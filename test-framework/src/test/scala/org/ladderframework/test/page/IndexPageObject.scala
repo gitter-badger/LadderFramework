@@ -8,6 +8,6 @@ case class IndexPageObject(response: IndexResponse)(implicit val context: Contex
 	
 	def header: Node = (resposeXml \\ "h1").head
 	
-	def aboutHeader = Link[AboutPageObject]()
+	//def aboutHeader = Link[AboutPageObject]()
 	
 }

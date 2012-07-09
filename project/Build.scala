@@ -1,7 +1,5 @@
 import sbt._
 import Keys._
-import com.github.siasia.PluginKeys._
-import com.github.siasia.WebPlugin._
 
 object LadderFrameworkBuild extends Build {
 
@@ -16,14 +14,14 @@ object LadderFrameworkBuild extends Build {
 		base = file(".")
 	) aggregate (framework, testFramework)
 
-	lazy val framework = Project(id = "ladder_framework",
+	lazy val framework = Project(id = "ladder-web",
 		base = file("framework"),
 		settings = ladderSettings ++ Seq(
 			libraryDependencies ++= Dependencies.framework ++ Dependencies.testkit
 		)
 	)
 
-	lazy val testFramework = Project(id = "ladder_test-framework",
+	lazy val testFramework = Project(id = "ladder-test",
 		base = file("test-framework"),
 		settings = ladderSettings ++ Seq(
 			libraryDependencies ++= Dependencies.test_framework ++ Dependencies.testkit

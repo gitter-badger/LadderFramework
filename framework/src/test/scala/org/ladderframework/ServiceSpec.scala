@@ -33,7 +33,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 				HttpResourceResponse(path = static :: Nil)
 			case HttpRequest(GET, _, "statefull" :: "request" :: Nil, _, _) =>
 				new StatefulHtmlResponse{
-					override def content(implicit context:Context) = {
+					override def statefullContent(implicit context:Context) = {
 						val callback = context.addSubmitCallback(() => (
 								"some" :: "where" :: "new" :: Nil, 
 								HtmlResponse("<html><body>redirect post</body></html>"))
@@ -43,7 +43,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 				}
 			case HttpRequest(GET, _, originalPath @ "statefull" :: "ajaxrequest" :: Nil, _, _) =>
 				new StatefulHtmlResponse{
-					override def content(implicit context:Context) = {
+					override def statefullContent(implicit context:Context) = {
 						val callback = context.addAjaxSubmitCallback(() => JsCall("callback"))
 						callback.tail.mkString("_")
 					}
@@ -51,14 +51,14 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 				
 			case HttpRequest(GET, _, originalPath @ "statefull" :: "ajaxcallback" :: Nil, _, _) =>
 				new StatefulHtmlResponse{
-					override def content(implicit context:Context) = {
+					override def statefullContent(implicit context:Context) = {
 						val callback = context.addAjaxInputCallback((input) => JsCall("inputCallback:" + input))
 						callback.tail.mkString("_")
 					}
 				}
 			case HttpRequest(GET, _, originalPath @ "statefull" :: "ajaxhandler" :: Nil, _, _) =>
 				new StatefulHtmlResponse{
-					override def content(implicit context:Context) = {
+					override def statefullContent(implicit context:Context) = {
 						val callback = context.addAjaxHandlerCallback({
 							case _ => HtmlResponse("got back here")
 						})
@@ -67,7 +67,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 				}
 			case HttpRequest(GET, _, originalPath @ "statefull" :: "pull" :: Nil, _, _) =>
 				new StatefulHtmlResponse{
-					override def content(implicit context:Context) = {
+					override def statefullContent(implicit context:Context) = {
 						context.update("Message")
 						context.contextID
 					}
