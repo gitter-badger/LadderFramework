@@ -47,7 +47,7 @@ object Dependencies {
 
 	val testkit = Seq(Test.scalatest, Test.junit, Test.akkaTest)
 
-	val framework = Seq(servletApi, akkaActor, akkaLogging) ++ slf4j
+	val framework = Seq(servletApi, akkaActor, akkaLogging, scalaz) ++ slf4j
 	val test_framework = Seq(servletApi) ++ slf4j
 
 }
@@ -61,19 +61,21 @@ object Dependency {
 		val scalatest = "1.7.1"
 		val slf4j = "1.6.4"
 		val akka = "2.0.2"
+		val scalaz = "6.0.4"
 	}
 
 	// Compile
-	val jetty = "org.eclipse.jetty" % "jetty-webapp" % "8.0.4.v20111024" % "test,container"
+	lazy val jetty = "org.eclipse.jetty" % "jetty-webapp" % "8.0.4.v20111024" % "test,container"
 
-	val servletApi = "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided"
+	lazy val servletApi = "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided"
 
-	val slf4jApi = "org.slf4j" % "slf4j-api" % V.slf4j
-	val logback = "ch.qos.logback" % "logback-classic" % V.logback
+	lazy val slf4jApi = "org.slf4j" % "slf4j-api" % V.slf4j
+	lazy val logback = "ch.qos.logback" % "logback-classic" % V.logback
 
-	val akkaActor = "com.typesafe.akka" % "akka-actor" % V.akka
-	val akkaLogging = "com.typesafe.akka" % "akka-slf4j" % V.akka
-	
+	lazy val akkaActor = "com.typesafe.akka" % "akka-actor" % V.akka
+	lazy val akkaLogging = "com.typesafe.akka" % "akka-slf4j" % V.akka
+
+	lazy val scalaz = "org.scalaz" %% "scalaz-core" % V.scalaz	
 
 	object Test {
 		val junit = "junit" % "junit" % "4.10" % "test" // Common Public License 1.0

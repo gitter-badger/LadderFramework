@@ -9,6 +9,8 @@ import akka.dispatch.Future
 import akka.dispatch.ExecutionContext
 import java.io.File
 import org.ladderframework.logging.Loggable
+import org.ladderframework.css.CssSelector._
+import org.ladderframework.js.JsCmd
 
 trait HttpResponse{
 	def status:Status 
@@ -33,14 +35,15 @@ object NotFoundResponse extends HtmlResponse{
 case class HttpResourceResponse(status:Status = OK, path:List[String]) extends HttpResponse with Loggable {
 	
 	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context:Context) {
-		val file = LadderBoot.resource(path.mkString("/"))
+		val pathString = path.mkString("/", "/", "")
+		val file = LadderBoot.resource(pathString)
 		debug("HttpResourceResponse - print: " + file)
 		if(file != null){
 			httpServletResponse.setStatus(status.code)
 			path.reverse.headOption.foreach(contentType => 
 				httpServletResponse.setContentType(LadderBoot.mimeType(contentType))
 			)
-			val content = LadderBoot.resourceAsStream(path.mkString("/"))
+			val content = LadderBoot.resourceAsStream(pathString)
 			val out = httpServletResponse.getOutputStream()
 	    Iterator.continually (content.read).takeWhile (-1 !=).foreach(out.write)
 		}else{
@@ -58,14 +61,14 @@ case class JsonResponse(content:String) extends HttpResponse{
 		httpServletResponse.getWriter().append(content).flush()
 	}
 }
-case class JsCmdResponse(content:String) extends HttpResponse with Loggable{
+case class JsCmdResponse(cmd: JsCmd) extends HttpResponse with Loggable{
 	val status:Status = OK
 	val contentType = "text/javascript"	
 	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context:Context) {
 		debug(this)	
 		httpServletResponse.setStatus(status.code)
 		httpServletResponse.setContentType(contentType)
-		httpServletResponse.getWriter().append(content).flush()
+		httpServletResponse.getWriter().append(cmd.toCmd).flush()
 	}
 }
 
@@ -76,7 +79,7 @@ case class PullResponse(messages:List[PushMessage]) extends HttpResponse with Lo
 		debug(this)	
 		httpServletResponse.setStatus(status.code)
 		httpServletResponse.setContentType(contentType)
-		httpServletResponse.getWriter().append(messages.map(_.asJson).mkString("[", ",", "]")).flush()
+		httpServletResponse.getWriter().append(messages.map(_.asJson).mkString("""{"messages":[""", ",", "]}")).flush()
 	}
 }
 
@@ -120,9 +123,15 @@ trait HtmlPage extends StatefulHtmlResponse with Loggable{
 		val resouce = LadderBoot.resource(source)
 		XML.load(resouce)
 	}
+	
+	def addPush(ns: NodeSeq)(implicit context: Context): NodeSeq = {
+		("body" #+> 
+			<script type="text/javascript">{"$(function(){ladder.push('" + context.contextID + "');})"}</script>
+		).apply(ns)
+	}
 
-	def render(ns: NodeSeq)(implicit context:Context): NodeSeq
-	def statefullContent(implicit context:Context):String = "<!DOCTYPE html>\n" + render(xml).toString
+	def render(ns: NodeSeq)(implicit context: Context): NodeSeq
+	def statefullContent(implicit context: Context):String = "<!DOCTYPE html>\n" + addPush(render(xml)).toString
 
 }
 

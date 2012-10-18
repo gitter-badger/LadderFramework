@@ -23,6 +23,8 @@ import com.typesafe.config.ConfigFactory
 import bootstrap.LadderBoot
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.JavaConverters.mapAsScalaMapConverter
+import javax.servlet.http.HttpSessionListener
+import javax.servlet.http.HttpSessionEvent
 
 @WebFilter(urlPatterns = Array("/*"), asyncSupported = true)
 @MultipartConfig(location = "/tmp", fileSizeThreshold = 1048576, maxFileSize = 52428800, maxRequestSize = 52428800)
@@ -32,8 +34,8 @@ class LadderFrameworkFilter extends Filter with Loggable {
 	val system = ActorSystem("WebSystem", akkaConfig)
  
     // create the result listener, which will print the result and shutdown the system
-  val master = system.actorOf(Props[Master].withRouter(RoundRobinRouter(10)), name = "master")
-  val requestHandler = system.actorFor(master.path / "requestHandler")
+  val master = system.actorOf(Props[Master], name = "master")
+  def requestHandler = system.actorFor(master.path / "requestHandler")
 	var config: FilterConfig = _
 	
 	lazy val asyncListener = new AsyncListener{
@@ -47,6 +49,18 @@ class LadderFrameworkFilter extends Filter with Loggable {
 		debug("init")
 		this.config = config
 		val cxt = config.getServletContext()
+		cxt.addListener(new HttpSessionListener{
+			def sessionCreated(sessionEvent: HttpSessionEvent) {
+				val sessionId = sessionEvent.getSession.getId
+				debug("Create session: " + sessionId)
+				master ! CreateSession(sessionId)
+			} 
+			def sessionDestroyed(sessionEvent: HttpSessionEvent) {
+				val sessionId = sessionEvent.getSession.getId
+				debug("Remove session: " + sessionId)
+				master ! RemoveSession(sessionId)
+			} 
+		})
 		LadderBoot.mimeType = cxt.getMimeType
 		LadderBoot.resourceAsStream = cxt.getResourceAsStream
 		LadderBoot.resource = cxt.getResource

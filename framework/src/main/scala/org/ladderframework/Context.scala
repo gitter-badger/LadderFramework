@@ -1,39 +1,63 @@
 package org.ladderframework
 
-import org.ladderframework.logging.Loggable
-import java.util.UUID
 import java.io.InputStream
 import java.util.Scanner
-import bootstrap.LadderBoot
-import akka.actor.ActorRef
+import java.util.UUID
+
+import scala.Array.canBuildFrom
+import scala.Option.option2Iterable
+import scala.annotation.implicitNotFound
+
 import org.ladderframework.js.JsCmd
+import org.ladderframework.logging.Loggable
+
+import bootstrap.LadderBoot
 
 object Context{
 	private val lineSeparator = System.getProperty("line.separator")
-	private val FileName = """.*filename="(.+)"""".r
+	def createUUID:String = UUID.randomUUID.toString
+	
+	implicit def stream2String(is: InputStream): String = {
+		val scanner = new Scanner(is)
+		val sb = new StringBuilder
+		while (scanner.hasNext) {
+			sb.append(scanner.nextLine)
+			if (scanner.hasNext) sb.append(lineSeparator)
+		}
+		sb.toString
+	}
+	
+	def booleanValue(value: String):Option[Boolean] = {
+			value match {
+				case "1" | "true" | "yes" | "TRUE" | "YES" => Some(true)
+				case "0" | "false" | "no" | "FALSE" | "NO" => Some(false)
+				case _ => None
+			}
+	}
 }
 
 case class Context(
 		val contextID: String, 
 		addResponse: (List[String], HttpResponse) => String, 
-		update: String => Unit) extends Loggable {
+		update: JsCmd => Unit) extends Loggable {
+	
+	type Params = HttpRequest
 	
 	import Context._
+	
 	private var inputMap = Map[String, String => Unit]()
 	private var booleanInputMap = Map[String, Boolean => Unit]()
 	private var clickMap = Map[String, () => Unit]()
 	private var fileInputMap = Map[String, FileInfo => Unit]()
-	private var postMap = Map[String, () => (List[String], HttpResponse)]()
+	private var postMap = Map[String, Params => (List[String], HttpResponse)]()
 	
 	private var ajaxInputMap = Map[String, String => JsCmd]()
 	private var ajaxBooleanInputMap = Map[String, Boolean => JsCmd]()
 	private var ajaxClickMap = Map[String, () => JsCmd]()
 	//private var ajaxFileInputMap = Map[String, FileInfo => JsCmd]()
-	private var ajaxPostMap = Map[String, () => JsCmd]()
+	private var ajaxPostMap = Map[String, Params => JsCmd]()
 	
 	private var ajaxHandlerMap = Map[String, PartialFunction[HttpRequest, HttpResponse]]()
-
-	private def createUUID:String = UUID.randomUUID.toString
 
 	private def addCallback(addFunc: String => Unit):String = {
 		val uuid = createUUID
@@ -54,49 +78,39 @@ case class Context(
 
 	def getFileInputCallback(key: String): Option[FileInfo => Unit] = fileInputMap.get(key)
 
-	def addInputValueCallback(callback: (String) => Unit): String = 
+	def addInputValueCallback(callback: (String) => Unit): String = {
+		debug("addInputValueCallback: " + callback)
+		if(callback == null) throw new IllegalArgumentException("InputCallback sould not be null")
 		addCallback(uuid => inputMap += (uuid -> callback))
+	}
 
 	def getInput(key: String): Option[String => Unit] = inputMap.get(key)
 
-	def addSubmitCallback(callback: () => (List[String], HttpResponse)): List[String] = {
+	def addSubmitCallback(callback: Params => (List[String], HttpResponse)): List[String] = {
 		val funcUuid = createUUID
 		postMap += (funcUuid -> callback)
 		"post" :: contextID :: funcUuid :: Nil
 	}
 	
-	private def booleanValue(value: String):Option[Boolean] = {
-			value match {
-				case "1" | "true" | "yes" | "TRUE" | "YES" => Some(true)
-				case "0" | "false" | "no" | "FALSE" | "NO" => Some(false)
-				case _ => None
-			}
-	}
-
 	def submitCallback:PartialFunction[HttpRequest, HttpResponse] = {
-		case HttpRequest(POST, _, "post" :: `contextID` :: func :: Nil, params, parts) if postMap.contains(func) => 
+		case request @ HttpRequest(POST, _, "post" :: `contextID` :: func :: Nil, params, parts) if postMap.contains(func) => 
 			debug("handleContextPost")
 			debug("func: " + func + " --- " + postMap.get(func))
 			params.foreach(param => {
 				debug("param: " + param)
-				val (key, value) = param
-				inputMap.get(key).foreach(cb => value.foreach(cb))
+				val (name, value) = param
+				inputMap.get(name).foreach(cb => value.foreach(cb))
 				for{
 					v <- value
 					booleanValue <- booleanValue(v)
-					callback <- booleanInputMap.get(key)
+					callback <- booleanInputMap.get(name)
 				} yield callback(booleanValue)
 			})
 			parts.foreach(part => {
 				val name = part.getName
 				inputMap.get(name).foreach(_(part.getInputStream))
 				fileInputMap.get(name).foreach(_({
-					val contentDisp = part.getHeader("content-disposition")
-					val fileName = contentDisp match {
-						case FileName(fn) => fn
-						case _ => ""
-					}
-					FileInfo(fileName, part.getSize, part.getInputStream)
+					FileInfo(part)
 				}))
 				clickMap.get(name).foreach(_())
 			})
@@ -108,12 +122,12 @@ case class Context(
 				val name = part.getName
 				clickMap.get(name).foreach(_())
 			})
-			val (nextPath, response) = postMap(func).apply()
+			val (nextPath, response) = postMap(func).apply(request)
 			val uuid = addResponse(nextPath, response)
 			HttpRedirectResponse(nextPath, Option(uuid))
 	}
 	
-	implicit private def stream2String(is: InputStream): String = {
+	implicit def stream2String(is: InputStream): String = {
 		val scanner = new Scanner(is)
 		val sb = new StringBuilder
 		while (scanner.hasNext) {
@@ -123,26 +137,32 @@ case class Context(
 		sb.toString
 	}
 	
-	private def addAjax(addFunc: String => Unit):List[String] = {
+	private def addAjax(addFunc: String => Unit): List[String] = {
 		val uuid = createUUID
 		addFunc(uuid)
 		"ajax" :: contextID :: uuid :: Nil
 	}
 
-	def addAjaxSubmitCallback(callback: () => JsCmd): List[String] = 
-		addAjax(uuid => ajaxPostMap += (uuid -> callback))
+	def addAjaxFormSubmitCallback(callback: Params => JsCmd): String = 
+		addAjax(uuid => ajaxPostMap += (uuid -> callback)).mkString("/")
 
-	def addAjaxBooleanCallback(callback: Boolean => JsCmd): List[String] = 
-		addAjax(uuid => ajaxBooleanInputMap += (uuid -> callback))
+		
+	case class AjaxCallBackCmd (lookupPath: List[String]) {
+		val name = lookupPath.last
+		val toCmd = "javascript:ladder.ajax('" + lookupPath.take(2) + "', event)"; 
+	}
+	def addAjaxBooleanCallback(callback: Boolean => JsCmd): AjaxCallBackCmd = {
+		AjaxCallBackCmd( addAjax(uuid => ajaxBooleanInputMap += (uuid -> callback)))
+	}
 
-	def addAjaxClickCallback(callback: () => JsCmd): List[String] = 
-		addAjax(uuid => ajaxClickMap += (uuid -> callback))
+	def addAjaxClickCallback(callback: () => JsCmd): AjaxCallBackCmd = 
+		AjaxCallBackCmd( addAjax(uuid => ajaxClickMap += (uuid -> callback)) )
 	
-	def addAjaxInputCallback(callback: String => JsCmd): List[String] = 
-		addAjax(uuid => ajaxInputMap += (uuid -> callback))
+	def addAjaxInputCallback(callback: String => JsCmd): AjaxCallBackCmd = 
+		AjaxCallBackCmd(addAjax(uuid => ajaxInputMap += (uuid -> callback)))
 	
-	def addAjaxHandlerCallback(callback: PartialFunction[HttpRequest, HttpResponse]) : List[String] = {
-		addAjax(uuid => ajaxHandlerMap += (uuid -> callback))
+	def addAjaxHandlerCallback(callback: PartialFunction[HttpRequest, HttpResponse]) : AjaxCallBackCmd = {
+		AjaxCallBackCmd(addAjax(uuid => ajaxHandlerMap += (uuid -> callback)))
 	}
 	
 	def ajaxCallback:PartialFunction[HttpRequest, HttpResponse] = {
@@ -161,18 +181,26 @@ case class Context(
 					ajaxClickMap.get(key).map(_.apply())
 				}
 			})
-			jsCmd.map(_.toCmd).map(msg => JsCmdResponse(msg)).getOrElse(LadderBoot.notFound) 
+			jsCmd.map(msg => JsCmdResponse(msg)).getOrElse(LadderBoot.notFound) 
 	}
 	
 	def ajaxSubmitCallback:PartialFunction[HttpRequest, HttpResponse] = {
-		case HttpRequest(_, _, "ajax" :: `contextID` :: func :: Nil, params, parts) if ajaxPostMap.contains(func) => 
-			debug("ajax func: " + func + " --- " + ajaxPostMap(func)) 
+		case request @ HttpRequest(_, _, "ajax" :: `contextID` :: func :: Nil, params, parts) if ajaxPostMap.contains(func) => 
+			debug("ajax func: " + func + " --- " + ajaxPostMap(func))
 			
 			params.foreach(param => {
-				val (key, value) = param
-				inputMap.get(key).foreach(cb => value.foreach(cb))
+				val (key, values: Array[String]) = param
 				for{
-					v <- value
+					callbackFunc <- inputMap.get(key)
+					nullableValue <- values
+					value <- Option(nullableValue)
+				} {
+					debug("key: " + key + "callbackFunc: " + callbackFunc + " --- value: " + value)
+					callbackFunc(value)
+				}
+				
+				for{
+					v <- values
 					booleanValue <- booleanValue(v)
 					callback <- booleanInputMap.get(key)
 				} yield callback(booleanValue)
@@ -182,7 +210,13 @@ case class Context(
 				val (key, value) = param
 				clickMap.get(key).foreach(_.apply())
 			})
-			val jsCmd:String = ajaxPostMap(func).apply().toCmd
+			val jsCmd: JsCmd = ajaxPostMap(func).apply(request)
+			debug("result: " + jsCmd)
+			JsCmdResponse(jsCmd)
+		case request @ HttpRequest(_, _, "ajax" :: `contextID` :: func :: Nil, params, parts) if ajaxClickMap.contains(func) =>
+			debug("ajax click func: " + func + " --- " + ajaxClickMap(func)) 
+			
+			val jsCmd: JsCmd = ajaxClickMap(func).apply()
 			JsCmdResponse(jsCmd)
 	}
 	

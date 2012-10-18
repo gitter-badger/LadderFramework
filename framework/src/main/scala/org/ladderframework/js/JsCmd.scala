@@ -25,11 +25,11 @@ package org.ladderframework{
 		}
 		
 		case class JsStringArg(string:String) extends JsArg{
-			def arg = "\"" + string.replaceAll("\"", "&quot;") + "\""
+			def arg = "\"" + string.replaceAll("\"", "\\\"") + "\""
 		}
 		
 		case class JsNodeSeqArg(ns:NodeSeq) extends JsArg{
-			def arg = ns.toString.replaceAll("\"", "&quot;")
+			def arg = "\"" + ns.toString.replaceAll("\"", "\\\"") + "\""
 		}
 	}
 }

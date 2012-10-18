@@ -7,6 +7,8 @@ case class HttpRequest(
 		path:List[String], 
 		parameters: Map[String,Array[String]] = Map(), 
 		parts: List[Part] = Nil){
+	def part(name: String): Option[Part] = parts.filter{_.getName() == name}.headOption
+	def partAsString(name: String): Option[String] = part(name).map(part => Context.stream2String(part.getInputStream))
 }
 
 trait Method{

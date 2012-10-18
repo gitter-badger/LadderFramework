@@ -5,6 +5,7 @@ import org.scalatest.GivenWhenThen
 import org.ladderframework.Context
 import org.ladderframework.Utils
 import org.ladderframework.HttpResponse
+import org.ladderframework.js._
 import org.ladderframework.test.page._
 import org.ladderframework.test.response._
 import bootstrap.LadderBoot
@@ -18,7 +19,7 @@ class PageContentSpec extends FunSpec with GivenWhenThen {
 	implicit val context: Context = Context(
 		contextID = Utils.uuid, 
 		addResponse = (path: List[String], res: HttpResponse) => "", 
-		update = (str: String) => Unit )
+		update = (str: JsCmd) => Unit )
 		
 	val indexResponse = new IndexResponse
 	

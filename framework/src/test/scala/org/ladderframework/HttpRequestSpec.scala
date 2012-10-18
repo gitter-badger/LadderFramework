@@ -13,8 +13,23 @@ class HttpRequestSpec extends FunSpec with GivenWhenThen {
   	it("should map POST") {
   		assert(Method("POST") == POST)
   	}
-  	it("should map *") {
-  		pending
+  	it("should map PUT") {
+  		assert(Method("PUT") == PUT)
+  	}
+  	it("should map HEAD") {
+  		assert(Method("HEAD") == HEAD)
+  	}
+  	it("should map DELETE") {
+  		assert(Method("DELETE") == DELETE)
+  	}
+  	it("should map TRACE") {
+  		assert(Method("TRACE") == TRACE)
+  	}
+  	it("should map OPTIONS") {
+  		assert(Method("OPTIONS") == OPTIONS)
+  	}
+  	it("should map CONNECT") {
+  		assert(Method("CONNECT") == CONNECT)
   	}
   }
   

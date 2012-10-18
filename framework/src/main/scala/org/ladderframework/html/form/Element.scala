@@ -4,13 +4,19 @@ import scala.xml._
 import org.ladderframework.Context
 
 trait Element {
-	final def handleAttributes(attributes: MetaData) = {
-		overrideAttributes.foldLeft(attributes)((attrs, pair) => {
+	final def handleAttributes(attributes: MetaData):MetaData = {
+		val overrideedAttrs = overrideAttributes.foldLeft(attributes)((attrs, pair) => {
 			val (key, value) = pair
 			attrs remove(key) append Attribute(None, key, Text(value), Null)
 		})
+		appendAttributes.foldLeft(overrideedAttrs)((attrs, pair) => {
+			val (key, value) = pair
+			val oldValue = attrs(key).text
+			attrs remove(key) append Attribute(None, key, Text(oldValue + " " + value), Null)
+		})
 	}
 	
+	protected def appendAttributes = Map[String, String]()
 	protected def overrideAttributes = Map[String, String]()
 	
 	val tagName:String

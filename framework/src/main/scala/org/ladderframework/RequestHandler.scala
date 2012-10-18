@@ -14,6 +14,7 @@ import javax.servlet.AsyncContext
 import javax.servlet.AsyncListener
 import javax.servlet.AsyncEvent
 import akka.util.duration._
+import org.ladderframework.js.JsCmd
 
 case class HttpInteraction(asyncContext: AsyncContext, req:HttpRequest, res: HttpServletResponse)
 case class RenderInital(res: HttpServletResponse, asyncContext:AsyncContext)
@@ -21,14 +22,14 @@ case class CreateSession(sessionId: String)
 case class RemoveSession(sessionId: String)
 case class AddResponse(path: List[String], uuid:String, response: HttpResponse)
 case class PushMessage(id: String = Utils.uuid, message: String){
-	lazy val asJson = "{id:\"" + id + "\", message:\"" + message + "\"}"
+	lazy val asJson = """{"id":"""" + id + """", "message":"""" + message.replace("\"", "\\\"") + """"}"""
 }
 
 class Master extends Actor with ActorLogging {
  
 	val requestHandler = context.actorOf(Props[RequestHandler].withRouter(RoundRobinRouter(10)), name = "requestHandler")
 	
-	def receive = {
+	override def receive = {
 		case hi : HttpInteraction => 
 			log.debug("receive - HttpInteraction: " + hi)
 			requestHandler ! hi 
@@ -45,7 +46,7 @@ class Master extends Actor with ActorLogging {
 
 class RequestHandler extends Actor with ActorLogging {
 	
-	def receive = {
+	override def receive = {
 		case hi : HttpInteraction =>
 			log.debug("receive - HttpInteraction: " + hi)
 			val sessionID = hi.req.sessionID
@@ -130,8 +131,8 @@ trait ResponseContainer extends Actor with ActorLogging{
 		case _ => LadderBoot.notFound
 	}
 	
-	def update(message: String) {
-		context.self ! PushMessage(message = message)
+	def update(message: JsCmd) {
+		context.self ! PushMessage(message = message.toCmd)
 	}
 	
 	implicit val statefulContext = new Context(uuid, addResponse , update)
@@ -157,7 +158,7 @@ trait ResponseContainer extends Actor with ActorLogging{
 			messages = messages :+ newMessage
 			log.debug("messages:" + messages)
 			context.children.foreach(_ ! newMessage)
-		case HttpInteraction(asyncContext, req @ HttpRequest(POST, _, "pull" :: `uuid` :: Nil, params, _), res) => 
+		case HttpInteraction(asyncContext, req @ HttpRequest(_, _, "pull" :: `uuid` :: _, params, _), res) => 
 			log.debug("pull")
 			updateLastAccess()
 			params.get("lastId").flatMap(_.headOption).foreach(id => { 

@@ -13,6 +13,8 @@ import bootstrap.LadderBoot
 import akka.actor.ActorRef
 import akka.actor.Actor
 import org.ladderframework.js.JsCall
+import org.ladderframework.js.JsCmd
+import org.junit.runner.RunWith
 
 class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec with GivenWhenThen with BeforeAndAfterAll{
 
@@ -28,13 +30,13 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 			case HttpRequest(GET, _, "hello" :: "world" :: Nil, params, _) if params.size == 0 => helloWorldResponse
 			case HttpRequest(POST | GET, _, "hello" :: "world" :: Nil, params, _) => 
 				HtmlResponse("<html><body>hello world " + params("parameter").head + "</body></html>")
-			case HttpRequest(GET, _, "resource" :: static :: Nil, _, _) =>
+			case HttpRequest(GET, _, "resources" :: static :: Nil, _, _) =>
 				println("HttpResourceResponse: " + static)
 				HttpResourceResponse(path = static :: Nil)
 			case HttpRequest(GET, _, "statefull" :: "request" :: Nil, _, _) =>
 				new StatefulHtmlResponse{
 					override def statefullContent(implicit context:Context) = {
-						val callback = context.addSubmitCallback(() => (
+						val callback = context.addSubmitCallback(params => (
 								"some" :: "where" :: "new" :: Nil, 
 								HtmlResponse("<html><body>redirect post</body></html>"))
 						)
@@ -44,16 +46,15 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 			case HttpRequest(GET, _, originalPath @ "statefull" :: "ajaxrequest" :: Nil, _, _) =>
 				new StatefulHtmlResponse{
 					override def statefullContent(implicit context:Context) = {
-						val callback = context.addAjaxSubmitCallback(() => JsCall("callback"))
-						callback.tail.mkString("_")
+						val callback = context.addAjaxFormSubmitCallback(params => JsCall("callback"))
+						callback.split("/").tail.mkString("_")
 					}
 				}
-				
 			case HttpRequest(GET, _, originalPath @ "statefull" :: "ajaxcallback" :: Nil, _, _) =>
 				new StatefulHtmlResponse{
 					override def statefullContent(implicit context:Context) = {
 						val callback = context.addAjaxInputCallback((input) => JsCall("inputCallback:" + input))
-						callback.tail.mkString("_")
+						callback.lookupPath.tail.mkString("_")
 					}
 				}
 			case HttpRequest(GET, _, originalPath @ "statefull" :: "ajaxhandler" :: Nil, _, _) =>
@@ -62,20 +63,20 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 						val callback = context.addAjaxHandlerCallback({
 							case _ => HtmlResponse("got back here")
 						})
-						callback.tail.mkString("_")
+						callback.lookupPath.tail.mkString("_")
 					}
 				}
 			case HttpRequest(GET, _, originalPath @ "statefull" :: "pull" :: Nil, _, _) =>
 				new StatefulHtmlResponse{
 					override def statefullContent(implicit context:Context) = {
-						context.update("Message")
+						context.update(JsCall("Message"))
 						context.contextID
 					}
 				}
 		}
 		
-		LadderBoot.resourceAsStream = getClass.getClassLoader().getResourceAsStream
-		LadderBoot.resource = getClass.getClassLoader().getResource
+		LadderBoot.resourceAsStream = (in:String) => getClass.getClassLoader().getResourceAsStream(in.substring(1))
+		LadderBoot.resource = (in:String) => getClass.getClassLoader().getResource(in.substring(1))
 		LadderBoot.mimeType = _ match {
 			case s:String if s.endsWith("html") => "text/html"
 			case _ => "NOT FOUND"
@@ -136,7 +137,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 			"serve valid requests" in {
 				val asyncContext = new AsyncContextMock
 				val httpServletResponse = new HttpServletResponseMock()
-				val request = HttpRequest(GET, sessionID, "resource" :: "static.html" :: Nil)
+				val request = HttpRequest(GET, sessionID, "resources" :: "static.html" :: Nil)
 				send(HttpInteraction(asyncContext, request, httpServletResponse))
 				asyncContext.latch.await(1, TimeUnit.SECONDS)
 				assert(httpServletResponse.text === "static")
@@ -147,7 +148,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 			"handle not found (404)" in {
 				val asyncContext = new AsyncContextMock
 				val httpServletResponse = new HttpServletResponseMock()
-				val request = HttpRequest(GET, sessionID, "resource" :: "notFound.html" :: Nil)
+				val request = HttpRequest(GET, sessionID, "resources" :: "notFound.html" :: Nil)
 				master ! HttpInteraction(asyncContext, request, httpServletResponse)
 				asyncContext.latch.await(1, TimeUnit.SECONDS)
 				assert(httpServletResponse.text === NotFoundResponse.content)
@@ -158,7 +159,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 			"handle it asyncrounously" in {
 				val asyncContext = new AsyncContextMock(10)
 				val httpServletResponse = new HttpServletResponseMock()
-				val request = HttpRequest(GET, sessionID, "resource" :: "static.html" :: Nil)
+				val request = HttpRequest(GET, sessionID, "resources" :: "static.html" :: Nil)
 				for(i <- 0 to 10){
 					master ! HttpInteraction(asyncContext, request, new HttpServletResponseMock())
 				}
@@ -296,7 +297,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 				asyncContextPull.latch.await(1, TimeUnit.SECONDS)
 				assert(httpServletResponsePull.getStatus === OK.code)
 				assert(httpServletResponsePull.contentType === "text/json")
-				val RegExp = """\[\{id:"(.*)", message:"Message"\}\]""".r
+				val RegExp = """\{"messages":\[\{"id":"(.*)", "message":"Message\(\);"\}\]\}""".r
 				httpServletResponsePull.text match {
 					case RegExp(id) => 
 					case _ => assert(false, httpServletResponsePull.text + " --- " + RegExp) 

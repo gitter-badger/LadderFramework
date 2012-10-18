@@ -7,39 +7,38 @@ import org.ladderframework.HttpResponse
 
 trait Form extends Element {
 	val tagName = "form"
-	val children:NodeSeq => NodeSeq
-	
-	override def transform = (ns:NodeSeq) => {
+	val children: NodeSeq => NodeSeq
+
+	override def transform = (ns: NodeSeq) => {
 		val Tag = tagName
 		def tf(n: Node): Seq[Node] = {
 			n match {
-		    case Elem(prefix, Tag, attribs, scope, ch @ _*)  => 
-		    	val newAttribs = handleAttributes(attribs) 
-		      Elem(prefix, Tag, newAttribs, scope, children(ch):_*)
-		    case other => other
-		  }
+				case Elem(prefix, Tag, attribs, scope, ch @ _*) =>
+					val newAttribs = handleAttributes(attribs)
+					Elem(prefix, Tag, newAttribs, scope, children(ch): _*)
+				case other => other
+			}
 		}
 		ns.flatMap(tf)
 	}
 }
 
 case class PostForm(
-		submitCallback:() => (List[String], HttpResponse), 
-		children:NodeSeq => NodeSeq)(
-				implicit val context: Context) extends Form{
-	
-	override val overrideAttributes = Map[String, String]("action" -> context.addSubmitCallback(submitCallback).mkString("/"), 
-			"method" -> "post")
-	
+	submitCallback: Context#Params => (List[String], HttpResponse),
+	children: NodeSeq => NodeSeq)(
+		implicit val context: Context) extends Form {
+
+	override val overrideAttributes = Map[String, String]("action" -> context.addSubmitCallback(submitCallback).mkString("/"),
+		"method" -> "post")
+
 }
 
-case class AjaxForm(submitCallback:() => JsCmd, children:NodeSeq => NodeSeq)(
-		implicit val context: Context) extends Form{
-	
-	override val overrideAttributes = Map[String, String]("action" -> context.addAjaxSubmitCallback(submitCallback).mkString("/"),
+case class AjaxForm(submitCallback: Context#Params => JsCmd, children: NodeSeq => NodeSeq)(
+	implicit val context: Context) extends Form {
+
+	override val overrideAttributes = Map[String, String]("action" -> context.addAjaxFormSubmitCallback(submitCallback),
 		"method" -> "ajax",
-		"onsubmit" -> "isituptodate.submitFunction(event);",
-		"onclick" -> "isituptodate.clickedLast(this, event)"
-	)
+		"onsubmit" -> "ladder.submitFunction(event);",
+		"onclick" -> "ladder.clickedLast(this, event)")
 }
 

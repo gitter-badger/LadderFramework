@@ -10,6 +10,8 @@ trait CssSelector {
 	def #> (nsf:NodeSeq => NodeSeq):NodeSeq => NodeSeq
 	def #> (e:Element):NodeSeq => NodeSeq
 	def #> (iter:Iterable[NodeSeq => NodeSeq]):NodeSeq => NodeSeq
+	def #>> (ns:NodeSeq):NodeSeq => NodeSeq
+	def #+> (ns:NodeSeq):NodeSeq => NodeSeq
 	def matches(n:Node):Boolean
 }
 
@@ -42,6 +44,8 @@ private[ladderframework] class PassThruSelector(val any:String) extends CssSelec
 	def #> (nsf:NodeSeq => NodeSeq):NodeSeq => NodeSeq = ns=>ns
 	def #> (e:Element):NodeSeq => NodeSeq = ns => ns
 	def #> (iter:Iterable[NodeSeq => NodeSeq]):NodeSeq => NodeSeq = ns => ns
+	def #>> (ns:NodeSeq):NodeSeq => NodeSeq = ns => ns
+	def #+> (ns:NodeSeq):NodeSeq => NodeSeq = ns => ns
 	def matches(n:Node):Boolean = false
 }
 
@@ -60,6 +64,33 @@ private[ladderframework] trait AttribSelector extends CssSelector{
 		}
 		(ns:NodeSeq) => new RuleTransformer(rr).transform(ns)
 	}
+	
+	def #>> (ns:NodeSeq):NodeSeq => NodeSeq = {
+		val rr = new RewriteRule {
+			override def transform(n: Node): Seq[Node] = {
+			  n match {
+			    case e @ Elem(p, l, attribs, s, _*) if attributeMatches(attribs) =>
+			    	Elem(p,l,attribs, s, ns:_*)
+			    case other => other
+			  }
+			}
+		}
+		(ns:NodeSeq) => new RuleTransformer(rr).transform(ns)
+	}
+	
+	def #+> (ns:NodeSeq):NodeSeq => NodeSeq = {
+		val rr = new RewriteRule {
+			override def transform(n: Node): Seq[Node] = {
+			  n match {
+			    case e @ Elem(p, l, attribs, s, children @ _*) if attributeMatches(attribs) =>
+			    	Elem(p,l,attribs, s, (children ++ ns):_*)
+			    case other => other
+			  }
+			}
+		}
+		(ns:NodeSeq) => new RuleTransformer(rr).transform(ns)
+	}
+	
 	def #> (nsTransform:NodeSeq => NodeSeq):NodeSeq => NodeSeq = {
 		var rr = new RewriteRule {
 			override def transform(n: Node): Seq[Node] = n match {
@@ -124,23 +155,47 @@ object ClassSelector{
 	} 
 }
 private[ladderframework] class ElementSelector(val element:String) extends CssSelector{
-	val Label = element
 	
 	def #> (ns:NodeSeq):NodeSeq => NodeSeq = {
 		val rr = new RewriteRule {
 			override def transform(n: Node): Seq[Node] = {
 			  n match {
-			    case Elem(_, Label, _, _, _*) => ns
+			    case Elem(_, `element`, _, _, _*) => ns
 			    case other => other
 			  }
 			}
 		}
 		(ns:NodeSeq) => new RuleTransformer(rr).transform(ns)
 	}
+	def #>> (ns:NodeSeq):NodeSeq => NodeSeq = {
+			val rr = new RewriteRule {
+				override def transform(n: Node): Seq[Node] = {
+						n match {
+							case e @ Elem(p, `element`, attribs, s, _*) =>
+								Elem(p, element, attribs, s, ns:_*)
+							case other => other
+						}
+				}
+			}
+			(ns:NodeSeq) => new RuleTransformer(rr).transform(ns)
+	}
+	def #+> (ns:NodeSeq):NodeSeq => NodeSeq = {
+			val rr = new RewriteRule {
+				override def transform(n: Node): Seq[Node] = {
+						n match {
+							case e @ Elem(p, `element`, attribs, s, children @ _*) =>
+								Elem(p, element, attribs, s, (children ++ ns):_*)
+							case other => other
+						}
+				}
+			}
+			(ns:NodeSeq) => new RuleTransformer(rr).transform(ns)
+	}
+	
 	def #> (nsTransform:NodeSeq => NodeSeq):NodeSeq => NodeSeq = {
 		var rr = new RewriteRule {
 			override def transform(n: Node): Seq[Node] = n match {
-			case Elem(_, Label, _, _, children @ _*) => 
+			case Elem(_, `element`, _, _, children @ _*) => 
 				nsTransform(children)
 			case other => other
 			}
@@ -150,7 +205,7 @@ private[ladderframework] class ElementSelector(val element:String) extends CssSe
 	def #> (e:Element):NodeSeq => NodeSeq = {
 			var rr = new RewriteRule {
 				override def transform(n: Node): Seq[Node] = n match {
-				case el @ Elem(_, Label, _, _, children @ _*) => 
+				case el @ Elem(_, `element`, _, _, children @ _*) => 
 					e.transform(el)
 				case other => other
 				}
@@ -162,8 +217,8 @@ private[ladderframework] class ElementSelector(val element:String) extends CssSe
 		val rr = new RewriteRule {
 			override def transform(n: Node): Seq[Node] = {
 			  n match {
-			    case Elem(p, Label, a, n, children @ _*) => 
-			    	Elem(p, Label, a, n, iter.map(_.apply(children)).reduce(_ ++ _):_*)
+			    case Elem(p, `element`, a, n, children @ _*) => 
+			    	Elem(p, element, a, n, iter.map(_.apply(children)).reduce(_ ++ _):_*)
 			    case other => other
 			  }
 			}
@@ -173,7 +228,7 @@ private[ladderframework] class ElementSelector(val element:String) extends CssSe
 	
 	def matches(n:Node):Boolean = {
 		n match {
-			case Elem(_, Label, _, _, _*) => true
+			case Elem(_, `element`, _, _, _*) => true
 			case _ => false
 		}
 	}
@@ -204,18 +259,41 @@ object AttributeSelector{
 }
 
 private[ladderframework] class ElementAttributeSelector(tagName:String, attrib:String, value:String) extends CssSelector{
-	val Label = tagName
 	
 	def attributeMatches(attribs:MetaData) = attribs.asAttrMap.get(attrib).
 			map(attr => (" " + attr + " ") == (" " + value + " ")).getOrElse(false) 
-			
-	
 			
 	def #>(ns: NodeSeq): NodeSeq => NodeSeq = {
 		val rr = new RewriteRule {
 			override def transform(n: Node): Seq[Node] = {
 			  n match {
-			    case Elem(_, Label, attribs, _, _*) if attributeMatches(attribs) => ns
+			    case Elem(_, `tagName`, attribs, _, _*) if attributeMatches(attribs) => ns
+			    case other => other
+			  }
+			}
+		}
+		(ns:NodeSeq) => new RuleTransformer(rr).transform(ns)
+	}
+	
+	def #>>(ns: NodeSeq): NodeSeq => NodeSeq = {
+		val rr = new RewriteRule {
+			override def transform(n: Node): Seq[Node] = {
+			  n match {
+			    case e @ Elem(p, `tagName`, attribs, s, children @ _*) if attributeMatches(attribs) =>
+			    	Elem(p, tagName, attribs, s, ns:_*)
+			    case other => other
+			  }
+			}
+		}
+		(ns:NodeSeq) => new RuleTransformer(rr).transform(ns)
+	}
+	
+	def #+>(ns: NodeSeq): NodeSeq => NodeSeq = {
+		val rr = new RewriteRule {
+			override def transform(n: Node): Seq[Node] = {
+			  n match {
+			    case e @ Elem(p, `tagName`, attribs, s, children @ _*) if attributeMatches(attribs) =>
+			    	Elem(p, tagName, attribs, s, (children ++ ns):_*)
 			    case other => other
 			  }
 			}
@@ -226,8 +304,8 @@ private[ladderframework] class ElementAttributeSelector(tagName:String, attrib:S
 	def #>(nsTransform: NodeSeq => NodeSeq):NodeSeq => NodeSeq = {
 		var rr = new RewriteRule {
 			override def transform(n: Node): Seq[Node] = n match {
-			case e @ Elem(p, Label, attribs, s, children @ _*) if attributeMatches(attribs) =>
-				Elem(p,Label,attribs, s, nsTransform(children):_*)
+			case e @ Elem(p, `tagName`, attribs, s, children @ _*) if attributeMatches(attribs) =>
+				Elem(p, tagName, attribs, s, nsTransform(children):_*)
 			case other => other
 			}
 		}
@@ -237,7 +315,7 @@ private[ladderframework] class ElementAttributeSelector(tagName:String, attrib:S
 	def #>(e: Element): NodeSeq => NodeSeq = {
 			var rr = new RewriteRule {
 				override def transform(n: Node): Seq[Node] = n match {
-				case el @ Elem(_, Label, attribs, _, children @ _*) if attributeMatches(attribs) => 
+				case el @ Elem(_, `tagName`, attribs, _, children @ _*) if attributeMatches(attribs) => 
 					e.transform(el)
 				case other => other
 				}
@@ -248,8 +326,8 @@ private[ladderframework] class ElementAttributeSelector(tagName:String, attrib:S
 			val rr = new RewriteRule {
 				override def transform(n: Node): Seq[Node] = {
 						n match {
-						case Elem(p, Label, attribs, n, children @ _*) if attributeMatches(attribs) => 
-							Elem(p,Label,attribs, n, iter.map(_.apply(children)).reduce(_ ++ _):_*)
+						case Elem(p, `tagName`, attribs, n, children @ _*) if attributeMatches(attribs) => 
+							Elem(p, tagName, attribs, n, iter.map(_.apply(children)).reduce(_ ++ _):_*)
 						case other => other
 						}
 				}
@@ -259,7 +337,7 @@ private[ladderframework] class ElementAttributeSelector(tagName:String, attrib:S
 	
 	def matches(n:Node):Boolean = {
 		n match {
-			case Elem(_, Label, attribs, _, _*) if attributeMatches(attribs) => true
+			case Elem(_, `tagName`, attribs, _, _*) if attributeMatches(attribs) => true
 			case _ => false
 		}
 	}
