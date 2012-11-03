@@ -7,7 +7,7 @@ object LadderFrameworkBuild extends Build {
 	
 	lazy val buildSettings = Defaults.defaultSettings ++ Seq(
 		organization := "org.ladderframework",
-		version := "0.0.1-SNAPSHOT",
+		version := "0.0.2-SNAPSHOT",
 		scalaVersion := buildScalaVersion)
 
 	lazy val root = Project(id = "root",

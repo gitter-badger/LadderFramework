@@ -2,14 +2,14 @@ package org.ladderframework
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.util.Try
+import scala.util.Failure
+import scala.util.Success
 import java.util.concurrent.TimeUnit._
 import java.util.UUID
-import akka.actor.actorRef2Scala
-import akka.actor.Actor
-import akka.actor.ActorLogging
-import akka.actor.ActorRef
-import akka.actor.PoisonPill
-import akka.actor.Props
+import akka.actor._
 import akka.routing.RoundRobinRouter
 import bootstrap.LadderBoot
 import javax.servlet.http.HttpServletResponse
@@ -17,14 +17,15 @@ import javax.servlet.AsyncContext
 import javax.servlet.AsyncListener
 import javax.servlet.AsyncEvent
 import org.ladderframework.js.JsCmd
+import scala.concurrent.Promise
 
 case class HttpInteraction(asyncContext: AsyncContext, req:HttpRequest, res: HttpServletResponse)
 case class RenderInital(res: HttpServletResponse, asyncContext:AsyncContext)
 case class CreateSession(sessionId: String)
 case class RemoveSession(sessionId: String)
-case class AddResponse(path: List[String], uuid:String, response: HttpResponse)
+case class AddResponse(path: List[String], uuid:String, response: HttpResponse){}
 case class PushMessage(id: String = Utils.uuid, message: String){
-	lazy val asJson = """{"id":"""" + id + """", "message":"""" + message.replace("\"", "\\\"") + """"}"""
+	lazy val asJson = {"""{"id":"""" + id + """", "message":"""" + message.replace("\"", "\\\"") + """"}"""}
 }
 
 class Master extends Actor with ActorLogging {
@@ -84,7 +85,7 @@ class SessionActor(sessionID:String) extends Actor with ActorLogging{
 					resonseContainerRef ! RenderInital(hi.res, hi.asyncContext)
 			}
 		case AddResponse(path, uuid, response) =>
-			context.actorOf(Props(new RedirectResponseContainer(context.self, response, uuid)), name = uuid)
+			context.actorOf(Props(new RedirectResponseContainer(context.self, Promise().success(response), uuid)), name = uuid)
 	}
 }
 
@@ -92,7 +93,7 @@ class SessionActor(sessionID:String) extends Actor with ActorLogging{
 
 class RedirectResponseContainer(
 		val session:ActorRef, 
-		val httpResponse:HttpResponse, 
+		val httpResponse:Promise[HttpResponse], 
 		val uuid:String) extends ResponseContainer
 
 class InitalResponseContainer(
@@ -100,7 +101,7 @@ class InitalResponseContainer(
 		val initalRequest:HttpRequest, 
 		val uuid:String) extends ResponseContainer{
 	
-	lazy val httpResponse:HttpResponse = (LadderBoot.site orElse notFound).apply(initalRequest)
+	val httpResponse:Promise[HttpResponse] = Promise().completeWith(Future{(LadderBoot.site orElse notFound)}.map(_.apply(initalRequest)))
 	
 } 
 
@@ -108,7 +109,7 @@ case object Tick
 
 trait ResponseContainer extends Actor with ActorLogging{
 	
-	def httpResponse: HttpResponse
+	def httpResponse: Promise[HttpResponse]
 	val uuid: String
 	def session: ActorRef
 	private var messages: List[PushMessage] = Nil
@@ -152,18 +153,24 @@ trait ResponseContainer extends Actor with ActorLogging{
 		case RenderInital(res, asyncContext) =>
 			log.debug("RenderInital")
 			updateLastAccess()
-			try{
-				httpResponse.applyToHttpServletResponse(res)
-			}catch{
-				case t:Throwable =>
+			
+			def complete() = {
+				asyncContext.complete()
+	    	httpResponse.future.map(_ match {
+					case _ : Stateful => 
+					case _ => self ! PoisonPill
+				})
+			}
+			val future = httpResponse.future.flatMap(_.applyToHttpServletResponse(res))
+			future.onComplete{
+				case Failure(t) =>
 					log.error(t, "Problems handling request: " + httpResponse)
-					(LadderBoot.errorHandle orElse errorHandle)((InternalServerError, Some(t))).applyToHttpServletResponse(res)
+					(LadderBoot.errorHandle orElse errorHandle)((InternalServerError, Option(t))).applyToHttpServletResponse(res).onComplete{
+							case _ => complete()
+					}
+				case Success(status:Status) => println("Status: " + status + "; httpResponse: " + Await.ready(httpResponse.future, 10 seconds)); complete()
 			}
-    	asyncContext.complete()
-    	httpResponse match {
-				case _ : Stateful => 
-				case _ => self ! PoisonPill
-			}
+    	
 		case newMessage : PushMessage =>
 			log.debug("newMessage:" + newMessage)
 			updateLastAccess()
@@ -184,8 +191,10 @@ trait ResponseContainer extends Actor with ActorLogging{
 					statefulContext.ajaxSubmitCallback orElse
 					statefulContext.ajaxHandlerCallback orElse
 					statefulContext.ajaxCallback orElse notFound).apply(req)
-			response.applyToHttpServletResponse(res)
-    	asyncContext.complete()
+			response.applyToHttpServletResponse(res).map{ status => 
+				asyncContext.complete()
+				status
+			}
 	}
 	
 }
@@ -216,7 +225,10 @@ class PullActor(asyncContext: AsyncContext, res:HttpServletResponse) extends Act
 	
 	def send(msgs:List[PushMessage]) {
 		val response = PullResponse(msgs)
-		response.applyToHttpServletResponse(res)(null)
-		asyncContext.complete()
+		implicit val context:Context = null
+		response.applyToHttpServletResponse(res).onSuccess{
+			case _ => asyncContext.complete()
+		}
 	}
 }
+

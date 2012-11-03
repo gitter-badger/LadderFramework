@@ -1,5 +1,6 @@
 package org.ladderframework.test
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalatest.FunSpec
 import org.scalatest.GivenWhenThen
 import bootstrap.LadderBoot

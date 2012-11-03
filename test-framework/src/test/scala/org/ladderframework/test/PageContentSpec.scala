@@ -1,5 +1,6 @@
 package org.ladderframework.test
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalatest.FunSpec
 import org.scalatest.GivenWhenThen
 import org.ladderframework.Context
@@ -9,9 +10,11 @@ import org.ladderframework.js._
 import org.ladderframework.test.page._
 import org.ladderframework.test.response._
 import bootstrap.LadderBoot
+import org.scalatest.concurrent.Futures
+import scala.util.Success
 
-class PageContentSpec extends FunSpec with GivenWhenThen {
-	
+class PageContentSpec extends FunSpec with GivenWhenThen with Futures{
+
 	LadderBoot.resourceImpl = (resource:String) => { 
 		getClass().getClassLoader().getResource(resource) 
 	}  
@@ -27,7 +30,8 @@ class PageContentSpec extends FunSpec with GivenWhenThen {
 	
 	describe("PageContent") {
   	it("should contain text") {
-  		assert(indexPageObject.header.text === "index header")
+  		val Success(header) = indexPageObject.header.future.value.get
+  		assert(header.text === "index header")
   	}
 	}
 

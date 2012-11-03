@@ -1,14 +1,15 @@
 package org.ladderframework.mock
 
+import java.util.concurrent.CountDownLatch
+
 import javax.servlet.AsyncContext
-import javax.servlet.ServletRequest
-import javax.servlet.ServletResponse
+import javax.servlet.AsyncEvent
 import javax.servlet.AsyncListener
 import javax.servlet.ServletContext
-import java.util.concurrent.CountDownLatch
-import javax.servlet.AsyncEvent
+import javax.servlet.ServletRequest
+import javax.servlet.ServletResponse
 
-class AsyncContextMock(countDown:Int = 1) extends AsyncContext {
+class AsyncContextMock(httpServletResponse: HttpServletResponseMock, countDown:Int = 1) extends AsyncContext {
 
 	var timeout = 3000L
 	val latch = new CountDownLatch(countDown)
@@ -36,6 +37,7 @@ class AsyncContextMock(countDown:Int = 1) extends AsyncContext {
 	}
 	def start(runnable: java.lang.Runnable) {}
 	def complete() {
+		if(httpServletResponse.status == 0) throw new IllegalStateException("status not set")
 		latch.countDown()
 	}
 	def dispatch(context: ServletContext, x$2: java.lang.String) {}

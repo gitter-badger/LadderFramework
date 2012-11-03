@@ -23,7 +23,7 @@ class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpec 
 		"handle polling" should {
 			"handle pushing message" in {
 				val httpServletResponse = new HttpServletResponseMock()
-				val asyncContext = new AsyncContextMock
+				val asyncContext = new AsyncContextMock(httpServletResponse)
 				val pullActor = system.actorOf(Props(new PullActor(asyncContext, httpServletResponse)))
 				val uuid = Utils.uuid
 				pullActor ! PushMessage(uuid, "sendMessage")
@@ -36,7 +36,7 @@ class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpec 
 			}
 			"handle pushing messages" in {
 				val httpServletResponse = new HttpServletResponseMock()
-				val asyncContext = new AsyncContextMock
+				val asyncContext = new AsyncContextMock(httpServletResponse)
 				val pullActor = system.actorOf(Props(new PullActor(asyncContext, httpServletResponse)))
 				val uuid = Utils.uuid
 				val uuid2 = Utils.uuid
@@ -55,7 +55,7 @@ class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpec 
 			
 			"handle pushing no messages" in {
 				val httpServletResponse = new HttpServletResponseMock()
-				val asyncContext = new AsyncContextMock
+				val asyncContext = new AsyncContextMock(httpServletResponse)
 				val pullActor = TestActorRef(new PullActor(asyncContext, httpServletResponse))
 				asyncContext.latch.await(200, TimeUnit.MILLISECONDS)
 				assert(httpServletResponse.getStatus === 0)
@@ -66,14 +66,14 @@ class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpec 
 			
 			"handle timeout" in {
 				val httpServletResponse = new HttpServletResponseMock()
-				val asyncContext = new AsyncContextMock
+				val asyncContext = new AsyncContextMock(httpServletResponse)
 				val pullActor = TestActorRef(new PullActor(asyncContext, httpServletResponse))
 				asyncContext.sendTimeout
 				awaitCond(pullActor.isTerminated, 200 millis, 10 millis)
 			}
 			"handle error" in {
 				val httpServletResponse = new HttpServletResponseMock()
-				val asyncContext = new AsyncContextMock
+				val asyncContext = new AsyncContextMock(httpServletResponse)
 				val pullActor = TestActorRef(new PullActor(asyncContext, httpServletResponse))
 				asyncContext.sendError
 				awaitCond(pullActor.isTerminated, 200 millis, 10 millis)

@@ -24,11 +24,11 @@ class ResponseContainerActorSpec (system: ActorSystem) extends TestKit(system) w
 		"handle time to live" should {
 			"handle timing out" in {
 				val httpServletResponse = new HttpServletResponseMock()
-				val asyncContext = new AsyncContextMock
+				val asyncContext = new AsyncContextMock(httpServletResponse)
 				val uuid = Utils.uuid
 				LadderBoot.timeToLivePage = 200
 				val initalResponseContainer = system.actorOf(Props(new InitalResponseContainer(null, null, uuid)))
-				awaitCond(initalResponseContainer.isTerminated, 500 millis, 25 millis)
+				awaitCond(initalResponseContainer.isTerminated, 1000 millis, 25 millis)
 			}
 		}
 	}
