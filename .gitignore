@@ -6,3 +6,5 @@ framework/target
 .project
 target
 test-framework/target
+test-framework/bin
+framework/bin
