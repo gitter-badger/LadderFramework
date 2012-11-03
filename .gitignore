@@ -1,0 +1,8 @@
+project/target
+framework/target
+.classpath
+.settings
+.cache
+.project
+target
+test-framework/target
