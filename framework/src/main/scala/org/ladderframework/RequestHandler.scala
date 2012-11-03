@@ -1,5 +1,8 @@
 package org.ladderframework
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import java.util.concurrent.TimeUnit._
 import java.util.UUID
 import akka.actor.actorRef2Scala
 import akka.actor.Actor
@@ -13,7 +16,6 @@ import javax.servlet.http.HttpServletResponse
 import javax.servlet.AsyncContext
 import javax.servlet.AsyncListener
 import javax.servlet.AsyncEvent
-import akka.util.duration._
 import org.ladderframework.js.JsCmd
 
 case class HttpInteraction(asyncContext: AsyncContext, req:HttpRequest, res: HttpServletResponse)
@@ -113,7 +115,7 @@ trait ResponseContainer extends Actor with ActorLogging{
 	private var lastAccess = System.currentTimeMillis	
 	
 	def updateLastAccess(){
-		context.system.scheduler.scheduleOnce(LadderBoot.timeToLivePage milliseconds, context.self, Tick)
+		context.system.scheduler.scheduleOnce(LadderBoot.timeToLivePage millis, context.self, Tick)
 		lastAccess = System.currentTimeMillis
 	}
 	
@@ -131,6 +133,10 @@ trait ResponseContainer extends Actor with ActorLogging{
 		case _ => LadderBoot.notFound
 	}
 	
+	def errorHandle: PartialFunction[(Status, Option[Throwable]), HttpResponse] = {
+		case (s, ot) => ErrorResponse(s, ot)
+	}
+	
 	def update(message: JsCmd) {
 		context.self ! PushMessage(message = message.toCmd)
 	}
@@ -146,7 +152,13 @@ trait ResponseContainer extends Actor with ActorLogging{
 		case RenderInital(res, asyncContext) =>
 			log.debug("RenderInital")
 			updateLastAccess()
-			httpResponse.applyToHttpServletResponse(res)
+			try{
+				httpResponse.applyToHttpServletResponse(res)
+			}catch{
+				case t:Throwable =>
+					log.error(t, "Problems handling request: " + httpResponse)
+					(LadderBoot.errorHandle orElse errorHandle)((InternalServerError, Some(t))).applyToHttpServletResponse(res)
+			}
     	asyncContext.complete()
     	httpResponse match {
 				case _ : Stateful => 

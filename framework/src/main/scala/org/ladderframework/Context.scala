@@ -93,7 +93,7 @@ case class Context(
 	}
 	
 	def submitCallback:PartialFunction[HttpRequest, HttpResponse] = {
-		case request @ HttpRequest(POST, _, "post" :: `contextID` :: func :: Nil, params, parts) if postMap.contains(func) => 
+		case request @ HttpRequest(POST, _, "post" :: `contextID` :: func :: Nil, params, parts) if postMap.contains(func) =>
 			debug("handleContextPost")
 			debug("func: " + func + " --- " + postMap.get(func))
 			params.foreach(param => {
@@ -108,7 +108,7 @@ case class Context(
 			})
 			parts.foreach(part => {
 				val name = part.getName
-				inputMap.get(name).foreach(_(part.getInputStream))
+				inputMap.get(name).foreach(_(stream2String(part.getInputStream)))
 				fileInputMap.get(name).foreach(_({
 					FileInfo(part)
 				}))

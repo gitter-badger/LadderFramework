@@ -11,7 +11,7 @@ import javax.servlet.AsyncContext
 import org.ladderframework.mock.HttpServletResponseMock
 import org.ladderframework.mock.AsyncContextMock
 import java.util.concurrent.TimeUnit
-import akka.util.duration._
+import scala.concurrent.duration._
 import bootstrap.LadderBoot
 
 class ResponseContainerActorSpec (system: ActorSystem) extends TestKit(system) with WordSpec with GivenWhenThen with BeforeAndAfterAll{

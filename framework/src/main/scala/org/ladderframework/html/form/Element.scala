@@ -27,7 +27,7 @@ trait Element {
 		def tf(n: Node): Seq[Node] = n match {
 	    case Elem(prefix, Tag, attribs, scope, children @ _*)  => 
 	    	val newAttribs = handleAttributes(attribs) 
-	      Elem(prefix, Tag, newAttribs, scope, children:_*)
+	      Elem(prefix, Tag, newAttribs, scope, children.isEmpty, children:_*)
 	    case other => other
 	  }
 		ns.flatMap(tf)

@@ -130,7 +130,7 @@ case class Textarea(
 		def tf(n: scala.xml.Node): NodeSeq = n match {
 	    case Elem(prefix, Tag, attribs, scope, children @ _*)  => 
 	    	val newAttribs = attribs remove("name") append Attribute(None, "name", Text(nameId), Null)
-	      Elem(prefix, Tag, newAttribs, scope, Text(value))
+	      Elem(prefix, Tag, newAttribs, scope, false, Text(value))
 	    case other => other
 	  }
 		ns.flatMap(tf)

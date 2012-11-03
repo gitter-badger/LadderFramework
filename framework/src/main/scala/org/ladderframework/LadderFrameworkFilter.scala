@@ -61,10 +61,10 @@ class LadderFrameworkFilter extends Filter with Loggable {
 				master ! RemoveSession(sessionId)
 			} 
 		})
-		LadderBoot.mimeType = cxt.getMimeType
-		LadderBoot.resourceAsStream = cxt.getResourceAsStream
-		LadderBoot.resource = cxt.getResource
-		LadderBoot.contextPath = cxt.getContextPath
+		LadderBoot.mimeTypeImpl = cxt.getMimeType
+		LadderBoot.resourceAsStreamImpl = cxt.getResourceAsStream
+		LadderBoot.resourceImpl = (s:String) => if(s.startsWith("/")) cxt.getResource(s) else cxt.getResource("/" + s)
+		LadderBoot.contextPathImpl = cxt.getContextPath
 		
 	}
 	
@@ -73,11 +73,15 @@ class LadderFrameworkFilter extends Filter with Loggable {
 		(servletRequest, servletResponse) match {
 			case (httpServletRequest: HttpServletRequest, httpServletResponse: HttpServletResponse) =>
 				debug("New request to: " + httpServletRequest.getServletPath())
+				
+				val parts = if(Option(httpServletRequest.getContentType).map(_.startsWith("multipart/form-data")).getOrElse(false)) 
+					httpServletRequest.getParts.toList else Nil
+				
 				val request = HttpRequest(method = Method(httpServletRequest.getMethod),
 						sessionID = httpServletRequest.getSession().getId(),
 						path = httpServletRequest.getServletPath.split("/").filterNot(_.isEmpty).toList,
 						parameters = httpServletRequest.getParameterMap.asScala.toMap, 
-						parts = httpServletRequest.getParts.toList) //TODO S wrap Part in something appropriate
+						parts = parts) //TODO S wrap Part in something appropriate
 				val asyncContext = httpServletRequest.startAsync
 				asyncContext.addListener(asyncListener)
 				requestHandler ! HttpInteraction(asyncContext, request, httpServletResponse)

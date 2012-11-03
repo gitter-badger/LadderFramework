@@ -15,7 +15,7 @@ trait Form extends Element {
 			n match {
 				case Elem(prefix, Tag, attribs, scope, ch @ _*) =>
 					val newAttribs = handleAttributes(attribs)
-					Elem(prefix, Tag, newAttribs, scope, children(ch): _*)
+					Elem(prefix, Tag, newAttribs, scope, false, children(ch): _*)
 				case other => other
 			}
 		}

@@ -12,7 +12,7 @@ import org.ladderframework.Utils
 
 class PostFormSpec extends FunSpec with GivenWhenThen {
 	
-	LadderBoot.resource = (resource:String) => { 
+	LadderBoot.resourceImpl = (resource:String) => { 
 		getClass().getClassLoader().getResource(resource) 
 	}  
 	

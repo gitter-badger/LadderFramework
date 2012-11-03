@@ -75,9 +75,9 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 				}
 		}
 		
-		LadderBoot.resourceAsStream = (in:String) => getClass.getClassLoader().getResourceAsStream(in.substring(1))
-		LadderBoot.resource = (in:String) => getClass.getClassLoader().getResource(in.substring(1))
-		LadderBoot.mimeType = _ match {
+		LadderBoot.resourceAsStreamImpl = (in:String) => getClass.getClassLoader().getResourceAsStream(in.substring(1))
+		LadderBoot.resourceImpl = (in:String) => getClass.getClassLoader().getResource(in.substring(1))
+		LadderBoot.mimeTypeImpl = _ match {
 			case s:String if s.endsWith("html") => "text/html"
 			case _ => "NOT FOUND"
 		}

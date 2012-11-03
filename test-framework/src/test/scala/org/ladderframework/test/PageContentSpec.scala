@@ -12,7 +12,7 @@ import bootstrap.LadderBoot
 
 class PageContentSpec extends FunSpec with GivenWhenThen {
 	
-	LadderBoot.resource = (resource:String) => { 
+	LadderBoot.resourceImpl = (resource:String) => { 
 		getClass().getClassLoader().getResource(resource) 
 	}  
 	

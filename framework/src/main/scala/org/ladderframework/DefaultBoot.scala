@@ -10,14 +10,23 @@ trait DefaultBoot {
 	def site:PartialFunction[HttpRequest, HttpResponse]
 	
 	def notFound:HttpResponse = NotFoundResponse
+	def errorHandle:PartialFunction[(Status, Option[Throwable]), HttpResponse] = {
+		case (NotFound, _) => NotFoundResponse
+		case (s, ot) => ErrorResponse(s, ot)
+	}
 	
 	var timeToLivePage: Int = 10 * 60 * 1000
 	
 	//def resourcePath(resource:String):URL = getClass().getClassLoader().getResource(resource) 
 	
-	private[ladderframework] var resource:String => URL = s => new File(s).toURI.toURL
-	private[ladderframework] var resourceAsStream:String => InputStream = s => new FileInputStream(new File(resource(s).toURI))
-	private[ladderframework] var mimeType:String => String = s => s
-	private[ladderframework] var contextPath:String = ""
+	def resource(s:String):URL = resourceImpl(s) 
+	def resourceAsStream(s:String):InputStream = resourceAsStreamImpl(s) 
+	def mimeType(s:String):String = mimeTypeImpl(s)
+	def contextPath:String = contextPathImpl
+	
+	private[ladderframework] var resourceImpl:String => URL = s => new File(s).toURI.toURL
+	private[ladderframework] var resourceAsStreamImpl:String => InputStream = s => new FileInputStream(new File(resource(s).toURI))
+	private[ladderframework] var mimeTypeImpl:String => String = s => s
+	private[ladderframework] var contextPathImpl:String = ""
 	
 }

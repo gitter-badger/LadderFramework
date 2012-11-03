@@ -5,12 +5,12 @@ import scala.xml.XML
 import java.io.InputStream
 import javax.servlet.http.HttpServletResponse
 import bootstrap.LadderBoot
-import akka.dispatch.Future
-import akka.dispatch.ExecutionContext
 import java.io.File
 import org.ladderframework.logging.Loggable
 import org.ladderframework.css.CssSelector._
 import org.ladderframework.js.JsCmd
+import java.io.StringWriter
+import java.io.PrintWriter
 
 trait HttpResponse{
 	def status:Status 
@@ -30,6 +30,23 @@ case class HttpRedirectResponse(location:List[String], params: Option[String] = 
 object NotFoundResponse extends HtmlResponse{
 	override final val status = NotFound
 	def content:String = <html><head><title>404</title></head><body>404</body></html>.toString
+}
+
+case class ErrorResponse(override val status:Status, ot: Option[Throwable]) extends HtmlResponse{
+	
+	lazy val throwableString:String = {
+		ot.map(t => {
+			val sw = new StringWriter
+			val pw = new PrintWriter(sw)
+			t.printStackTrace(pw);
+			sw.toString()
+		}).getOrElse("")
+	}
+	
+	def content:String = <html>
+		<head><title>{status.code}</title></head>
+		<body><h1>{status.code}</h1><h2>{ot.map(_.getMessage).getOrElse("")}</h2><pre>{throwableString}</pre></body>
+	</html>.toString
 }
 
 case class HttpResourceResponse(status:Status = OK, path:List[String]) extends HttpResponse with Loggable {

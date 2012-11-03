@@ -85,7 +85,7 @@ case class SubmitButton(implicit val pageObjectContext: PageObjectContext) exten
 		forms.map(_ \ "@action").map(_.text).map(action => {
 			context.submitCallback(HttpRequest(POST, sessionID, action.split("/").toList))
 		}).headOption.collect{
-			case x:Any if manifest.erasure.isInstance(x) => x.asInstanceOf[R]
+			case x:Any if manifest.runtimeClass.isInstance(x) => x.asInstanceOf[R]
 		}
 	}
 		
