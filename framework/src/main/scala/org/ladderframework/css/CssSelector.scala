@@ -43,7 +43,7 @@ object CssSelector {
 	
 	implicit def pimpNodeSeqFunc(nsf:NodeSeq => NodeSeq) = new NodeSeqFuncPimper(nsf)	
 	
-	implicit def stringToTextNode(text:String):Node = Text(text)
+	implicit def stringToTextNode(text:String):Node = Option(text).map(Text(_)).getOrElse(Text(""))
 }
 
 private[ladderframework] class PassThruSelector(val any:String) extends CssSelector{
@@ -124,9 +124,8 @@ private[ladderframework] trait AttribSelector extends CssSelector{
 			val rr = new RewriteRule {
 				override def transform(n: Node): Seq[Node] = {
 						n match {
-						case Elem(p, l, attribs, n, children @ _*) if attributeMatches(attribs) =>
-							val trChldrn = iter.flatMap(_.apply(children)).toSeq
-							Elem(p,l,attribs, n, trChldrn.isEmpty, trChldrn:_*)
+						case e @ Elem(p, l, attribs, n, children @ _*) if attributeMatches(attribs) =>
+							iter.flatMap(_.apply(e)).toSeq							
 						case other => other
 						}
 				}
@@ -242,9 +241,8 @@ private[ladderframework] class ElementSelector(val element:String) extends CssSe
 		val rr = new RewriteRule {
 			override def transform(n: Node): Seq[Node] = {
 			  n match {
-			    case Elem(p, `element`, a, n, children @ _*) =>
-			    	val trChildren = iter.flatMap(_.apply(children)).toSeq
-			    	Elem(p, element, a, n, trChildren.isEmpty, trChildren:_*)
+			    case e @ Elem(p, `element`, a, n, children @ _*) =>
+			    	iter.flatMap(_.apply(e)).toSeq
 			    case other => other
 			  }
 			}
@@ -368,9 +366,8 @@ private[ladderframework] class ElementAttributeSelector(tagName:String, attrib:S
 			val rr = new RewriteRule {
 				override def transform(n: Node): Seq[Node] = {
 						n match {
-						case Elem(p, `tagName`, attribs, n, children @ _*) if attributeMatches(attribs) => 
-							val transformedChildren = iter.flatMap(_.apply(children)).toSeq
-							Elem(p, tagName, attribs, n, transformedChildren.isEmpty, transformedChildren:_*)
+						case e @ Elem(p, `tagName`, attribs, n, children @ _*) if attributeMatches(attribs) => 
+							iter.flatMap(_.apply(e)).toSeq
 						case other => other
 						}
 				}

@@ -172,7 +172,7 @@ class CssSelectorSpec extends FunSpec with GivenWhenThen {
   		val list = List("a", "b", "c")
   		val transformed = (".find" #> list.map(i => "span" #> <span>{i}</span>)).apply(html) 
   		then("right element is transformed")
-  		assert(transformed.toString === (<div><span class="find"><span>a</span><span>b</span><span>c</span></span></div>).toString)
+  		assert(transformed.toString === (<div><span>a</span><span>b</span><span>c</span></div>).toString)
   	}
   	
   	it("should insert attibute") {
