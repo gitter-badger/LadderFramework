@@ -84,7 +84,11 @@ class LadderFrameworkFilter extends Filter with Loggable {
 						parts = parts) //TODO S wrap Part in something appropriate
 				val asyncContext = httpServletRequest.startAsync
 				asyncContext.addListener(asyncListener)
-				requestHandler ! HttpInteraction(asyncContext, request, httpServletResponse)
+				val response = asyncContext.getResponse match {
+						case http:HttpServletResponse => http
+						case _ => httpServletResponse
+				}
+				requestHandler ! HttpInteraction(asyncContext, request, response)
 			case _ =>
 				chain.doFilter(servletRequest, servletResponse);
 		}

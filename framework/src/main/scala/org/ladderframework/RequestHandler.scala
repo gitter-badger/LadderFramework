@@ -155,6 +155,7 @@ trait ResponseContainer extends Actor with ActorLogging{
 			updateLastAccess()
 			
 			def complete() = {
+				println("Completed")
 				asyncContext.complete()
 	    	httpResponse.future.map(_ match {
 					case _ : Stateful => 
