@@ -1,0 +1,494 @@
+package org.ladderframework.html.form
+
+import org.ladderframework.html.form.Formats._
+
+import scala.annotation._
+
+/**
+ * Contains data manipulation helpers (typically HTTP form handling)
+ *
+ * {{{
+ * import play.api.data._
+ * import play.api.data.Forms._
+ *
+ * val taskForm = Form(
+ *   of(Task.apply _, Task.unapply _)(
+ *     text(minLength = 3),
+ *     date("yyyy-MM-dd"),
+ *     boolean
+ *   )
+ * )
+ * }}}
+ *
+ */
+object Forms {
+
+  /**
+   * Creates a Mapping of type `T`.
+   *
+   * For example:
+   * {{{
+   * Form(of[String])
+   * }}}
+   *
+   * @tparam T the mapping type
+   * @return a mapping for a simple field
+   */
+  def of[T](implicit binder: Formatter[T]): FieldMapping[T] = FieldMapping[T]()(binder)
+
+  /**
+   * Creates a Mapping of type `T`.
+   *
+   * For example:
+   * {{{
+   * Form(of[String]("email")
+   * }}}
+   *
+   * @tparam T the mapping type
+   * @return a mapping for a simple field
+   */
+  def of[T](key: String)(implicit binder: Formatter[T]): FieldMapping[T] = FieldMapping[T](key)(binder)
+  /**
+   * Creates a Mapping of type `T`.
+   *
+   * For example:
+   * {{{
+   * Form(
+   *   mapping(
+   *     of[String]
+   *   )(User.apply, User.unapply)
+   * )
+   * }}}
+   *
+   * @tparam T the mapped type
+   * @param apply A function able to create a value of T from a value of A1 (If T is case class you can use its own apply function)
+   * @param unapply A function able to create A1 from a value of T (If T is a case class you can use its own unapply function)
+   * @return a mapping for type `T`
+   */
+  def mapping[R, A1, M1 <: Mapping{type T = A1}](apply: Function1[A1, R])(unapply: Function1[R, Option[(A1)]])(a1: M1) = {
+    ObjectMapping1(apply, unapply, a1)
+  }
+
+  def mapping[R, A1, A2, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}](apply: Function2[A1, A2, R])(unapply: Function1[R, Option[(A1, A2)]])(a1: M1, a2: M2) = {
+    ObjectMapping2(apply, unapply, a1, a2)
+  }
+
+  def mapping[R, A1, A2, A3, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}](apply: Function3[A1, A2, A3, R])(unapply: Function1[R, Option[(A1, A2, A3)]])(a1: M1, a2: M2, a3: M3) = {
+    ObjectMapping3(apply, unapply, a1, a2, a3)
+  }
+
+  def mapping[R, A1, A2, A3, A4, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}](apply: Function4[A1, A2, A3, A4, R])(unapply: Function1[R, Option[(A1, A2, A3, A4)]])(a1: M1, a2: M2, a3: M3, a4: M4) = {
+    ObjectMapping4(apply, unapply, a1, a2, a3, a4)
+  }
+
+  def mapping[R, A1, A2, A3, A4, A5, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}](apply: Function5[A1, A2, A3, A4, A5, R])(unapply: Function1[R, Option[(A1, A2, A3, A4, A5)]])(a1: M1, a2: M2, a3: M3, a4: M4, a5: M5) = {
+    ObjectMapping5(apply, unapply, a1, a2, a3, a4, a5)
+  }
+
+  def mapping[R, A1, A2, A3, A4, A5, A6, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}](apply: Function6[A1, A2, A3, A4, A5, A6, R])(unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6)]])(a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6) = {
+    ObjectMapping6(apply, unapply, a1, a2, a3, a4, a5, a6)
+  }
+
+  def mapping[R, A1, A2, A3, A4, A5, A6, A7, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}](apply: Function7[A1, A2, A3, A4, A5, A6, A7, R])(unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7)]])(a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7) = {
+    ObjectMapping7(apply, unapply, a1, a2, a3, a4, a5, a6, a7)
+  }
+
+  def mapping[R, A1, A2, A3, A4, A5, A6, A7, A8, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}](apply: Function8[A1, A2, A3, A4, A5, A6, A7, A8, R])(unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8)]])(a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8) = {
+    ObjectMapping8(apply, unapply, a1, a2, a3, a4, a5, a6, a7, a8)
+  }
+
+  def mapping[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}](apply: Function9[A1, A2, A3, A4, A5, A6, A7, A8, A9, R])(unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9)]])(a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9) = {
+    ObjectMapping9(apply, unapply, a1, a2, a3, a4, a5, a6, a7, a8, a9)
+  }
+
+  def mapping[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}](apply: Function10[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, R])(unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10)]])(a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10) = {
+    ObjectMapping10(apply, unapply, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
+  }
+
+  def mapping[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}](apply: Function11[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, R])(unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11)]])(a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11) = {
+    ObjectMapping11(apply, unapply, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)
+  }
+
+  def mapping[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}](apply: Function12[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, R])(unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12)]])(a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12) = {
+    ObjectMapping12(apply, unapply, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
+  }
+
+  def mapping[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}](apply: Function13[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, R])(unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13)]])(a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13) = {
+    ObjectMapping13(apply, unapply, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
+  }
+
+  def mapping[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}](apply: Function14[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, R])(unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14)]])(a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13, a14: M14) = {
+    ObjectMapping14(apply, unapply, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)
+  }
+
+  def mapping[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}](apply: Function15[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, R])(unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15)]])(a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13, a14: M14, a15: M15) = {
+    ObjectMapping15(apply, unapply, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)
+  }
+
+  def mapping[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}, M16 <: Mapping{type T = A16}](apply: Function16[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, R])(unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16)]])(a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13, a14: M14, a15: M15, a16: M16) = {
+    ObjectMapping16(apply, unapply, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
+  }
+
+  def mapping[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}, M16 <: Mapping{type T = A16}, M17 <: Mapping{type T = A17}](apply: Function17[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, R])(unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17)]])(a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13, a14: M14, a15: M15, a16: M16, a17: M17) = {
+    ObjectMapping17(apply, unapply, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17)
+  }
+
+  def mapping[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}, M16 <: Mapping{type T = A16}, M17 <: Mapping{type T = A17}, M18 <: Mapping{type T = A18}](apply: Function18[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, R])(unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18)]])(a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13, a14: M14, a15: M15, a16: M16, a17: M17, a18: M18) = {
+    ObjectMapping18(apply, unapply, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18)
+  }
+
+//  /**
+//   * Creates a Mapping for a single value.
+//   *
+//   * For example:
+//   * {{{
+//   * Form(
+//   *   single(
+//   *     email
+//   *   )
+//   * )
+//   * }}}
+//   *
+//   * @return a mapping for a type A1
+//   */
+//  def single[A1, M1 <: Mapping{type T = A1}](a1: M1) = mapping[A1, A1, M1](a1)((a1: A1) => (a1))((t: (A1)) => Some(t))
+//
+//  /**
+//   * Creates a Mapping of tuple `(A,B)`.
+//   *
+//   * For example:
+//   * {{{
+//   * Form(
+//   *   tuple(
+//   *     email,
+//   *     nonEmptyText
+//   *   )
+//   * )
+//   * }}}
+//   *
+//   * @return a mapping for a tuple `(A,B)`
+//   */
+//  def tuple[A1, A2, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}](a1: M1, a2: M2) = mapping[(A1, A2), A1, A2, M1, M2](a1, a2)((a1: A1, a2: A2) => (a1, a2))((t: (A1, A2)) => Some(t))
+//
+//  def tuple[A1, A2, A3, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}](a1: M1, a2: M2, a3: M3) = mapping[(A1, A2, A3), A1, A2, A3, M1, M2, M3]((a1: A1, a2: A2, a3: A3) => (a1, a2, a3))((t: (A1, A2, A3)) => Some(t))(a1, a2, a3)
+//
+//  def tuple[A1, A2, A3, A4, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}](a1: M1, a2: M2, a3: M3, a4: M4) = mapping[(A1, A2, A3, A4), A1, A2, A3, A4, M1, M2, M3, M4](a1, a2, a3, a4)((a1: A1, a2: A2, a3: A3, a4: A4) => (a1, a2, a3, a4))((t: (A1, A2, A3, A4)) => Some(t))
+//
+//  def tuple[A1, A2, A3, A4, A5, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5) = mapping[(A1, A2, A3, A4, A5), A1, A2, A3, A4, A5, M1, M2, M3, M4, M5](a1, a2, a3, a4, a5)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => (a1, a2, a3, a4, a5))((t: (A1, A2, A3, A4, A5)) => Some(t))
+//
+//  def tuple[A1, A2, A3, A4, A5, A6, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6) = mapping[(A1, A2, A3, A4, A5, A6), A1, A2, A3, A4, A5, A6, M1, M2, M3, M4, M5, M6](a1, a2, a3, a4, a5, a6)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6) => (a1, a2, a3, a4, a5, a6))((t: (A1, A2, A3, A4, A5, A6)) => Some(t))
+//
+//  def tuple[A1, A2, A3, A4, A5, A6, A7, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7) = mapping[(A1, A2, A3, A4, A5, A6, A7), A1, A2, A3, A4, A5, A6, A7, M1, M2, M3, M4, M5, M6, M7](a1, a2, a3, a4, a5, a6, a7)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7) => (a1, a2, a3, a4, a5, a6, a7))((t: (A1, A2, A3, A4, A5, A6, A7)) => Some(t))
+//
+//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8), A1, A2, A3, A4, A5, A6, A7, A8, M1, M2, M3, M4, M5, M6, M7, M8](a1, a2, a3, a4, a5, a6, a7, a8)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8) => (a1, a2, a3, a4, a5, a6, a7, a8))((t: (A1, A2, A3, A4, A5, A6, A7, A8)) => Some(t))
+//
+//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9), A1, A2, A3, A4, A5, A6, A7, A8, A9, M1, M2, M3, M4, M5, M6, M7, M8, M9](a1, a2, a3, a4, a5, a6, a7, a8, a9)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9) => (a1, a2, a3, a4, a5, a6, a7, a8, a9))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9)) => Some(t))
+//
+//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10)) => Some(t))
+//
+//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11)) => Some(t))
+//
+//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12)) => Some(t))
+//
+//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13)) => Some(t))
+//
+//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13, a14: M14) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14)) => Some(t))
+//
+//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13, a14: M14, a15: M15) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14, a15: A15) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15)) => Some(t))
+//
+//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}, M16 <: Mapping{type T = A16}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13, a14: M14, a15: M15, a16: M16) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14, a15: A15, a16: A16) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16)) => Some(t))
+//
+//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}, M16 <: Mapping{type T = A16}, M17 <: Mapping{type T = A17}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13, a14: M14, a15: M15, a16: M16, a17: M17) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16, M17](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14, a15: A15, a16: A16, a17: A17) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17)) => Some(t))
+//
+//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}, M16 <: Mapping{type T = A16}, M17 <: Mapping{type T = A17}, M18 <: Mapping{type T = A18}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13, a14: M14, a15: M15, a16: M16, a17: M17, a18: M18) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16, M17, M18](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14, a15: A15, a16: A16, a17: A17, a18: A18) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18)) => Some(t))
+
+  // --
+
+  import Form._
+import Formats._
+
+  /**
+   * Constructs a simple mapping for a text field.
+   *
+   * For example:
+   * {{{
+   * Form(text)
+   * }}}
+   */
+  val text: FieldMapping[String] = of[String]
+
+  /**
+   * Constructs a simple mapping for required text field.
+   *
+   * Note that all field are always required to be present in the form unless
+   * there are marked as optional explicitely. But a nonEmptyText defines text
+   * field that must not be empty, even if present in the form.
+   *
+   * Example:
+   * {{{
+   * Form(nonEmptyText)
+   * }}}
+   */
+  val nonEmptyText: FieldMapping[String] = text verifying Constraints.nonEmpty
+
+  /**
+   * Constructs a simple mapping for a text field.
+   *
+   * For example:
+   * {{{
+   * Form(text(minLength=3))
+   * }}}
+   *
+   * @param minLength minimum text length
+   * @param maxLength maximum text length
+   */
+  def text(minLength: Int = 0, maxLength: Int = Int.MaxValue): FieldMapping[String] = (minLength, maxLength) match {
+    case (0, Int.MaxValue) => text
+    case (min, Int.MaxValue) => text verifying Constraints.minLength(min)
+    case (0, max) => text verifying Constraints.maxLength(max)
+    case (min, max) => text verifying (Constraints.minLength(min), Constraints.maxLength(max))
+  }
+
+  /**
+   * Constructs a simple mapping for required text field.
+   *
+   * Example:
+   * {{{
+   * Form(nonEmptyText(minLength=3))
+   * }}}
+   *
+   * @param minLength Text min length.
+   * @param maxLength Text max length.
+   */
+  def nonEmptyText(minLength: Int = 0, maxLength: Int = Int.MaxValue): FieldMapping[String] = text(minLength, maxLength) verifying Constraints.nonEmpty
+
+  /**
+   * Constructs a simple mapping for a numeric field.
+   *
+   * For example:
+   * {{{
+   * Form(number)
+   * }}}
+   */
+  val number: FieldMapping[Int] = of[Int]
+
+  /**
+   * Constructs a simple mapping for a numeric field (using a Long type behind).
+   *
+   * For example:
+   * {{{
+   * Form(longNumber)
+   * }}}
+   */
+  val longNumber: FieldMapping[Long] = of[Long]
+
+  /**
+   * Constructs a simple mapping for a numeric field.
+   *
+   * For example:
+   * {{{
+   * Form(number(min=0, max=100))
+   * }}}
+   *
+   * @param min minimum value
+   * @param max maximum value
+   */
+  def number(min: Int = Int.MinValue, max: Int = Int.MaxValue): FieldMapping[Int] = (min, max) match {
+    case (Int.MinValue, Int.MaxValue) => number
+    case (min, Int.MaxValue) => number verifying Constraints.min(min)
+    case (Int.MinValue, max) => number verifying Constraints.max(max)
+    case (min, max) => number verifying (Constraints.min(min), Constraints.max(max))
+  }
+
+  /**
+   * Constructs a simple mapping for a numeric field (using a Long type behind).
+   *
+   * For example:
+   * {{{
+   * Form(longNumber(min=0, max=100))
+   * }}}
+   *
+   * @param min minimum value
+   * @param max maximum value
+   */
+  def longNumber(min: Long = Long.MinValue, max: Long = Long.MaxValue): FieldMapping[Long] = (min, max) match {
+    case (Long.MinValue, Long.MaxValue) => longNumber
+    case (min, Long.MaxValue) => longNumber verifying Constraints.min(min)
+    case (Long.MinValue, max) => longNumber verifying Constraints.max(max)
+    case (min, max) => longNumber verifying (Constraints.min(min), Constraints.max(max))
+  }
+
+  /**
+   * Constructs a simple mapping for a date field.
+   *
+   * For example:
+   * {{{
+   * Form(date)
+   * }}}
+   */
+  val date: FieldMapping[java.util.Date] = of[java.util.Date]
+
+  /**
+   * Define a fixed value in a mapping.
+   * This mapping will not participate to the binding.
+   *
+   * @param value As we ignore this parameter in binding/unbinding we have to provide a default value.
+   */
+  def ignored[A](value: A): FieldMapping[A] = of(ignoredFormat(value))
+
+  /**
+   * Defines an optional mapping.
+   *
+   * {{{
+   * Form(
+   *   optional(text)
+   * )
+   * }}}
+   *
+   * @param mapping The mapping to make optional.
+   */
+  def optional[A](mapping: FieldMapping[A]): OptionalMapping[A] = OptionalMapping(mapping)
+
+  /**
+   * Defines an default mapping, if the parameter is not present, provide a default value.
+   *
+   * {{{
+   * Form(
+   *   default(text, "The default text")
+   * )
+   * }}}
+   *
+   * @param mapping The mapping to make optional.
+   * @param value The default value when mapping and the field is not present.
+   */
+  def default[A, M <: Mapping{type T = A}](mapping: M, value:A) = OptionalMapping(mapping).transform[A](_.getOrElse(value), Some(_))
+
+  /**
+   * Defines a repeated mapping.
+   * {{{
+   * Form(
+   *   list(text)
+   * )
+   * }}}
+   *
+   * @param mapping The mapping to make repeated.
+   */
+  def list[A, M <: Mapping{type T = A}](mapping: M) = RepeatedMapping(mapping)
+
+  /**
+   * Defines a repeated mapping.
+   * {{{
+   * Form(
+   *   seq(text)
+   * )
+   * }}}
+   * 
+   * @param mapping The mapping to make repeated.
+   */
+  def seq[A, M <: Mapping{type T = A}](mapping: M) = RepeatedMapping(mapping).transform[Seq[A]](_.toSeq, _.toList)
+
+  /**
+   * Constructs a simple mapping for a date field.
+   *
+   * For example:
+   * {{{
+   *   Form(date("dd-MM-yyyy"))
+   * }}}
+   *
+   * @param pattern the date pattern, as defined in `java.text.SimpleDateFormat`
+   */
+  def date(pattern: String): FieldMapping[java.util.Date] = of[java.util.Date] as dateFormat(pattern)
+
+  /**
+   * Constructs a simple mapping for a date field (mapped as `sql.Date type`).
+   *
+   * For example:
+   * {{{
+   *   Form(sqlDate)
+   * }}}
+   */
+  val sqlDate: FieldMapping[java.sql.Date] = of[java.sql.Date]
+
+  /**
+   * Constructs a simple mapping for a date field (mapped as `sql.Date type`).
+   *
+   * For example:
+   * {{{
+   *   Form(sqlDate("dd-MM-yyyy"))
+   * }}}
+   *
+   * @param pattern the date pattern, as defined in `java.text.SimpleDateFormat`
+   */
+  def sqlDate(pattern: String): FieldMapping[java.sql.Date] = of[java.sql.Date] as sqlDateFormat(pattern)
+
+//  /**
+//   * Constructs a simple mapping for a date field (mapped as `org.joda.time.DateTime type`).
+//   *
+//   * For example:
+//   * {{{
+//   *   Form("birthdate" -> jodaDate)
+//   * }}}
+//   */
+//  val jodaDate: Mapping[org.joda.time.DateTime] = of[org.joda.time.DateTime]
+//
+//  /**
+//   * Constructs a simple mapping for a date field (mapped as `org.joda.time.DateTime type`).
+//   *
+//   * For example:
+//   * {{{
+//   *   Form("birthdate" -> jodaDate("dd-MM-yyyy"))
+//   * }}}
+//   *
+//   * @param pattern the date pattern, as defined in `org.joda.time.format.DateTimeFormat`
+//   */
+//  def jodaDate(pattern: String): Mapping[org.joda.time.DateTime] = of[org.joda.time.DateTime] as jodaDateTimeFormat(pattern)
+//
+//  /**
+//   * Constructs a simple mapping for a date field (mapped as `org.joda.time.LocalDatetype`).
+//   *
+//   * For example:
+//   * {{{
+//   * Form("birthdate" -> jodaLocalDate)
+//   * }}}
+//   */
+//  val jodaLocalDate: Mapping[org.joda.time.LocalDate] = of[org.joda.time.LocalDate]
+//
+//  /**
+//   * Constructs a simple mapping for a date field (mapped as `org.joda.time.LocalDate type`).
+//   *
+//   * For example:
+//   * {{{
+//   * Form("birthdate" -> jodaLocalDate("dd-MM-yyyy"))
+//   * }}}
+//   *
+//   * @param pattern the date pattern, as defined in `org.joda.time.format.DateTimeFormat`
+//   */
+//  def jodaLocalDate(pattern: String): Mapping[org.joda.time.LocalDate] = of[org.joda.time.LocalDate] as jodaLocalDateFormat(pattern)
+
+  /**
+   * Constructs a simple mapping for an e-mail field.
+   *
+   * For example:
+   * {{{
+   *   Form(email)
+   * }}}
+   */
+  val email: FieldMapping[String] = of[String] verifying Constraints.pattern(
+    """\b[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\b""".r,
+    "constraint.email",
+    "error.email")
+
+  /**
+   * Constructs a simple mapping for a Boolean field, such as a check-box.
+   *
+   * For example:
+   * {{{
+   *   Form(boolean)
+   * }}}
+   */
+  val boolean: FieldMapping[Boolean] = of[Boolean]
+
+  //TODO fix casting
+  def checked(msg: String): FieldMapping[Boolean] = (boolean verifying (msg, (bool: Boolean) => bool)).asInstanceOf[FieldMapping[Boolean]]
+
+}
