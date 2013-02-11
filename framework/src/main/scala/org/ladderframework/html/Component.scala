@@ -6,27 +6,27 @@ import org.ladderframework.css.CssSelector
 import org.ladderframework.css.CssSelector._
 import org.ladderframework.Utils
 import bootstrap.LadderBoot
+import scala.concurrent._
+import bootstrap.LadderBoot.executionContext
 
 trait Component {
-	val source:String
+	def source:String
 	
-	lazy val xml:NodeSeq = {
+	lazy val xml:Promise[NodeSeq] = promise[NodeSeq].completeWith(future{
 		val resouce = LadderBoot.resource(source)
 		XML.load(resouce)
-	}
+	})
 	val extract:CssSelector
 	
-	def render:NodeSeq => NodeSeq
+	def render:Future[NodeSeq => NodeSeq]
 	
-	def content = {
-		render(xml.extract(extract).head)
-	}
+	def content:Future[NodeSeq] = render.flatMap(renderFunc => xml.future.map(_.extract(extract).head).map(renderFunc))
 
 }
 
 object Component{
 	
-	def apply(source:String, extract:CssSelector, render:NodeSeq => NodeSeq):Component = {
+	def apply(source:String, extract:CssSelector, render:Future[NodeSeq => NodeSeq]):Component = {
 		val s = source
 		val r = render
 		val e = extract
@@ -37,6 +37,6 @@ object Component{
 		}
 	}
 	
-	implicit def componentToNodeSeq[C <: Component](c:C):NodeSeq = c.content
+	implicit def componentToNodeSeq[C <: Component](c:C):Future[NodeSeq] = c.content
 }
 

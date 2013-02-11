@@ -7,6 +7,7 @@ import bootstrap.LadderBoot
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
+import org.ladderframework.exception.RetrievingXMLException
 
 trait StatelessHtmlPage extends HtmlResponse{
 	def source: String
@@ -28,7 +29,11 @@ trait StatelessHtmlPage extends HtmlResponse{
 
 	
 	private def xml(implicit ec:ExecutionContext):Future[NodeSeq] = Future{
-		XML.load{LadderBoot.resource(source)}
+		try{
+			XML.load{LadderBoot.resource(source)}
+		}catch{
+			case t:Throwable => throw new RetrievingXMLException("Error loading xml: " + source, t)
+		}
 	}
 	
 	def render(implicit ec:ExecutionContext):Future[NodeSeq => NodeSeq]

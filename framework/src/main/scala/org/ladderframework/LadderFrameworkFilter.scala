@@ -30,10 +30,9 @@ import javax.servlet.http.HttpSessionEvent
 @MultipartConfig(location = "/tmp", fileSizeThreshold = 1048576, maxFileSize = 52428800, maxRequestSize = 52428800)
 class LadderFrameworkFilter extends Filter with Loggable {
 
-	val akkaConfig = ConfigFactory.load()
-	val system = ActorSystem("WebSystem", akkaConfig)
- 
-    // create the result listener, which will print the result and shutdown the system
+	import bootstrap.LadderBoot.system
+	
+  // create the result listener, which will print the result and shutdown the system
   val master = system.actorOf(Props[Master], name = "master")
   def requestHandler = system.actorFor(master.path / "requestHandler")
 	var config: FilterConfig = _

@@ -4,8 +4,15 @@ import java.net.URL
 import java.io.File
 import java.io.InputStream
 import java.io.FileInputStream
+import com.typesafe.config.ConfigFactory
+import akka.actor.ActorSystem
+import scala.concurrent.ExecutionContext
 
 trait DefaultBoot {
+	
+	val akkaConfig = ConfigFactory.load()
+	val system = ActorSystem("WebSystem", akkaConfig)
+	implicit lazy val executionContext = ExecutionContext.Implicits.global 
 	
 	def site:PartialFunction[HttpRequest, HttpResponse]
 	

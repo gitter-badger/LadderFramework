@@ -1,5 +1,6 @@
 project/target
 framework/target
+framework/.worksheet
 .classpath
 .settings
 .cache
@@ -8,3 +9,5 @@ target
 test-framework/target
 test-framework/bin
 framework/bin
+bitbucket
+bitbucket.pub

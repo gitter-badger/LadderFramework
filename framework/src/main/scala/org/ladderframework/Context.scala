@@ -29,8 +29,8 @@ object Context{
 	
 	def booleanValue(value: String):Option[Boolean] = {
 			value match {
-				case "1" | "true" | "yes" | "TRUE" | "YES" => Some(true)
-				case "0" | "false" | "no" | "FALSE" | "NO" => Some(false)
+				case "1" | "true" | "yes" | "TRUE" | "YES" | "on" | "ON" => Some(true)
+				case "0" | "false" | "no" | "FALSE" | "NO" | "off" | "OFF" => Some(false)
 				case _ => None
 			}
 	}

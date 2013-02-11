@@ -3,12 +3,15 @@ package org.ladderframework.css
 import scala.xml._
 import scala.xml.transform._
 import MetaData._
-import org.ladderframework.html.form.Element
+import org.ladderframework.html.form.FormRendering
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 
 trait CssSelector {
+	type NSTransform = NodeSeq => NodeSeq
 	def #> (ns:NodeSeq):NodeSeq => NodeSeq
 	def #> (nsf:NodeSeq => NodeSeq):NodeSeq => NodeSeq
-	def #> (e:Element):NodeSeq => NodeSeq
+	def #> (e: FormRendering):NodeSeq => NodeSeq
 	def #> (iter:Iterable[NodeSeq => NodeSeq]):NodeSeq => NodeSeq
 	def #>> (ns:NodeSeq):NodeSeq => NodeSeq
 	def #+> (ns:NodeSeq):NodeSeq => NodeSeq
@@ -49,7 +52,7 @@ object CssSelector {
 private[ladderframework] class PassThruSelector(val any:String) extends CssSelector{
 	def #> (ns:NodeSeq):NodeSeq => NodeSeq = ns => ns
 	def #> (nsf:NodeSeq => NodeSeq):NodeSeq => NodeSeq = ns=>ns
-	def #> (e:Element):NodeSeq => NodeSeq = ns => ns
+	def #> (e:FormRendering):NodeSeq => NodeSeq = ns => ns
 	def #> (iter:Iterable[NodeSeq => NodeSeq]):NodeSeq => NodeSeq = ns => ns
 	def #>> (ns:NodeSeq):NodeSeq => NodeSeq = ns => ns
 	def #+> (ns:NodeSeq):NodeSeq => NodeSeq = ns => ns
@@ -78,7 +81,7 @@ private[ladderframework] trait AttribSelector extends CssSelector{
 			override def transform(n: Node): Seq[Node] = {
 			  n match {
 			    case e @ Elem(p, l, attribs, s, _*) if attributeMatches(attribs) =>
-			    	Elem(p,l,attribs, s, ns.isEmpty, ns:_*)
+			    	Elem(p,l,attribs, s, false, ns:_*)
 			    case other => other
 			  }
 			}
@@ -91,7 +94,7 @@ private[ladderframework] trait AttribSelector extends CssSelector{
 			override def transform(n: Node): Seq[Node] = {
 			  n match {
 			    case e @ Elem(p, l, attribs, s, children @ _*) if attributeMatches(attribs) =>
-			    	Elem(p,l,attribs, s, (children ++ ns).isEmpty, (children ++ ns):_*)
+			    	Elem(p,l,attribs, s, false, (children ++ ns):_*)
 			    case other => other
 			  }
 			}
@@ -104,13 +107,13 @@ private[ladderframework] trait AttribSelector extends CssSelector{
 			override def transform(n: Node): Seq[Node] = n match {
 			case e @ Elem(p, l, attribs, s, children @ _*) if attributeMatches(attribs) =>
 				val transformedChildren = nsTransform(children)
-				Elem(p,l,attribs, s, transformedChildren.isEmpty, transformedChildren:_*)
+				Elem(p,l,attribs, s, false, transformedChildren:_*)
 			case other => other
 			}
 		}
 		ns => transform(ns, rr)
 	}
-	def #> (e:Element):NodeSeq => NodeSeq = {
+	def #> (e: FormRendering):NodeSeq => NodeSeq = {
 			val rr = new RewriteRule {
 				override def transform(n: Node): Seq[Node] = n match {
 				case el @ Elem(_, _, attribs, _, children @ _*) if attributeMatches(attribs) => 
@@ -139,7 +142,7 @@ private[ladderframework] trait AttribSelector extends CssSelector{
 						n match {
 						case Elem(p, l, attribs, n, children @ _*) if attributeMatches(attribs) =>
 							val concatenatedAttrs = concatenate(CssSelector.mapToAttribute(newAttrs), attribs)
-							Elem(p,l, concatenatedAttrs, n, children.isEmpty, children:_*)
+							Elem(p,l, concatenatedAttrs, n, false, children:_*)
 						case other => other
 						}
 				}
@@ -195,7 +198,7 @@ private[ladderframework] class ElementSelector(val element:String) extends CssSe
 				override def transform(n: Node): Seq[Node] = {
 						n match {
 							case e @ Elem(p, `element`, attribs, s, _*) =>
-								Elem(p, element, attribs, s, ns.isEmpty, ns:_*)
+								Elem(p, element, attribs, s, false, ns:_*)
 							case other => other
 						}
 				}
@@ -208,7 +211,7 @@ private[ladderframework] class ElementSelector(val element:String) extends CssSe
 						n match {
 							case e @ Elem(p, `element`, attribs, s, children @ _*) =>
 								val newChilren = (children ++ ns)
-								Elem(p, element, attribs, s, newChilren.isEmpty, newChilren:_*)
+								Elem(p, element, attribs, s, false, newChilren:_*)
 							case other => other
 						}
 				}
@@ -226,7 +229,7 @@ private[ladderframework] class ElementSelector(val element:String) extends CssSe
 		}
 		ns => transform(ns, rr)
 	}
-	def #> (e:Element):NodeSeq => NodeSeq = {
+	def #> (e: FormRendering):NodeSeq => NodeSeq = {
 			val rr = new RewriteRule {
 				override def transform(n: Node): Seq[Node] = n match {
 				case el @ Elem(_, `element`, _, _, children @ _*) => 
@@ -256,7 +259,7 @@ private[ladderframework] class ElementSelector(val element:String) extends CssSe
 					n match {
 					case Elem(p, `element`, attribs, n, children @ _*) =>
 						val concatenatedAttrs = concatenate(CssSelector.mapToAttribute(newAttrs), attribs)
-						Elem(p, element, concatenatedAttrs, n, children.isEmpty, children:_*)
+						Elem(p, element, concatenatedAttrs, n, false, children:_*)
 					case other => other
 					}
 			}
@@ -318,7 +321,7 @@ private[ladderframework] class ElementAttributeSelector(tagName:String, attrib:S
 			override def transform(n: Node): Seq[Node] = {
 			  n match {
 			    case e @ Elem(p, `tagName`, attribs, s, children @ _*) if attributeMatches(attribs) =>
-			    	Elem(p, tagName, attribs, s, ns.isEmpty, ns:_*)
+			    	Elem(p, tagName, attribs, s, false, ns:_*)
 			    case other => other
 			  }
 			}
@@ -332,7 +335,7 @@ private[ladderframework] class ElementAttributeSelector(tagName:String, attrib:S
 			  n match {
 			    case e @ Elem(p, `tagName`, attribs, s, children @ _*) if attributeMatches(attribs) =>
 			    	val newChildren = (children ++ ns)
-			    	Elem(p, tagName, attribs, s, newChildren.isEmpty, newChildren:_*)
+			    	Elem(p, tagName, attribs, s, false, newChildren:_*)
 			    case other => other
 			  }
 			}
@@ -345,14 +348,14 @@ private[ladderframework] class ElementAttributeSelector(tagName:String, attrib:S
 			override def transform(n: Node): Seq[Node] = n match {
 			case e @ Elem(p, `tagName`, attribs, s, children @ _*) if attributeMatches(attribs) =>
 				val transformedChildren = nsTransform(children)
-				Elem(p, tagName, attribs, s, transformedChildren.isEmpty, transformedChildren:_*)
+				Elem(p, tagName, attribs, s, false, transformedChildren:_*)
 			case other => other
 			}
 		}
 		ns => transform(ns, rr)
 	}
 	
-	def #>(e: Element): NodeSeq => NodeSeq = {
+	def #>(e: FormRendering): NodeSeq => NodeSeq = {
 			val rr = new RewriteRule {
 				override def transform(n: Node): Seq[Node] = n match {
 				case el @ Elem(_, `tagName`, attribs, _, children @ _*) if attributeMatches(attribs) => 
@@ -381,7 +384,7 @@ private[ladderframework] class ElementAttributeSelector(tagName:String, attrib:S
 				n match {
 					case Elem(p, `tagName`, attribs, n, children @ _*) if attributeMatches(attribs) => 
 						val concatenatedAttrs = concatenate(CssSelector.mapToAttribute(newAttrs), attribs)
-						Elem(p, tagName, concatenatedAttrs, n, children.isEmpty, children:_*)
+						Elem(p, tagName, concatenatedAttrs, n, false, children:_*)
 					case other => other
 				}
 			}

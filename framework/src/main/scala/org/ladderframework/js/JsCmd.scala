@@ -31,5 +31,9 @@ package org.ladderframework{
 		case class JsNodeSeqArg(ns:NodeSeq) extends JsArg{
 			def arg = "\"" + ns.toString.replaceAll("\"", "\\\"") + "\""
 		}
+		
+		case class JsSetHtml(selector: String, ns: NodeSeq) extends JsCmd{
+			def toCmd = "$(\"" + selector + "\").html(\"" + ns.mkString.replaceAll("[\"]","""\\"""").replaceAll("\\s+", " ") + "\");"
+		}
 	}
 }

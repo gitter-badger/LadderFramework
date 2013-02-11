@@ -14,6 +14,7 @@ import java.io.PrintWriter
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Promise
+import scala.xml.Xhtml
 
 trait HttpResponse{
 	def status:Status 
@@ -172,7 +173,7 @@ trait HtmlPage extends StatefulHtmlResponse with Loggable{
 					XML.load(resouce)
 				}).future
 			r <- render
-		} yield "<!DOCTYPE html>\n" + addPush.apply(r(x)).toString
+		} yield "<!DOCTYPE html>\n" + Xhtml.toXhtml(addPush.apply(r(x)))
 	}
 }
 
