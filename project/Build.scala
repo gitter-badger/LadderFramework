@@ -8,6 +8,7 @@ object LadderFrameworkBuild extends Build {
 	
 	lazy val buildSettings = Defaults.defaultSettings ++ Seq(
 		organization := "org.ladderframework",
+		publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
 		scalaVersion := buildScalaVersion)
 
 	lazy val root = Project(id = "root",
