@@ -60,7 +60,7 @@ class ProductHtmlPage(speaker: Option[Speaker]) extends HtmlPage {
 	))
 	
 	def render(implicit context: Context, ec: ExecutionContext): Future[NodeSeq => NodeSeq] = Future{
-		Ajax(form)((either, id) => JsNoCmd)(
+		Ajax(form)((either, id) => Future(JsNoCmd))(
 				implicit context => speaker => {
 					ns => {
 						<div>

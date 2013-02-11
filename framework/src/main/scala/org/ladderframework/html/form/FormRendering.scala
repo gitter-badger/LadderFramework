@@ -5,6 +5,7 @@ import org.ladderframework.js.JsCmd
 import org.ladderframework.Context
 import org.ladderframework.Utils
 import org.ladderframework.HttpResponse
+import scala.concurrent.Future
 
 case class FormContext(data: String => Option[String], errors: Seq[FormError])
 
@@ -15,7 +16,7 @@ trait FormRendering {
 }
 
 case class Ajax[M <: Mapping](form: Form[M])
-		(callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => JsCmd)(rendering: FormContext => M => (NodeSeq => NodeSeq))
+		(callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => Future[JsCmd])(rendering: FormContext => M => (NodeSeq => NodeSeq))
 		(implicit context: Context) extends FormRendering{
 	val id = Utils.uuid
 	context.addAjaxFormSubmitCallback(req => {
@@ -30,7 +31,7 @@ case class Ajax[M <: Mapping](form: Form[M])
 abstract class StatefullForm[M <: Mapping](
 			method: String, 
 			form: Form[M], 
-			callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => (List[String], HttpResponse), 
+			callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => Future[(List[String], HttpResponse)], 
 			rendering: FormContext => M => (NodeSeq => NodeSeq)
 		)(implicit context: Context) extends FormRendering{
 	val id = Utils.uuid
@@ -44,11 +45,11 @@ abstract class StatefullForm[M <: Mapping](
 }
 
 case class StatefullPost[M <: Mapping](form: Form[M])
-		(callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => (List[String], HttpResponse))(rendering: FormContext => M => (NodeSeq => NodeSeq))
+		(callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => Future[(List[String], HttpResponse)])(rendering: FormContext => M => (NodeSeq => NodeSeq))
 		(implicit context: Context) extends StatefullForm[M]("POST", form, callback, rendering)
 		
 case class StatefullGet[M <: Mapping](form: Form[M])
-	(callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => (List[String], HttpResponse))(rendering: FormContext => M => (NodeSeq => NodeSeq))
+	(callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => Future[(List[String], HttpResponse)])(rendering: FormContext => M => (NodeSeq => NodeSeq))
 	(implicit context: Context) extends StatefullForm[M]("GET", form, callback, rendering)
 
 

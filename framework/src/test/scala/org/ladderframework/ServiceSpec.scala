@@ -27,7 +27,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 
 	def this() = this(ActorSystem("WebSystem"))
 	
-	val helloWorldResponse = HtmlResponse("<html><body>hello world</body></html>")
+	val helloWorldResponse = Future(HtmlResponse("<html><body>hello world</body></html>"))
 	
 	val sessionID = "sessionID"
 	val master = system.actorOf(Props[Master], name = "master")
@@ -36,50 +36,50 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 		LadderBoot.site = {
 			case HttpRequest(GET, _, "hello" :: "world" :: Nil, params, _) if params.size == 0 => helloWorldResponse
 			case HttpRequest(POST | GET, _, "hello" :: "world" :: Nil, params, _) => 
-				HtmlResponse("<html><body>hello world " + params("parameter").head + "</body></html>")
+				Future(HtmlResponse("<html><body>hello world " + params("parameter").head + "</body></html>"))
 			case HttpRequest(GET, _, "resources" :: static :: Nil, _, _) =>
 				println("HttpResourceResponse: " + static)
-				HttpResourceResponse(path = static :: Nil)
+				Future(HttpResourceResponse(path = static :: Nil))
 			case HttpRequest(GET, _, "statefull" :: "request" :: Nil, _, _) =>
-				new StatefulHtmlResponse{
+				Future(new StatefulHtmlResponse{
 					override def statefullContent(implicit context:Context, ec:ExecutionContext) = Future{
-						val callback = context.addSubmitCallback(params => (
+						val callback = context.addSubmitCallback(params => Future(
 								"some" :: "where" :: "new" :: Nil, 
-								HtmlResponse("<html><body>redirect post</body></html>"))
-						)
+								HtmlResponse("<html><body>redirect post</body></html>")
+						))
 						callback.tail.mkString("_")
 					}
-				}
+				})
 			case HttpRequest(GET, _, originalPath @ "statefull" :: "ajaxrequest" :: Nil, _, _) =>
-				new StatefulHtmlResponse{
+				Future(new StatefulHtmlResponse{
 					override def statefullContent(implicit context:Context, ec:ExecutionContext) = Future{
-						val callback = context.addAjaxFormSubmitCallback(params => JsCall("callback"))
+						val callback = context.addAjaxFormSubmitCallback(params => Future(JsCall("callback")))
 						callback.split("/").tail.mkString("_")
 					}
-				}
+				})
 			case HttpRequest(GET, _, originalPath @ "statefull" :: "ajaxcallback" :: Nil, _, _) =>
-				new StatefulHtmlResponse{
+				Future(new StatefulHtmlResponse{
 					override def statefullContent(implicit context:Context, ec:ExecutionContext) = Future{
-						val callback = context.addAjaxInputCallback((input) => JsCall("inputCallback:" + input))
+						val callback = context.addAjaxInputCallback((input) => Future(JsCall("inputCallback:" + input)))
 						callback.lookupPath.tail.mkString("_")
 					}
-				}
+				})
 			case HttpRequest(GET, _, originalPath @ "statefull" :: "ajaxhandler" :: Nil, _, _) =>
-				new StatefulHtmlResponse{
+				Future(new StatefulHtmlResponse{
 					override def statefullContent(implicit context:Context, ec:ExecutionContext) = Future{
 						val callback = context.addAjaxHandlerCallback({
-							case _ => HtmlResponse("got back here")
+							case _ => Future(HtmlResponse("got back here"))
 						})
 						callback.lookupPath.tail.mkString("_")
 					}
-				}
+				})
 			case HttpRequest(GET, _, originalPath @ "statefull" :: "pull" :: Nil, _, _) =>
-				new StatefulHtmlResponse{
+				Future(new StatefulHtmlResponse{
 					override def statefullContent(implicit context:Context, ec:ExecutionContext) = Future{
 						context.update(JsCall("Message"))
 						context.contextID
 					}
-				}
+				})
 		}
 		
 		LadderBoot.resourceAsStreamImpl = (in:String) => getClass.getClassLoader().getResourceAsStream(in.substring(1))

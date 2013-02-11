@@ -7,6 +7,7 @@ import java.io.FileInputStream
 import com.typesafe.config.ConfigFactory
 import akka.actor.ActorSystem
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 trait DefaultBoot {
 	
@@ -14,7 +15,7 @@ trait DefaultBoot {
 	val system = ActorSystem("WebSystem", akkaConfig)
 	implicit lazy val executionContext = ExecutionContext.Implicits.global 
 	
-	def site:PartialFunction[HttpRequest, HttpResponse]
+	def site:PartialFunction[HttpRequest, Future[HttpResponse]]
 	
 	def notFound:HttpResponse = NotFoundResponse
 	def errorHandle:PartialFunction[(Status, Option[Throwable]), HttpResponse] = {

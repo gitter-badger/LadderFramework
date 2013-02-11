@@ -101,7 +101,7 @@ class InitalResponseContainer(
 		val initalRequest:HttpRequest, 
 		val uuid:String) extends ResponseContainer{
 	
-	val httpResponse:Promise[HttpResponse] = Promise().completeWith(Future{(LadderBoot.site orElse notFound)}.map(_.apply(initalRequest)))
+	val httpResponse:Promise[HttpResponse] = Promise().completeWith((Future(LadderBoot.site).map(_ orElse notFound)).flatMap(_.apply(initalRequest)))
 	
 } 
 
@@ -130,8 +130,8 @@ trait ResponseContainer extends Actor with ActorLogging{
 		uniqueID
 	}
 	
-	def notFound: PartialFunction[HttpRequest, HttpResponse] = {
-		case _ => LadderBoot.notFound
+	def notFound: PartialFunction[HttpRequest, Future[HttpResponse]] = {
+		case _ => Future(LadderBoot.notFound)
 	}
 	
 	def errorHandle: PartialFunction[(Status, Option[Throwable]), HttpResponse] = {
@@ -192,7 +192,7 @@ trait ResponseContainer extends Actor with ActorLogging{
 					statefulContext.ajaxSubmitCallback orElse
 					statefulContext.ajaxHandlerCallback orElse
 					statefulContext.ajaxCallback orElse notFound).apply(req)
-			response.applyToHttpServletResponse(res).map{ status => 
+			response.flatMap(_.applyToHttpServletResponse(res)).map{ status => 
 				asyncContext.complete()
 				status
 			}
