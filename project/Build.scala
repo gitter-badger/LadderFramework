@@ -1,5 +1,6 @@
 import sbt._
 import Keys._
+import sbtrelease.ReleasePlugin._
 
 object LadderFrameworkBuild extends Build {
 
@@ -7,12 +8,11 @@ object LadderFrameworkBuild extends Build {
 	
 	lazy val buildSettings = Defaults.defaultSettings ++ Seq(
 		organization := "org.ladderframework",
-		version := "0.0.3-SNAPSHOT",
 		scalaVersion := buildScalaVersion)
 
 	lazy val root = Project(id = "root",
 		base = file("."),
-		settings = ladderSettings
+		settings = ladderSettings ++ releaseSettings
 	) aggregate (framework, testFramework)
 
 	lazy val framework = Project(id = "ladder-web",
