@@ -105,7 +105,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 		val httpServletResponse = new HttpServletResponseMock()
 		val asyncContext = new AsyncContextMock(httpServletResponse)
 		send(HttpInteraction(asyncContext, request, httpServletResponse))
-		asyncContext.latch.await(1, TimeUnit.SECONDS)
+		asyncContext.latch.await(2, TimeUnit.SECONDS)
 		httpServletResponse
 	}
 	

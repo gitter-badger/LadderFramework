@@ -192,11 +192,31 @@ trait ResponseContainer extends Actor with ActorLogging{
 					statefulContext.ajaxSubmitCallback orElse
 					statefulContext.ajaxHandlerCallback orElse
 					statefulContext.ajaxCallback orElse notFound).apply(req)
-			response.flatMap(_.applyToHttpServletResponse(res)).map{ status => 
-				log.debug("completing: " + status)
-				asyncContext.complete()
-				status
+			response.onComplete{
+					case Success(http) => 
+						log.debug("completing - success, http: " + http)
+						http.applyToHttpServletResponse(res).onComplete {
+							case Success(status) => 
+								asyncContext.complete()
+								log.debug("completed - success, status: " + status)
+							case Failure(throwable) =>
+								log.error("problem completing", throwable)
+								asyncContext.complete()
+						}
+						
+					case Failure(fail) => {
+						log.error("complete - fail: " + fail)
+						ErrorResponse(InternalServerError, Some(fail)).applyToHttpServletResponse(res).onComplete {
+							case Success(status) => 
+								asyncContext.complete()
+								log.debug("completed - fail, status: " + status)
+							case Failure(throwable) =>
+								log.error("problem completing fail result", throwable)
+								asyncContext.complete()
+						}
+					}
 			}
+			
 	}
 	
 }
