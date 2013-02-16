@@ -200,7 +200,7 @@ trait ResponseContainer extends Actor with ActorLogging{
 								asyncContext.complete()
 								log.debug("completed - success, status: " + status)
 							case Failure(throwable) =>
-								log.error("problem completing", throwable)
+								log.error(throwable, "problem completing")
 								asyncContext.complete()
 						}
 						
