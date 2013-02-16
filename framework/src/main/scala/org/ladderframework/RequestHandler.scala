@@ -188,11 +188,12 @@ trait ResponseContainer extends Actor with ActorLogging{
 			
 		case HttpInteraction(asyncContext, req, res) =>
 			updateLastAccess()
-			val response = (statefulContext.submitCallback orElse 
+			val response: Future[HttpResponse] = (statefulContext.submitCallback orElse 
 					statefulContext.ajaxSubmitCallback orElse
 					statefulContext.ajaxHandlerCallback orElse
 					statefulContext.ajaxCallback orElse notFound).apply(req)
 			response.flatMap(_.applyToHttpServletResponse(res)).map{ status => 
+				log.debug("completing: " + status)
 				asyncContext.complete()
 				status
 			}
