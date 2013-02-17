@@ -131,7 +131,10 @@ trait ResponseContainer extends Actor with ActorLogging{
 	}
 	
 	def notFound: PartialFunction[HttpRequest, Future[HttpResponse]] = {
-		case _ => Future(LadderBoot.notFound)
+		case r => 
+			log.debug("Not found - request: " + r)
+			log.debug("context: " + statefulContext)
+			Future(LadderBoot.notFound)
 	}
 	
 	def errorHandle: PartialFunction[(Status, Option[Throwable]), HttpResponse] = {
@@ -142,7 +145,7 @@ trait ResponseContainer extends Actor with ActorLogging{
 		context.self ! PushMessage(message = message.toCmd)
 	}
 	
-	implicit val statefulContext = new Context(uuid, addResponse , update)
+	implicit val statefulContext = new Context(uuid, addResponse, update)
 	
 	def receive = {
 		case Tick => 
@@ -224,7 +227,9 @@ trait ResponseContainer extends Actor with ActorLogging{
 class PullActor(asyncContext: AsyncContext, res:HttpServletResponse) extends Actor with ActorLogging {
 	
 	val asyncListener = new AsyncListener{
-		def onComplete(event: AsyncEvent) {}
+		def onComplete(event: AsyncEvent) {
+			context.self ! PoisonPill
+		}
 		def onError(event: AsyncEvent){
 			context.self ! PoisonPill
 		}
@@ -248,8 +253,13 @@ class PullActor(asyncContext: AsyncContext, res:HttpServletResponse) extends Act
 	def send(msgs:List[PushMessage]) {
 		val response = PullResponse(msgs)
 		implicit val context:Context = null
-		response.applyToHttpServletResponse(res).onSuccess{
-			case _ => asyncContext.complete()
+		response.applyToHttpServletResponse(res).onComplete{
+			case Success(status) => 
+				asyncContext.complete()
+				log.debug("pull completed - fail, status: " + status)
+			case Failure(throwable) =>
+				log.warning("pull problem completing fail result", throwable)
+				asyncContext.complete()
 		}
 	}
 }
