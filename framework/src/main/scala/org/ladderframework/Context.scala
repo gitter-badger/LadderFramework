@@ -10,6 +10,7 @@ import org.ladderframework.js.JsCmd
 import org.ladderframework.logging.Loggable
 import bootstrap.LadderBoot
 import scala.concurrent.Future
+import scala.collection.concurrent._
 
 object Context{
 	private val lineSeparator = System.getProperty("line.separator")
@@ -43,22 +44,23 @@ case class Context(
 	
 	import Context._
 	
-	private var inputMap = Map[String, String => Unit]()
-	private var booleanInputMap = Map[String, Boolean => Unit]()
-	private var clickMap = Map[String, () => Unit]()
-	private var fileInputMap = Map[String, FileInfo => Unit]()
-	private var postMap = Map[String, Params => Future[(List[String], HttpResponse)]]()
+	private val inputMap = TrieMap[String, String => Unit]()
+	private val booleanInputMap = TrieMap[String, Boolean => Unit]()
+	private val clickMap = TrieMap[String, () => Unit]()
+	private val fileInputMap = TrieMap[String, FileInfo => Unit]()
+	private val postMap = TrieMap[String, Params => Future[(List[String], HttpResponse)]]()
 	
-	private var ajaxInputMap = Map[String, String => Future[JsCmd]]()
-	private var ajaxBooleanInputMap = Map[String, Boolean => Future[JsCmd]]()
-	private var ajaxClickMap = Map[String, () => Future[JsCmd]]()
+	private val ajaxInputMap = TrieMap[String, String => Future[JsCmd]]()
+	private val ajaxBooleanInputMap = TrieMap[String, Boolean => Future[JsCmd]]()
+	private val ajaxClickMap = TrieMap[String, () => Future[JsCmd]]()
 	//private var ajaxFileInputMap = Map[String, FileInfo => JsCmd]()
-	private var ajaxPostMap = Map[String, Params => Future[JsCmd]]()
+	private val ajaxPostMap = TrieMap[String, Params => Future[JsCmd]]()
 	
-	private var ajaxHandlerMap = Map[String, PartialFunction[HttpRequest, Future[HttpResponse]]]()
+	private val ajaxHandlerMap = TrieMap[String, PartialFunction[HttpRequest, Future[HttpResponse]]]()
 
 	private def addCallback(addFunc: String => Unit):String = {
 		val uuid = createUUID
+		
 		addFunc(uuid)
 		uuid
 	}
@@ -212,7 +214,7 @@ case class Context(
 				val (key, value) = param
 				clickMap.get(key).foreach(_.apply())
 			})
-			val jsCmd: Future[JsCmd] = ajaxPostMap(func).apply(request)
+			val jsCmd: Future[JsCmd] = ajaxPostMap(func)(request)
 			debug("result: " + jsCmd)
 			import LadderBoot.executionContext
 			jsCmd.map(JsCmdResponse)
