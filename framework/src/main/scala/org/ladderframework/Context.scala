@@ -233,7 +233,7 @@ case class Context(
 	
 	def ajaxHandlerCallback:PartialFunction[HttpRequest, Future[HttpResponse]] = {
 		case req @ HttpRequest(_, _, "ajax" :: `contextID` :: func :: Nil, params, parts) if ajaxHandlerMap.contains(func) =>
-			( ajaxHandlerMap(func) orElse notFound ).apply(req)
+			ajaxHandlerMap(func)(req)
 	}
 }
 

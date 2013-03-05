@@ -29,7 +29,7 @@ package org.ladderframework{
 		}
 		
 		case class JsNodeSeqArg(ns:NodeSeq) extends JsArg{
-			def arg = "\"" + ns.toString.replaceAll("\"", "\\\"") + "\""
+			def arg = "\"" + ns.mkString.replaceAll("[\"]","""\\"""").replaceAll("\\s+", " ") + "\""
 		}
 		
 		case class JsSetHtml(selector: String, ns: NodeSeq) extends JsCmd{

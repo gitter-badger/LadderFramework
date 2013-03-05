@@ -34,6 +34,26 @@ package object form{
 	implicit class NestedMappingRender5[A1, A2, A3, A4, A5](nestedMapping: NestedMapping{type S = Tuple5[A1, A2, A3, A4, A5]}){
 		def render(transform: (A1, A2, A3, A4, A5) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
 	}
+
+	implicit class NestedMappingRender6[A1, A2, A3, A4, A5, A6](nestedMapping: NestedMapping{type S = Tuple6[A1, A2, A3, A4, A5, A6]}){
+		def render(transform: (A1, A2, A3, A4, A5, A6) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
+	}
+	
+	implicit class NestedMappingRender7[A1, A2, A3, A4, A5, A6, A7](nestedMapping: NestedMapping{type S = Tuple7[A1, A2, A3, A4, A5, A6, A7]}){
+		def render(transform: (A1, A2, A3, A4, A5, A6, A7) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
+	}
+
+	implicit class NestedMappingRender8[A1, A2, A3, A4, A5, A6, A7, A8](nestedMapping: NestedMapping{type S = Tuple8[A1, A2, A3, A4, A5, A6, A7, A8]}){
+		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
+	}
+	
+	implicit class NestedMappingRender9[A1, A2, A3, A4, A5, A6, A7, A8, A9](nestedMapping: NestedMapping{type S = Tuple9[A1, A2, A3, A4, A5, A6, A7, A8, A9]}){
+		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
+	}
+
+	implicit class NestedMappingRender10[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10](nestedMapping: NestedMapping{type S = Tuple10[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10]}){
+		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
+	}
 }
 
 package form{

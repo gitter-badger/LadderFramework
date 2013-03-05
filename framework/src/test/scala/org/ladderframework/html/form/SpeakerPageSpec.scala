@@ -73,8 +73,8 @@ class ProductHtmlPage(speaker: Option[Speaker]) extends HtmlPage {
 											<legend>Date of birth:</legend>
 											{
 												day.text("Day") ++
-												day.text("Month") ++
-												day.text("Year")
+												month.text("Month") ++
+												year.text("Year")
 											}
 										</fieldset> ++
 										info.textarea("Info")
