@@ -13,6 +13,10 @@ package object form{
 		def textarea(label: String, attrs: Tuple2[Symbol, String]*)(implicit context: FormContext, renderer: TextareaFieldRenderer[T]) = {
 			renderer(mapping, label, attrs.toMap, context)
 		}
+		
+		def password(label: String, attrs: Tuple2[Symbol, String]*)(implicit context: FormContext, renderer: PasswordFieldRenderer[T]) = {
+			renderer(mapping, label, attrs.toMap, context)
+		}
 	}
 	
 	implicit class NestedMappingRender1[A1 <: Mapping](nestedMapping: NestedMapping{type S = A1}){
@@ -130,6 +134,36 @@ package form{
 					<label class="control-label" for={id} >{label}</label>
 					<div class="controls">
 						<input type="text" 
+							name={mapping.key} 
+							id={id} 
+							placeholder={attrs.getOrElse('placeholder, "")} 
+							value={context.data(mapping.key).getOrElse("")}/>
+						<span class="help-inline">{attrs.getOrElse('help, "")}</span>
+						{fieldErrors.map(error => <span class="help-inline">{error.message}</span>)}
+					</div>
+				</div>
+			}
+		}
+	}
+	
+	trait PasswordFieldRenderer[T]{
+		//symbols 'id, 'placeholder, 'help
+		def apply(mapping: FieldMapping[T], label: String, attrs: Map[Symbol, String], context: FormContext): NodeSeq
+	}
+	
+	object PasswordFieldRenderer{
+		
+		implicit object StringFieldRenderer extends PasswordFieldRenderer[String]{
+			def apply(mapping: FieldMapping[String], label: String, attrs: Map[Symbol, String], context: FormContext): NodeSeq = {
+				
+				val id = attrs.getOrElse('id, Utils.uuid)
+				
+				val fieldErrors = context.errors.filter(_.key == mapping.key)
+				
+				<div class={"control-group" + {if(fieldErrors.isEmpty) "" else " error"}} >
+					<label class="control-label" for={id} >{label}</label>
+					<div class="controls">
+						<input type="password" 
 							name={mapping.key} 
 							id={id} 
 							placeholder={attrs.getOrElse('placeholder, "")} 
