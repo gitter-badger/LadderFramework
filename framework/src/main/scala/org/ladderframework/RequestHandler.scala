@@ -74,9 +74,15 @@ class SessionActor(sessionID:String) extends Actor with ActorLogging{
 					hi.req.parameters.headOption.map(_._1) match {
 						case Some(id) => 
 							log.debug("redirect:id = " + id)
-							log.debug("childPath: " + context.actorFor(id).path)
-							context.actorFor(id) ! RenderInital(hi.res, hi.asyncContext)
-						case _ => LadderBoot.notFound
+							log.debug("child: " + context.child(id))
+							context.child(id).getOrElse{
+								val uuid:String = UUID.randomUUID.toString
+								context.actorOf(Props(new InitalResponseContainer(context.self, hi.req, uuid)), name = uuid)
+							} ! RenderInital(hi.res, hi.asyncContext)
+						case _ => 
+							val uuid:String = UUID.randomUUID.toString
+							val resonseContainerRef = context.actorOf(Props(new InitalResponseContainer(context.self, hi.req, uuid)), name = uuid)
+							resonseContainerRef ! RenderInital(hi.res, hi.asyncContext)
 					} 
 					
 				case _ => 
