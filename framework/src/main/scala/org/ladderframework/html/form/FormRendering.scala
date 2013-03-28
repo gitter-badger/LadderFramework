@@ -41,7 +41,7 @@ abstract class StatefullForm[M <: Mapping](
 		callback(either, id)
 	})
 	
-	def transform(ns: NodeSeq): NodeSeq = <form id={id} method={method}>{rendering(form.context)(form.mapping)(ns)}</form>
+	def transform(ns: NodeSeq): NodeSeq = <form id={id} method={method} action={actionPath.mkString("/", "/", "")}>{rendering(form.context)(form.mapping)(ns)}</form>
 }
 
 case class StatefullPost[M <: Mapping](form: Form[M])
