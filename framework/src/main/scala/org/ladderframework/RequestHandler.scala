@@ -178,7 +178,9 @@ trait ResponseContainer extends Actor with ActorLogging{
 					(LadderBoot.errorHandle orElse errorHandle)((InternalServerError, Option(t))).applyToHttpServletResponse(res).onComplete{
 							case _ => complete()
 					}
-				case Success(status:Status) => println("Status: " + status + "; httpResponse: " + Await.ready(httpResponse.future, 10 seconds)); complete()
+				case Success(status:Status) => 
+					log.debug("Status: " + status + "; httpResponse: " + Await.ready(httpResponse.future, 10 seconds)); 
+					complete()
 			}
     	
 		case newMessage : PushMessage =>
