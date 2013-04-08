@@ -3,6 +3,9 @@ package org.ladderframework.css
 import org.scalatest.FunSpec
 import org.scalatest.GivenWhenThen
 import CssSelector._
+import scala.xml.Text
+import scala.concurrent.Future
+import scala.concurrent.Await
 
 class CssSelectorSpec extends FunSpec with GivenWhenThen {
 
@@ -183,6 +186,105 @@ class CssSelectorSpec extends FunSpec with GivenWhenThen {
   		val transformed = (".find" #@> Map("id" -> "inserted")).apply(html) 
   		Then("right attributes is inserted")
   		assert(transformed.toString === (<div><span id="inserted" class="find">FoundId</span></div>).toString)
+  	}
+  }
+  
+  describe("A Nested CssTransformation") {
+  	it("should transform larger graph") {
+  		Given("html")
+  		val html = <div id="content">
+  			<header class="jumbotron subhead" id="overview"><div class="container super-unit"><h1>Search</h1>
+		  		<form class="form-search" action="search" method="GET">
+						<div class="input-prepend"><button type="submit" class="btn">Search for</button><input type="text" name="query" class="span3 search-query input-large" placeholder="for artifacts, groups, etc..."/></div>
+		  		</form>
+					<p>Examples: <a href="search?query=hibernate">hibernate</a>, <a href="search?query=spring">spring</a>, <a href="search?query=logging">logging</a></p> 
+  			</div></header>
+  			<div class="container"><h2>Results</h2>
+  				<div class="row">
+  					<div class="span3"><h3>Filter</h3>
+  						<table class="table-condensed l_group_facet">
+		    				<thead><tr><th>Group</th></tr></thead><tbody><tr class="l_results"><td class="l_group"><a href="" class="l_group">@result.group</a></td></tr></tbody>
+		    			</table>
+  						<table class="table-condensed l_artifact_facet">
+		    				<thead><tr><th>Artifact</th></tr></thead><tbody><tr class="l_results"><td class="l_artifact"><a href="" class="l_artifact">@result.artifact</a></td></tr></tbody>
+		    			</table>
+  					</div>
+  					<div class="span9"><h3>Number of results (including versions) <span class="l_numberOfResults">XX</span></h3>
+  						<table class="table table-striped table-hover table-condensed l_list_results">
+		    				<thead><tr><th>Group</th><th>Artifact</th><th>Version</th><th>Name</th></tr></thead>
+		    				<tbody><tr class="l_results l">
+		    					<td class="l_group"><a href="" class="l_group">@result.group</a></td>
+		    					<td class="l_artifact"><a href="" class="l_artifact">@result.artifact</a></td>
+		    					<td class="l_version"><a href="" class="l_version">@result.version</a></td>
+		    					<td class="l_name">@result.name</td>
+		    				</tr></tbody>
+		    			</table>
+  					</div>
+  				</div>
+  			</div>
+  		</div>
+  		When("transforming")
+  		
+  		case class Result(group: String, artifactId: String, version: String, name: Option[String])
+  		case class Alternative(name: String, count: Int)
+  		case class Facet(name: String, alternatives: Seq[Alternative])
+  		
+  		val query = Option("")
+  		
+  		val results = (0 to 10000).map(i => Result("g" + i, "a" + i, "v" + i, Some("name is great" + i)))
+  		val numberOfHits = 1000
+  		val groupFacet = Facet(name = "group", alternatives = (0 to 10000).map(i => Alternative("a" + i, 1000 - i)))
+  		val artifactFacet = Facet(name = "artifact", alternatives = (0 to 10000).map(i => Alternative("a" + i, 1000 - i)))
+  		val versionFacet = Facet(name = "version", alternatives = (0 to 10000).map(i => Alternative("a" + i, 1000 - i)))
+			val transformfunc = {
+  			".l_group_facet" #> {
+					".l_results" #> groupFacet.alternatives.map( alt => {
+						"a" #@> Map("href" -> ("/artifact/" + alt.name)) &
+						"a" #>> (alt.name + " (" + alt.count + ")")
+					})
+				} &
+				".l_artifact_facet" #> {
+					".l_results" #> artifactFacet.alternatives.map( alt => {
+						"a" #@> Map("href" -> ("/artifact/" + alt.name)) &
+						"a" #>> (alt.name + " (" + alt.count + ")")
+					})
+				} &
+				".l_version_facet" #> {
+					".l_results" #> versionFacet.alternatives.map( alt => {
+						"a" #@> Map("href" -> ("/artifact/" + alt.name)) &
+						"a" #>> (alt.name + " (" + alt.count + ")")
+					})
+				} &
+				".l_numberOfResults" #> numberOfHits.toString &
+				"[name=query]" #@> Map("value" -> query.getOrElse("")) &
+				".l_list_results" #> {
+					".l_results" #> results.map(result => {
+						".l_group" #> {
+							"a" #@> Map("href" -> ("/artifact/" + result.group)) &
+							"a" #>> result.group
+						} &
+						".l_artifact" #> {
+							"a" #@> Map("href" -> ("/artifact/" + result.group + "/" + result.artifactId)) &
+							"a" #>> result.artifactId
+						} &
+						".l_version" #> {
+							"a" #@> Map("href" -> ("/artifact/" + result.group + "/" + result.artifactId + "/" + result.version)) &
+							"a" #>> result.version
+						} &
+						".l_name" #>> Text(result.name.getOrElse(""))
+					})
+				}
+  		}
+  		import scala.concurrent.ExecutionContext.Implicits.global
+  		import scala.concurrent.duration._
+  		val transform = Future({
+  			val s = java.lang.System.currentTimeMillis()
+  			val t = (transformfunc).apply(html)
+  			println("time: " + (java.lang.System.currentTimeMillis() - s))
+  			t
+  		}) 
+  		Then("it is done in a heart beat")
+  		assert(Await.ready(transform, 10 second).isCompleted)
   	}
   }
 }
