@@ -124,6 +124,9 @@ package form{
 							id={id} 
 							placeholder={attrs.getOrElse('placeholder, "")} 
 							value={context.data(mapping.key).getOrElse("")}/>
+						{
+							if(mapping.constraints.map(_.name).exists(_ == Constraints.nonEmpty.name)) <span>*</span> else NodeSeq.Empty
+						}
 						<span class="help-inline">{attrs.getOrElse('help, "")}</span>
 						{fieldErrors.map(error => <span class="help-inline">{errorTransformer(error)}</span>)}
 					</div>
@@ -146,6 +149,9 @@ package form{
 							id={id} 
 							placeholder={attrs.getOrElse('placeholder, "")} 
 							value={context.data(mapping.key).getOrElse("")}/>
+						{
+							if(mapping.constraints.map(_.name).exists(_ == Constraints.nonEmpty.name)) <span>*</span> else NodeSeq.Empty
+						}
 						<span class="help-inline">{attrs.getOrElse('help, "")}</span>
 						{fieldErrors.map(error => {						
 							<span class="help-inline">{errorTransformer(error)}</span>
@@ -179,6 +185,9 @@ package form{
 							id={id} 
 							placeholder={attrs.getOrElse('placeholder, "")} 
 							value={context.data(mapping.key).getOrElse("")}/>
+						{
+							if(mapping.constraints.map(_.name).exists(_ == Constraints.nonEmpty.name)) <span>*</span> else NodeSeq.Empty
+						}
 						<span class="help-inline">{attrs.getOrElse('help, "")}</span>
 						{fieldErrors.map(error => <span class="help-inline">{errorTransformer(error)}</span>)}
 					</div>
@@ -209,6 +218,9 @@ package form{
 							id={id} 
 							placeholder={attrs.getOrElse('placeholder, "")} 
 							value={context.data(mapping.key).getOrElse("")}/>
+						{
+							if(mapping.constraints.map(_.name).exists(_ == Constraints.nonEmpty.name)) <span>*</span> else NodeSeq.Empty
+						}
 						<span class="help-inline">{attrs.getOrElse('help, "")}</span>
 						{fieldErrors.map(error => <span class="help-inline">{errorTransformer(error)}</span>)}
 					</div>
