@@ -2,20 +2,28 @@ package org.ladderframework.html
 
 import scala.xml.NodeSeq
 import org.ladderframework.Utils
+import scala.xml.Text
+import bootstrap.LadderBoot
+import java.util.ResourceBundle
+import java.text.MessageFormat
 
 package object form{
 	
 	implicit class FieldMappingRender[T](mapping: FieldMapping[T]){
-		def text(label: String, attrs: Tuple2[Symbol, String]*)(implicit context: FormContext, renderer: TextFieldRenderer[T]) = {
-			renderer(mapping, label, attrs.toMap, context)
+		def text(label: String, attrs: Tuple2[Symbol, String]*)(implicit context: FormContext, renderer: TextFieldRenderer[T], errorTransformer: ErrorMessageTransformer) = {
+			renderer(mapping, label, attrs.toMap, context, errorTransformer)
 		}
 		
-		def textarea(label: String, attrs: Tuple2[Symbol, String]*)(implicit context: FormContext, renderer: TextareaFieldRenderer[T]) = {
-			renderer(mapping, label, attrs.toMap, context)
+		def textarea(label: String, attrs: Tuple2[Symbol, String]*)(implicit context: FormContext, renderer: TextareaFieldRenderer[T], errorTransformer: ErrorMessageTransformer) = {
+			renderer(mapping, label, attrs.toMap, context, errorTransformer)
 		}
 		
-		def password(label: String, attrs: Tuple2[Symbol, String]*)(implicit context: FormContext, renderer: PasswordFieldRenderer[T]) = {
-			renderer(mapping, label, attrs.toMap, context)
+		def password(label: String, attrs: Tuple2[Symbol, String]*)(implicit context: FormContext, renderer: PasswordFieldRenderer[T], errorTransformer: ErrorMessageTransformer) = {
+			renderer(mapping, label, attrs.toMap, context, errorTransformer)
+		}
+		
+		def checkbox(label: String, attrs: Tuple2[Symbol, String]*)(implicit context: FormContext, renderer: CheckboxFieldRenderer[T], errorTransformer: ErrorMessageTransformer) = {
+			renderer(mapping, label, attrs.toMap, context, errorTransformer)
 		}
 	}
 	
@@ -58,18 +66,51 @@ package object form{
 	implicit class NestedMappingRender10[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10](nestedMapping: NestedMapping{type S = Tuple10[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10]}){
 		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
 	}
+	
+	implicit class NestedMappingRender11[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11](nestedMapping: NestedMapping{type S = Tuple11[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11]}){
+		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
+	}
+	
+	implicit class NestedMappingRender12[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12](nestedMapping: NestedMapping{type S = Tuple12[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12]}){
+		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
+	}
+
+	implicit class NestedMappingRender13[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13](nestedMapping: NestedMapping{type S = Tuple13[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13]}){
+		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
+	}
 }
 
 package form{
+	
+	trait ErrorMessageTransformer{
+		def apply(error: FormError): NodeSeq
+	}
+	object ErrorMessageTransformer{
+		implicit object MessageFileErrorMessageTransformer extends ErrorMessageTransformer{
+			
+			lazy val bundle = ResourceBundle.getBundle("ValidationMessages")
+			
+			def apply(error: FormError): NodeSeq = {
+				if(bundle.containsKey(error.message)) {
+					val msg = bundle.getString(error.message)
+					Text(MessageFormat.format(msg, error.args.map(_.asInstanceOf[AnyRef]):_*))
+				}else {
+					Text(s"unable to find key '${error.message}' in ValidationMessage.properties")
+				}
+				
+			}			
+		}
+	}
+	
 	trait TextFieldRenderer[T]{
 		//symbols 'id, 'placeholder, 'help
-		def apply(mapping: FieldMapping[T], label: String, attrs: Map[Symbol, String], context: FormContext): NodeSeq
+		def apply(mapping: FieldMapping[T], label: String, attrs: Map[Symbol, String], context: FormContext, errorTransformer: ErrorMessageTransformer): NodeSeq
 	}
 	
 	object TextFieldRenderer{
 		
 		implicit object StringFieldRenderer extends TextFieldRenderer[String]{
-			def apply(mapping: FieldMapping[String], label: String, attrs: Map[Symbol, String], context: FormContext): NodeSeq = {
+			def apply(mapping: FieldMapping[String], label: String, attrs: Map[Symbol, String], context: FormContext, errorTransformer: ErrorMessageTransformer): NodeSeq = {
 				
 				val id = attrs.getOrElse('id, Utils.uuid)
 				
@@ -84,33 +125,33 @@ package form{
 							placeholder={attrs.getOrElse('placeholder, "")} 
 							value={context.data(mapping.key).getOrElse("")}/>
 						<span class="help-inline">{attrs.getOrElse('help, "")}</span>
-						{fieldErrors.map(error => <span class="help-inline">{error.message}</span>)}
+						{fieldErrors.map(error => <span class="help-inline">{errorTransformer(error)}</span>)}
 					</div>
 				</div>
 			}
 		}
 		
 		implicit object IntFieldRenderer extends TextFieldRenderer[Int]{
-			def apply(mapping: FieldMapping[Int], label: String, attrs: Map[Symbol, String], context: FormContext): NodeSeq = {
+			def apply(mapping: FieldMapping[Int], label: String, attrs: Map[Symbol, String], context: FormContext, errorTransformer: ErrorMessageTransformer): NodeSeq = {
 				
 				val id = attrs.getOrElse('id, Utils.uuid)
 				
 				val fieldErrors = context.errors.filter(_.key == mapping.key)
 				
 				<div class={"control-group" + {if(fieldErrors.isEmpty) "" else " error"}} >
-				<label class="control-label" for={id} >{label}</label>
-				<div class="controls">
-					<input type="number" 
-						name={mapping.key} 
-						id={id} 
-						placeholder={attrs.getOrElse('placeholder, "")} 
-						value={context.data(mapping.key).getOrElse("")}/>
-					<span class="help-inline">{attrs.getOrElse('help, "")}</span>
-					{fieldErrors.map(error => {						
-							<span class="help-inline">{error.message}</span>
+					<label class="control-label" for={id} >{label}</label>
+					<div class="controls">
+						<input type="number" 
+							name={mapping.key} 
+							id={id} 
+							placeholder={attrs.getOrElse('placeholder, "")} 
+							value={context.data(mapping.key).getOrElse("")}/>
+						<span class="help-inline">{attrs.getOrElse('help, "")}</span>
+						{fieldErrors.map(error => {						
+							<span class="help-inline">{errorTransformer(error)}</span>
 						})}
+					</div>
 				</div>
-			</div>
 			}
 		}
 		
@@ -118,13 +159,13 @@ package form{
 		
 	trait TextareaFieldRenderer[T]{
 		//symbols 'id, 'placeholder, 'help
-		def apply(mapping: FieldMapping[T], label: String, attrs: Map[Symbol, String], context: FormContext): NodeSeq
+		def apply(mapping: FieldMapping[T], label: String, attrs: Map[Symbol, String], context: FormContext, errorTransformer: ErrorMessageTransformer): NodeSeq
 	}
 	
 	object TextareaFieldRenderer{
 		
 		implicit object StringFieldRenderer extends TextareaFieldRenderer[String]{
-			def apply(mapping: FieldMapping[String], label: String, attrs: Map[Symbol, String], context: FormContext): NodeSeq = {
+			def apply(mapping: FieldMapping[String], label: String, attrs: Map[Symbol, String], context: FormContext, errorTransformer: ErrorMessageTransformer): NodeSeq = {
 				
 				val id = attrs.getOrElse('id, Utils.uuid)
 				
@@ -139,7 +180,7 @@ package form{
 							placeholder={attrs.getOrElse('placeholder, "")} 
 							value={context.data(mapping.key).getOrElse("")}/>
 						<span class="help-inline">{attrs.getOrElse('help, "")}</span>
-						{fieldErrors.map(error => <span class="help-inline">{error.message}</span>)}
+						{fieldErrors.map(error => <span class="help-inline">{errorTransformer(error)}</span>)}
 					</div>
 				</div>
 			}
@@ -148,13 +189,13 @@ package form{
 	
 	trait PasswordFieldRenderer[T]{
 		//symbols 'id, 'placeholder, 'help
-		def apply(mapping: FieldMapping[T], label: String, attrs: Map[Symbol, String], context: FormContext): NodeSeq
+		def apply(mapping: FieldMapping[T], label: String, attrs: Map[Symbol, String], context: FormContext, errorTransformer: ErrorMessageTransformer): NodeSeq
 	}
 	
 	object PasswordFieldRenderer{
 		
 		implicit object StringFieldRenderer extends PasswordFieldRenderer[String]{
-			def apply(mapping: FieldMapping[String], label: String, attrs: Map[Symbol, String], context: FormContext): NodeSeq = {
+			def apply(mapping: FieldMapping[String], label: String, attrs: Map[Symbol, String], context: FormContext, errorTransformer: ErrorMessageTransformer): NodeSeq = {
 				
 				val id = attrs.getOrElse('id, Utils.uuid)
 				
@@ -169,12 +210,49 @@ package form{
 							placeholder={attrs.getOrElse('placeholder, "")} 
 							value={context.data(mapping.key).getOrElse("")}/>
 						<span class="help-inline">{attrs.getOrElse('help, "")}</span>
-						{fieldErrors.map(error => <span class="help-inline">{error.message}</span>)}
+						{fieldErrors.map(error => <span class="help-inline">{errorTransformer(error)}</span>)}
 					</div>
 				</div>
 			}
 		}
 	}
+	
+	trait CheckboxFieldRenderer[T]{
+		//symbols 'id
+		def apply(mapping: FieldMapping[T], label: String, attrs: Map[Symbol, String], context: FormContext, errorTransformer: ErrorMessageTransformer): NodeSeq
+	}
+	
+	object CheckboxFieldRenderer{
+		
+		implicit object StringFieldRenderer extends PasswordFieldRenderer[Boolean]{
+			def apply(mapping: FieldMapping[Boolean], label: String, attrs: Map[Symbol, String], context: FormContext, errorTransformer: ErrorMessageTransformer): NodeSeq = {
+				
+				val id = attrs.getOrElse('id, Utils.uuid)
+				
+				val fieldErrors = context.errors.filter(_.key == mapping.key)
+				
+				<div class={"control-group" + {if(fieldErrors.isEmpty) "" else " error"}} >
+					<div class="controls">
+						<label class="checkbox">
+							<input type="checkbox"
+								name={mapping.key} 
+								id={id}
+								checked={if(context.data(mapping.key).exists(_ == true.toString)) Some(Seq(Text("checked"))) else None}
+								value="true"
+							/> {label}
+						</label>
+						<input type="hidden" 
+							name={mapping.key} 
+							value="false"/>
+						<span class="help-inline">{attrs.getOrElse('help, "")}</span>
+						{fieldErrors.map(error => <span class="help-inline">{errorTransformer(error)}</span>)}
+					</div>
+				</div>
+			}
+		}
+	}
+	
+	
 
 }
 
