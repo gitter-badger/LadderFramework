@@ -2,19 +2,18 @@ package org.ladderframework.test.html.form
 
 import java.io.File
 import java.io.FileInputStream
-import scala.Option.option2Iterable
-import scala.collection.immutable.HashMap
-import scala.xml.NodeSeq.seqToNodeSeq
-import org.ladderframework.css.CssSelector
-import org.ladderframework.css.CssSelector._
-import org.ladderframework.FileInfo
-import org.ladderframework.StatefulHtmlResponse
-import org.ladderframework.HttpRequest
-import org.ladderframework.HttpResponse
-import org.ladderframework.POST
-import org.ladderframework.Context
-import org.ladderframework.test.page.PageObjectContext
+
 import scala.concurrent.Future
+import scala.xml.NodeSeq.seqToNodeSeq
+
+import org.ladderframework.Context
+import org.ladderframework.FileInfo
+import org.ladderframework.HttpResponse
+import org.ladderframework.StatefulHtmlResponse
+import org.ladderframework.css.CssSelector
+import org.ladderframework.css.CssSelector.pimpNodeSeq
+import org.ladderframework.css.CssSelector.stringToCssSelector
+import org.ladderframework.test.page.PageObjectContext
 
 trait Element{
 	implicit def pageObjectContext:PageObjectContext
@@ -84,7 +83,7 @@ case class SubmitButton(implicit val pageObjectContext: PageObjectContext) exten
 			//Submit form
 			val forms = xml.extract("form")
 			forms.map(_ \ "@action").map(_.text).map(action => {
-				context.submitCallback(HttpRequest(POST, sessionID, action.split("/").toList))
+				context.submitCallback(null)//TODO HttpRequest(POST, sessionID, action.split("/").toList))
 			}).headOption.collect{
 				case x:Any if manifest.runtimeClass.isInstance(x) => x.asInstanceOf[R]
 			}

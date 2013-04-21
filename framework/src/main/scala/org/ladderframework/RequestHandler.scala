@@ -189,10 +189,10 @@ trait ResponseContainer extends Actor with ActorLogging{
 			messages = messages :+ newMessage
 			log.debug("messages:" + messages)
 			context.children.foreach(_ ! newMessage)
-		case HttpInteraction(asyncContext, req @ HttpRequest(_, _, "pull" :: `uuid` :: _, params, _), res) => 
+		case HttpInteraction(asyncContext, request @ HttpRequest(_, "pull" :: `uuid` :: _), res) => 
 			log.debug("pull")
 			updateLastAccess()
-			params.get("lastId").flatMap(_.headOption).foreach(id => { 
+			request.parameters.get("lastId").flatMap(_.headOption).foreach(id => { 
 					messages = messages.reverse.takeWhile(_.id != id).reverse
 			})
 			context.actorOf(Props(new PullActor(asyncContext, res))) ! messages

@@ -93,10 +93,10 @@ case class Context(
 	}
 	
 	def submitCallback:PartialFunction[HttpRequest, Future[HttpResponse]] = {
-		case request @ HttpRequest(POST, _, "post" :: `contextID` :: func :: Nil, params, parts) if postMap.contains(func) =>
+		case request @ HttpRequest(POST, "post" :: `contextID` :: func :: Nil) if postMap.contains(func) =>
 			debug("handleContextPost")
 			debug("func: " + func + " --- " + postMap.get(func))
-			params.foreach(param => {
+			request.parameters.foreach(param => {
 				debug("param: " + param)
 				val (name, value) = param
 				inputMap.get(name).foreach(cb => value.foreach(cb))
@@ -106,7 +106,7 @@ case class Context(
 					callback <- booleanInputMap.get(name)
 				} yield callback(booleanValue)
 			})
-			parts.foreach(part => {
+			request.parts.foreach(part => {
 				val name = part.getName
 				inputMap.get(name).foreach(_(stream2String(part.getInputStream)))
 				fileInputMap.get(name).foreach(_({
@@ -114,11 +114,11 @@ case class Context(
 				}))
 				clickMap.get(name).foreach(_())
 			})
-			params.foreach(param => {
+			request.parameters.foreach(param => {
 				val (key, value) = param
 				clickMap.get(key).foreach(_.apply())
 			})
-			parts.foreach(part => {
+			request.parts.foreach(part => {
 				val name = part.getName
 				clickMap.get(name).foreach(_())
 			})
@@ -169,10 +169,10 @@ case class Context(
 	}
 	
 	def ajaxCallback:PartialFunction[HttpRequest, Future[HttpResponse]] = {
-		case HttpRequest(_, _, "ajax" :: `contextID` :: Nil, params, parts) => 
+		case request @ HttpRequest(_, "ajax" :: `contextID` :: Nil) => 
 			debug("ajax callback ") 
 			
-			val jsCmd:Option[Future[JsCmd]] = params.headOption.flatMap(param => {
+			val jsCmd:Option[Future[JsCmd]] = request.parameters.headOption.flatMap(param => {
 				val (key, values) = param
 				val value = values.headOption.getOrElse("")
 				ajaxInputMap.get(key).map(_(value)) orElse {
@@ -189,10 +189,10 @@ case class Context(
 	}
 	
 	def ajaxSubmitCallback:PartialFunction[HttpRequest, Future[HttpResponse]] = {
-		case request @ HttpRequest(_, _, "ajax" :: `contextID` :: func :: Nil, params, parts) if ajaxPostMap.contains(func) => 
+		case request @ HttpRequest(_, "ajax" :: `contextID` :: func :: Nil) if ajaxPostMap.contains(func) => 
 			debug("ajax func: " + func + " --- " + ajaxPostMap(func))
 			
-			params.foreach(param => {
+			request.parameters.foreach(param => {
 				val (key, values: Array[String]) = param
 				for{
 					callbackFunc <- inputMap.get(key)
@@ -210,7 +210,7 @@ case class Context(
 				} yield callback(booleanValue)
 				
 			})
-			params.foreach(param => {
+			request.parameters.foreach(param => {
 				val (key, value) = param
 				clickMap.get(key).foreach(_.apply())
 			})
@@ -218,7 +218,7 @@ case class Context(
 			debug("result: " + jsCmd)
 			import LadderBoot.executionContext
 			jsCmd.map(JsCmdResponse)
-		case request @ HttpRequest(_, _, "ajax" :: `contextID` :: func :: Nil, params, parts) if ajaxClickMap.contains(func) =>
+		case request @ HttpRequest(_, "ajax" :: `contextID` :: func :: Nil) if ajaxClickMap.contains(func) =>
 			debug("ajax click func: " + func + " --- " + ajaxClickMap(func)) 
 			
 			import LadderBoot.executionContext
@@ -232,7 +232,7 @@ case class Context(
 	}
 	
 	def ajaxHandlerCallback:PartialFunction[HttpRequest, Future[HttpResponse]] = {
-		case req @ HttpRequest(_, _, "ajax" :: `contextID` :: func :: Nil, params, parts) if ajaxHandlerMap.contains(func) =>
+		case req @ HttpRequest(_, "ajax" :: `contextID` :: func :: Nil) if ajaxHandlerMap.contains(func) =>
 			ajaxHandlerMap(func)(req)
 	}
 }

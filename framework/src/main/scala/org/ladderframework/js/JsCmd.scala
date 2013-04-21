@@ -5,6 +5,8 @@ package org.ladderframework{
 	package object js{
 		implicit def string2JsArg(string:String):JsStringArg = JsStringArg(string)
 		implicit def nodeSeq2JsNodeSeqArg(ns:NodeSeq):JsNodeSeqArg = JsNodeSeqArg(ns)
+		
+		
 	}
 	
 	package js{

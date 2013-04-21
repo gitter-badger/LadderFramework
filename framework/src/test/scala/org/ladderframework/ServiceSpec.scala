@@ -34,13 +34,13 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 	
 	override def beforeAll {
 		LadderBoot.site = {
-			case HttpRequest(GET, _, "hello" :: "world" :: Nil, params, _) if params.size == 0 => helloWorldResponse
-			case HttpRequest(POST | GET, _, "hello" :: "world" :: Nil, params, _) => 
-				Future(HtmlResponse("<html><body>hello world " + params("parameter").head + "</body></html>"))
-			case HttpRequest(GET, _, "resources" :: static :: Nil, _, _) =>
+			case req @ HttpRequest(GET, "hello" :: "world" :: Nil) if req.parameters.size == 0 => helloWorldResponse
+			case req @ HttpRequest(POST | GET, "hello" :: "world" :: Nil) => 
+				Future(HtmlResponse("<html><body>hello world " + req.parameters("parameter").head + "</body></html>"))
+			case HttpRequest(GET, "resources" :: static :: Nil) =>
 				println("HttpResourceResponse: " + static)
 				Future(HttpResourceResponse(path = static :: Nil))
-			case HttpRequest(GET, _, "statefull" :: "request" :: Nil, _, _) =>
+			case HttpRequest(GET, "statefull" :: "request" :: Nil) =>
 				Future(new StatefulHtmlResponse{
 					override def statefullContent(implicit context:Context, ec:ExecutionContext) = Future{
 						val callback = context.addSubmitCallback(params => Future(
@@ -50,21 +50,21 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 						callback.tail.mkString("_")
 					}
 				})
-			case HttpRequest(GET, _, originalPath @ "statefull" :: "ajaxrequest" :: Nil, _, _) =>
+			case HttpRequest(GET, originalPath @ "statefull" :: "ajaxrequest" :: Nil) =>
 				Future(new StatefulHtmlResponse{
 					override def statefullContent(implicit context:Context, ec:ExecutionContext) = Future{
 						val callback = context.addAjaxFormSubmitCallback(params => Future(JsCall("callback")))
 						callback.split("/").tail.mkString("_")
 					}
 				})
-			case HttpRequest(GET, _, originalPath @ "statefull" :: "ajaxcallback" :: Nil, _, _) =>
+			case HttpRequest(GET, originalPath @ "statefull" :: "ajaxcallback" :: Nil) =>
 				Future(new StatefulHtmlResponse{
 					override def statefullContent(implicit context:Context, ec:ExecutionContext) = Future{
 						val callback = context.addAjaxInputCallback((input) => Future(JsCall("inputCallback:" + input)))
 						callback.lookupPath.tail.mkString("_")
 					}
 				})
-			case HttpRequest(GET, _, originalPath @ "statefull" :: "ajaxhandler" :: Nil, _, _) =>
+			case HttpRequest(GET, originalPath @ "statefull" :: "ajaxhandler" :: Nil) =>
 				Future(new StatefulHtmlResponse{
 					override def statefullContent(implicit context:Context, ec:ExecutionContext) = Future{
 						val callback = context.addAjaxHandlerCallback({
@@ -73,7 +73,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 						callback.lookupPath.tail.mkString("_")
 					}
 				})
-			case HttpRequest(GET, _, originalPath @ "statefull" :: "pull" :: Nil, _, _) =>
+			case HttpRequest(GET, originalPath @ "statefull" :: "pull" :: Nil) =>
 				Future(new StatefulHtmlResponse{
 					override def statefullContent(implicit context:Context, ec:ExecutionContext) = Future{
 						context.update(JsCall("Message"))
@@ -109,17 +109,24 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 		httpServletResponse
 	}
 	
+	def httpRequest(givenMethod: Method, givenSession: String, givenPath: List[String], givenParams: Map[String, Array[String]] = Map()) = new HttpRequest{
+		override val method = givenMethod
+		override val sessionID = givenSession
+		override def path = givenPath
+		override def parameters = givenParams
+	}
+	
 	"The framework" when {
 		"recieving a HTTP GET request to an in memory response (Hello World)" should {
 			
 			"handle simple request" in {
-				val httpServletResponse = call(HttpRequest(GET, sessionID,  "hello" :: "world" :: Nil))
+				val httpServletResponse = call(httpRequest(GET, sessionID,  "hello" :: "world" :: Nil))
 				assert(httpServletResponse.getStatus === OK.code)
 				assert(httpServletResponse.text === "<html><body>hello world</body></html>")
 				assert(httpServletResponse.contentType === "text/html")
 			}
 			"handle bad request" in {
-				val httpServletResponse = call(HttpRequest(GET, sessionID,  "hello" :: "not" :: "found" :: Nil))
+				val httpServletResponse = call(httpRequest(GET, sessionID,  "hello" :: "not" :: "found" :: Nil))
 				val content = Await.result(NotFoundResponse.content, 2 seconds)
 				assert(httpServletResponse.getStatus === NotFound.code)
 				assert(httpServletResponse.text === content)
@@ -128,7 +135,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 		}
 		
 		"recieving a HTTP GET request with parameter to an in memory response" should {
-			val request = HttpRequest(GET, sessionID,  "hello" :: "world" :: Nil, Map("parameter" -> Array("postedValue")))
+			val request = httpRequest(GET, sessionID, "hello" :: "world" :: Nil, Map("parameter" -> Array("postedValue")))
 			
 			"handle simple request" in {
 				val httpServletResponse = call(request)
@@ -140,14 +147,14 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 		
 		"recieving a HTTP GET request to a static resource on the file system" should {
 			"serve valid requests" in {
-				val httpServletResponse = call(HttpRequest(GET, sessionID, "resources" :: "static.html" :: Nil))
+				val httpServletResponse = call(httpRequest(GET, sessionID, "resources" :: "static.html" :: Nil))
 				assert(httpServletResponse.text === "static")
 				assert(httpServletResponse.getStatus === OK.code)
 				assert(httpServletResponse.contentType === "text/html")
 			}
 			
 			"handle not found (404)" in {
-				val httpServletResponse = call(HttpRequest(GET, sessionID, "resources" :: "notFound.html" :: Nil))
+				val httpServletResponse = call(httpRequest(GET, sessionID, "resources" :: "notFound.html" :: Nil))
 				val content = Await.result(NotFoundResponse.content, 2 seconds)
 				assert(httpServletResponse.text === content)
 				assert(httpServletResponse.getStatus === NotFound.code)
@@ -157,7 +164,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 			"handle it asyncrounously" in {
 				val httpServletResponse = new HttpServletResponseMock()
 				val asyncContext = new AsyncContextMock(httpServletResponse, 10)
-				val request = HttpRequest(GET, sessionID, "resources" :: "static.html" :: Nil)
+				val request = httpRequest(GET, sessionID, "resources" :: "static.html" :: Nil)
 				for(i <- 0 to 10){
 					master ! HttpInteraction(asyncContext, request, httpServletResponse)
 				}
@@ -166,7 +173,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 			}
 		}
 		"recieving a HTTP POST request to an in memory response (Hello World time)" should {
-			val request = HttpRequest(POST, sessionID,  "hello" :: "world" :: Nil, Map("parameter" -> Array("postedValue")))
+			val request = httpRequest(POST, sessionID,  "hello" :: "world" :: Nil, Map("parameter" -> Array("postedValue")))
 			
 			"handle simple request" in {
 				val httpServletResponse = call(request)
@@ -178,40 +185,40 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 		
 		"handle statefull response" should {
 			"handle POST REDIRECT GET" in {
-				val httpServletResponse = call(HttpRequest(GET, sessionID,  "statefull" :: "request" :: Nil))
+				val httpServletResponse = call(httpRequest(GET, sessionID,  "statefull" :: "request" :: Nil))
 				assert(httpServletResponse.getStatus === OK.code)
 				assert(httpServletResponse.contentType === "text/html")
 				val responseText = httpServletResponse.text.split("_")
 				val stateful = responseText(0)
 				val func = responseText(1)
 				
-				val httpServletResponseStatefull = call(HttpRequest(POST, sessionID,  "post" :: stateful :: func :: Nil, Map("key" -> Array("value"))))
+				val httpServletResponseStatefull = call(httpRequest(POST, sessionID,  "post" :: stateful :: func :: Nil, Map("key" -> Array("value"))))
 				assert(httpServletResponseStatefull.getStatus === Found.code)
 				val location = httpServletResponseStatefull.headers("Location")
 				assert(location.startsWith(List("some", "where", "new").mkString("/", "/", "")))
 				
 				val param = location.split("\\?")(1).split("=")
-				val httpServletResponseRedirect = call( HttpRequest(GET, sessionID,  List("some", "where", "new"), Map(param(0) -> param.tail)))
+				val httpServletResponseRedirect = call( httpRequest(GET, sessionID, List("some", "where", "new"), Map(param(0) -> param.tail)))
 				assert(httpServletResponseRedirect.getStatus === OK.code)
 				assert(httpServletResponseRedirect.contentType === "text/html")
 				assert(httpServletResponseRedirect.text === "<html><body>redirect post</body></html>")
 			}
 			"handle simple ajax post" in {
-				val httpServletResponse = call(HttpRequest(GET, sessionID,  "statefull" :: "ajaxrequest" :: Nil))
+				val httpServletResponse = call(httpRequest(GET, sessionID,  "statefull" :: "ajaxrequest" :: Nil))
 				assert(httpServletResponse.getStatus === OK.code)
 				assert(httpServletResponse.contentType === "text/html")
 				val text = httpServletResponse.text.split("_")
 				val statefull = text(0)
 				val id = text(1)
 				
-				val httpServletResponseAjax = call( HttpRequest(POST, sessionID,  "ajax" :: statefull :: id :: Nil, Map("key" -> Array("value"))))
+				val httpServletResponseAjax = call( httpRequest(POST, sessionID, "ajax" :: statefull :: id :: Nil, Map("key" -> Array("value"))))
 				assert(httpServletResponseAjax.text === "callback();")
 				assert(httpServletResponseAjax.getStatus === OK.code)
 				assert(httpServletResponseAjax.contentType === "text/javascript")
 			}
 			
 			"handle simple ajax callback" in {
-				val request = HttpRequest(GET, sessionID,  "statefull" :: "ajaxcallback" :: Nil)
+				val request = httpRequest(GET, sessionID, "statefull" :: "ajaxcallback" :: Nil)
 				val httpServletResponse = call(request)
 				assert(httpServletResponse.getStatus === OK.code)
 				assert(httpServletResponse.contentType === "text/html")
@@ -219,13 +226,13 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 				val statefull = text(0)
 				val key = text(1)
 				
-				val httpServletResponseAjax = call(HttpRequest(POST, sessionID,  "ajax" :: statefull :: Nil, Map(key -> Array("inputValue"))))
+				val httpServletResponseAjax = call(httpRequest(POST, sessionID,  "ajax" :: statefull :: Nil, Map(key -> Array("inputValue"))))
 				assert(httpServletResponseAjax.getStatus === OK.code)
 				assert(httpServletResponseAjax.contentType === "text/javascript")
 				assert(httpServletResponseAjax.text === "inputCallback:inputValue();")
 			}
 			"handle simple ajax callback handler" in {
-				val request = HttpRequest(GET, sessionID,  "statefull" :: "ajaxhandler" :: Nil)
+				val request = httpRequest(GET, sessionID, "statefull" :: "ajaxhandler" :: Nil)
 				val httpServletResponse = call(request)
 				assert(httpServletResponse.getStatus === OK.code)
 				assert(httpServletResponse.contentType === "text/html")
@@ -233,7 +240,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 				val statefull = text(0)
 				val key = text(1)
 				
-				val httpServletResponseAjax = call(HttpRequest(POST, sessionID,  "ajax" :: statefull :: key :: Nil, Map(key -> Array("inputValue"))))
+				val httpServletResponseAjax = call(httpRequest(POST, sessionID,  "ajax" :: statefull :: key :: Nil, Map(key -> Array("inputValue"))))
 				assert(httpServletResponseAjax.getStatus === OK.code)
 				assert(httpServletResponseAjax.contentType === "text/html")
 				assert(httpServletResponseAjax.text === "got back here")
@@ -242,13 +249,13 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 		
 		"handle polling" should {
 			"handle pushing messages" in {
-				val request = HttpRequest(GET, sessionID,  "statefull" :: "pull" :: Nil)
+				val request = httpRequest(GET, sessionID,  "statefull" :: "pull" :: Nil)
 				val httpServletResponse = call(request)
 				assert(httpServletResponse.getStatus === OK.code)
 				assert(httpServletResponse.contentType === "text/html")
 				val statefull = httpServletResponse.text
 				
-				val httpServletResponsePull = call(HttpRequest(POST, sessionID,  "pull" :: statefull :: Nil))
+				val httpServletResponsePull = call(httpRequest(POST, sessionID,  "pull" :: statefull :: Nil))
 				assert(httpServletResponsePull.getStatus === OK.code)
 				assert(httpServletResponsePull.contentType === "text/json")
 				val RegExp = """\{"messages":\[\{"id":"(.*)", "message":"Message\(\);"\}\]\}""".r
