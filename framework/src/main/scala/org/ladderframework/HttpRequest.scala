@@ -23,7 +23,7 @@ class ServletHttpRequest(req: HttpServletRequest) extends HttpRequest{
 	override def headers: String => Option[String] = s => Option(req.getHeader(s))
 	def sessionID:String = req.getSession().getId()
 	def path:List[String] = req.getServletPath.split("/").filterNot(_.isEmpty).toList
-	def parameters: Map[String,Array[String]]  = req.getParameterMap.asScala.toMap 
+	def parameters: Map[String,Array[String]]  = req.getParameterMap.asScala.toMap
 	//TODO S wrap Part in something appropriate
 	override def parts = if(Option(req.getContentType).exists(_.startsWith("multipart/form-data"))) 
 					req.getParts.toList else Nil

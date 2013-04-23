@@ -3,34 +3,36 @@ package org.ladderframework
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import org.scalatest.WordSpec
-import org.scalatest.GivenWhenThen
-import com.typesafe.config.ConfigFactory
-import akka.actor.ActorSystem
-import akka.actor.Props
-import org.scalatest.BeforeAndAfterAll
-import akka.testkit.TestKit
-import org.ladderframework.mock._
-import java.util.concurrent.TimeUnit
-import bootstrap.LadderBoot
-import akka.actor.ActorRef
-import akka.actor.Actor
-import org.ladderframework.js.JsCall
-import org.ladderframework.js.JsCmd
-import org.junit.runner.RunWith
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Success
+import com.typesafe.config.ConfigFactory
+import org.scalatest.WordSpec
+import org.scalatest.GivenWhenThen
+import org.scalatest.BeforeAndAfterAll
+import org.ladderframework.mock._
+import bootstrap.LadderBoot
+import akka.actor.ActorSystem
+import akka.actor.Props
+import akka.actor.ActorRef
+import akka.actor.Actor
+import akka.actor.PoisonPill
+import akka.routing.RoundRobinRouter
+import akka.testkit.TestKit
 import javax.servlet.http.HttpServletResponse
+import java.util.concurrent.TimeUnit
+import org.ladderframework.js.JsCall
+import org.ladderframework.js.JsCmd
+import org.junit.runner.RunWith
 
 class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec with GivenWhenThen with BeforeAndAfterAll{
 
 	def this() = this(ActorSystem("WebSystem"))
 	
 	val helloWorldResponse = Future(HtmlResponse("<html><body>hello world</body></html>"))
+	val requestHandler = system.actorOf(Props[RequestHandler].withRouter(RoundRobinRouter(10)), name = "requestHandler")
 	
 	val sessionID = "sessionID"
-	val master = system.actorOf(Props[Master], name = "master")
 	
 	override def beforeAll {
 		LadderBoot.site = {
@@ -89,15 +91,15 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 			case _ => "NOT FOUND"
 		}
 		
-		master ! CreateSession(sessionID)
+		system.actorOf(SessionActor(sessionID), name = sessionID)
   }
 	
 	def send(msg:Any) {
-		system.actorFor(master.path / "requestHandler") ! msg 
+		requestHandler ! msg 
 	}
 		
 	override def afterAll {
-		master ! RemoveSession(sessionID)
+		system.actorFor(sessionID:: Nil) ! PoisonPill
     system.shutdown()
   }
 	
@@ -105,7 +107,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 		val httpServletResponse = new HttpServletResponseMock()
 		val asyncContext = new AsyncContextMock(httpServletResponse)
 		send(HttpInteraction(asyncContext, request, httpServletResponse))
-		asyncContext.latch.await(2, TimeUnit.SECONDS)
+		assert(asyncContext.latch.await(2, TimeUnit.SECONDS))
 		httpServletResponse
 	}
 	
@@ -166,7 +168,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 				val asyncContext = new AsyncContextMock(httpServletResponse, 10)
 				val request = httpRequest(GET, sessionID, "resources" :: "static.html" :: Nil)
 				for(i <- 0 to 10){
-					master ! HttpInteraction(asyncContext, request, httpServletResponse)
+					requestHandler ! HttpInteraction(asyncContext, request, httpServletResponse)
 				}
 				asyncContext.latch.await(1, TimeUnit.SECONDS)
 				assert(asyncContext.latch.getCount === 0)

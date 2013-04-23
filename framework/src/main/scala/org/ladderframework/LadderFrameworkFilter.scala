@@ -1,7 +1,6 @@
 package org.ladderframework
 
 import org.ladderframework.logging.Loggable
-
 import akka.actor.Props
 import akka.actor.actorRef2Scala
 import bootstrap.LadderBoot
@@ -19,6 +18,8 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import javax.servlet.http.HttpSessionEvent
 import javax.servlet.http.HttpSessionListener
+import akka.actor.PoisonPill
+import akka.routing.RoundRobinRouter
 
 @WebFilter(urlPatterns = Array("/*"), asyncSupported = true)
 @MultipartConfig(location = "/tmp", fileSizeThreshold = 1048576, maxFileSize = 52428800, maxRequestSize = 52428800)
@@ -27,8 +28,7 @@ class LadderFrameworkFilter extends Filter with Loggable {
 	import bootstrap.LadderBoot.system
 	
   // create the result listener, which will print the result and shutdown the system
-  val master = system.actorOf(Props[Master], name = "master")
-  def requestHandler = system.actorFor(master.path / "requestHandler")
+  def requestHandler = system.actorOf(Props[RequestHandler].withRouter(RoundRobinRouter(10)), name = "requestHandler")
 	var config: FilterConfig = _
 	
 	lazy val asyncListener = new AsyncListener{
@@ -52,13 +52,14 @@ class LadderFrameworkFilter extends Filter with Loggable {
 			def sessionCreated(sessionEvent: HttpSessionEvent) {
 				val sessionId = sessionEvent.getSession.getId
 				debug("Create session: " + sessionId)
-				master ! CreateSession(sessionId)
+				system.actorOf(SessionActor(sessionId), name = sessionId)
 			} 
 			def sessionDestroyed(sessionEvent: HttpSessionEvent) {
 				val sessionId = sessionEvent.getSession.getId
 				debug("Remove session: " + sessionId)
-				master ! RemoveSession(sessionId)
+				system.actorSelection("user/" + sessionId) ! PoisonPill
 			} 
+			
 		})
 		LadderBoot.mimeTypeImpl = cxt.getMimeType
 		LadderBoot.resourceAsStreamImpl = cxt.getResourceAsStream

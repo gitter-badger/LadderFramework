@@ -28,24 +28,6 @@ case class PushMessage(id: String = Utils.uuid, message: String){
 	lazy val asJson = {"""{"id":"""" + id + """", "message":"""" + message.replace("\"", "\\\"") + """"}"""}
 }
 
-class Master extends Actor with ActorLogging {
- 
-	val requestHandler = context.actorOf(Props[RequestHandler].withRouter(RoundRobinRouter(10)), name = "requestHandler")
-	
-	override def receive = {
-		case hi : HttpInteraction => 
-			log.debug("receive - HttpInteraction: " + hi)
-			requestHandler ! hi 
-		case CreateSession(sessionID) => 
-			log.debug("receive - CreateSession: " + sessionID)
-			context.actorOf(Props(new SessionActor(sessionID)), name = sessionID)
-		case RemoveSession(sessionID) =>
-			log.debug("receive - RemoveSession: " + sessionID)
-			val session:ActorRef = context.actorFor(sessionID:: Nil)
-			session ! PoisonPill
-	}
-	
-}
 
 class RequestHandler extends Actor with ActorLogging {
 	
@@ -54,10 +36,14 @@ class RequestHandler extends Actor with ActorLogging {
 			log.debug("receive - HttpInteraction: " + hi)
 			val sessionID = hi.req.sessionID
 			// If request to existing find actor. Find and send
-			val session:ActorRef = context.actorFor(context.system / "master" / sessionID)
+			val session = context.system.actorSelection("user/" + sessionID)
 			session ! hi
 	}
 	
+}
+
+object SessionActor{
+	def apply(sessionID:String): Props = Props(new SessionActor(sessionID))
 }
 
 class SessionActor(sessionID:String) extends Actor with ActorLogging{

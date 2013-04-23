@@ -28,7 +28,7 @@ class ResponseContainerActorSpec (system: ActorSystem) extends TestKit(system) w
 				val uuid = Utils.uuid
 				LadderBoot.timeToLivePage = 200
 				val initalResponseContainer = system.actorOf(Props(new InitalResponseContainer(null, null, uuid)))
-				awaitCond(initalResponseContainer.isTerminated, 1000 millis, 25 millis)
+				awaitCond(initalResponseContainer.isTerminated, 2000 millis, 25 millis)
 			}
 		}
 	}
