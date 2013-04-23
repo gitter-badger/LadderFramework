@@ -28,7 +28,7 @@ class LadderFrameworkFilter extends Filter with Loggable {
 	import bootstrap.LadderBoot.system
 	
   // create the result listener, which will print the result and shutdown the system
-  def requestHandler = system.actorOf(Props[RequestHandler].withRouter(RoundRobinRouter(10)), name = "requestHandler")
+  val requestHandler = system.actorOf(Props[RequestHandler].withRouter(RoundRobinRouter(10)), name = "requestHandler")
 	var config: FilterConfig = _
 	
 	lazy val asyncListener = new AsyncListener{
