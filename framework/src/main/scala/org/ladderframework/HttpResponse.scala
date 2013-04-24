@@ -84,6 +84,17 @@ case class HttpResourceResponse(status:Status = OK, path:List[String]) extends H
 	})
 }
 
+case class XmlResponse(content:NodeSeq) extends HttpResponse{
+	def status:Status = OK
+	def contentType = "text/xml"	
+	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context:Context, ec:ExecutionContext) = Future{
+		httpServletResponse.setStatus(status.code)
+		httpServletResponse.setContentType(contentType)
+		httpServletResponse.getWriter().append(content.mkString).flush()
+		status
+	}
+}
+
 case class JsonResponse(content:String) extends HttpResponse{
 	def status:Status = OK
 	def contentType = "text/json"	
