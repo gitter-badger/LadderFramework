@@ -1,13 +1,25 @@
 project/target
 framework/target
 framework/.worksheet
-.classpath
-.settings
-.cache
-.project
-target
 test-framework/target
 test-framework/bin
 framework/bin
 bitbucket
 bitbucket.pub
+*.class
+*.log
+
+# sbt specific
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+
+# Scala-IDE specific
+.scala_dependencies
+.classpath
+.settings
+.cache
+.project
