@@ -137,72 +137,6 @@ object Forms {
     ObjectMapping18(apply, unapply, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18)
   }
 
-//  /**
-//   * Creates a Mapping for a single value.
-//   *
-//   * For example:
-//   * {{{
-//   * Form(
-//   *   single(
-//   *     email
-//   *   )
-//   * )
-//   * }}}
-//   *
-//   * @return a mapping for a type A1
-//   */
-//  def single[A1, M1 <: Mapping{type T = A1}](a1: M1) = mapping[A1, A1, M1](a1)((a1: A1) => (a1))((t: (A1)) => Some(t))
-//
-//  /**
-//   * Creates a Mapping of tuple `(A,B)`.
-//   *
-//   * For example:
-//   * {{{
-//   * Form(
-//   *   tuple(
-//   *     email,
-//   *     nonEmptyText
-//   *   )
-//   * )
-//   * }}}
-//   *
-//   * @return a mapping for a tuple `(A,B)`
-//   */
-//  def tuple[A1, A2, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}](a1: M1, a2: M2) = mapping[(A1, A2), A1, A2, M1, M2](a1, a2)((a1: A1, a2: A2) => (a1, a2))((t: (A1, A2)) => Some(t))
-//
-//  def tuple[A1, A2, A3, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}](a1: M1, a2: M2, a3: M3) = mapping[(A1, A2, A3), A1, A2, A3, M1, M2, M3]((a1: A1, a2: A2, a3: A3) => (a1, a2, a3))((t: (A1, A2, A3)) => Some(t))(a1, a2, a3)
-//
-//  def tuple[A1, A2, A3, A4, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}](a1: M1, a2: M2, a3: M3, a4: M4) = mapping[(A1, A2, A3, A4), A1, A2, A3, A4, M1, M2, M3, M4](a1, a2, a3, a4)((a1: A1, a2: A2, a3: A3, a4: A4) => (a1, a2, a3, a4))((t: (A1, A2, A3, A4)) => Some(t))
-//
-//  def tuple[A1, A2, A3, A4, A5, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5) = mapping[(A1, A2, A3, A4, A5), A1, A2, A3, A4, A5, M1, M2, M3, M4, M5](a1, a2, a3, a4, a5)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => (a1, a2, a3, a4, a5))((t: (A1, A2, A3, A4, A5)) => Some(t))
-//
-//  def tuple[A1, A2, A3, A4, A5, A6, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6) = mapping[(A1, A2, A3, A4, A5, A6), A1, A2, A3, A4, A5, A6, M1, M2, M3, M4, M5, M6](a1, a2, a3, a4, a5, a6)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6) => (a1, a2, a3, a4, a5, a6))((t: (A1, A2, A3, A4, A5, A6)) => Some(t))
-//
-//  def tuple[A1, A2, A3, A4, A5, A6, A7, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7) = mapping[(A1, A2, A3, A4, A5, A6, A7), A1, A2, A3, A4, A5, A6, A7, M1, M2, M3, M4, M5, M6, M7](a1, a2, a3, a4, a5, a6, a7)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7) => (a1, a2, a3, a4, a5, a6, a7))((t: (A1, A2, A3, A4, A5, A6, A7)) => Some(t))
-//
-//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8), A1, A2, A3, A4, A5, A6, A7, A8, M1, M2, M3, M4, M5, M6, M7, M8](a1, a2, a3, a4, a5, a6, a7, a8)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8) => (a1, a2, a3, a4, a5, a6, a7, a8))((t: (A1, A2, A3, A4, A5, A6, A7, A8)) => Some(t))
-//
-//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9), A1, A2, A3, A4, A5, A6, A7, A8, A9, M1, M2, M3, M4, M5, M6, M7, M8, M9](a1, a2, a3, a4, a5, a6, a7, a8, a9)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9) => (a1, a2, a3, a4, a5, a6, a7, a8, a9))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9)) => Some(t))
-//
-//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10)) => Some(t))
-//
-//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11)) => Some(t))
-//
-//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12)) => Some(t))
-//
-//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13)) => Some(t))
-//
-//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13, a14: M14) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14)) => Some(t))
-//
-//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13, a14: M14, a15: M15) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14, a15: A15) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15)) => Some(t))
-//
-//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}, M16 <: Mapping{type T = A16}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13, a14: M14, a15: M15, a16: M16) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14, a15: A15, a16: A16) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16)) => Some(t))
-//
-//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}, M16 <: Mapping{type T = A16}, M17 <: Mapping{type T = A17}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13, a14: M14, a15: M15, a16: M16, a17: M17) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16, M17](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14, a15: A15, a16: A16, a17: A17) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17)) => Some(t))
-//
-//  def tuple[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}, M16 <: Mapping{type T = A16}, M17 <: Mapping{type T = A17}, M18 <: Mapping{type T = A18}](a1: M1, a2: M2, a3: M3, a4: M4, a5: M5, a6: M6, a7: M7, a8: M8, a9: M9, a10: M10, a11: M11, a12: M12, a13: M13, a14: M14, a15: M15, a16: M16, a17: M17, a18: M18) = mapping[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18), A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16, M17, M18](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18)((a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14, a15: A15, a16: A16, a17: A17, a18: A18) => (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18))((t: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18)) => Some(t))
-
-  // --
 
   import Form._
 import Formats._
@@ -215,7 +149,7 @@ import Formats._
    * Form(text)
    * }}}
    */
-  val text: FieldMapping[String] = of[String]
+  def text: FieldMapping[String] = of[String]
 
   /**
    * Constructs a simple mapping for required text field.
@@ -229,7 +163,7 @@ import Formats._
    * Form(nonEmptyText)
    * }}}
    */
-  val nonEmptyText: FieldMapping[String] = text verifying Constraints.nonEmpty
+  def nonEmptyText: FieldMapping[String] = text verifying Constraints.nonEmpty
 
   /**
    * Constructs a simple mapping for a text field.
@@ -270,7 +204,7 @@ import Formats._
    * Form(number)
    * }}}
    */
-  val number: FieldMapping[Int] = of[Int]
+  def number: FieldMapping[Int] = of[Int]
 
   /**
    * Constructs a simple mapping for a numeric field (using a Long type behind).
@@ -280,7 +214,7 @@ import Formats._
    * Form(longNumber)
    * }}}
    */
-  val longNumber: FieldMapping[Long] = of[Long]
+  def longNumber: FieldMapping[Long] = of[Long]
 
   /**
    * Constructs a simple mapping for a numeric field.
@@ -473,7 +407,7 @@ import Formats._
    *   Form(email)
    * }}}
    */
-  val email: FieldMapping[String] = of[String] verifying Constraints.pattern(
+  def email: FieldMapping[String] = of[String] verifying Constraints.pattern(
     """\b[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\b""".r,
     "constraint.email",
     "error.email")
@@ -486,7 +420,7 @@ import Formats._
    *   Form(boolean)
    * }}}
    */
-  val boolean: FieldMapping[Boolean] = of[Boolean]
+  def boolean: FieldMapping[Boolean] = of[Boolean]
 
   //TODO fix casting
   def checked(msg: String): FieldMapping[Boolean] = (boolean verifying (msg, (bool: Boolean) => bool)).asInstanceOf[FieldMapping[Boolean]]
