@@ -280,7 +280,7 @@ class CssSelectorSpec extends FunSpec with GivenWhenThen {
   		val transform = Future({
   			val s = java.lang.System.currentTimeMillis()
   			val t = (transformfunc).apply(html)
-  			println("time: " + (java.lang.System.currentTimeMillis() - s))
+  			//println("time: " + (java.lang.System.currentTimeMillis() - s))
   			t
   		}) 
   		Then("it is done in a heart beat")

@@ -62,7 +62,7 @@ object Dependency {
 		val logback = "1.0.7"
 		val scalatest = "2.0.M6-SNAP5"
 		val slf4j = "1.6.4"
-		val akka = "2.1.2"
+		val akka = "2.1.4"
 		val scalaVersion = "2.10.1"
 	}
 

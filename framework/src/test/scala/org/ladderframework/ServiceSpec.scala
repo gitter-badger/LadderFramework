@@ -40,7 +40,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec wit
 			case req @ HttpRequest(POST | GET, "hello" :: "world" :: Nil) => 
 				Future(HtmlResponse("<html><body>hello world " + req.parameters("parameter").head + "</body></html>"))
 			case HttpRequest(GET, "resources" :: static :: Nil) =>
-				println("HttpResourceResponse: " + static)
+				//println("HttpResourceResponse: " + static)
 				Future(HttpResourceResponse(path = static :: Nil))
 			case HttpRequest(GET, "statefull" :: "request" :: Nil) =>
 				Future(new StatefulHtmlResponse{

@@ -16,17 +16,17 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Promise
 import scala.xml.Xhtml
 
-trait HttpResponse{
-	def status:Status 
-	
-	def applyToHttpServletResponse(httpServletResponse:HttpServletResponse)(implicit context:Context, ec:ExecutionContext):Future[Status]
+trait HttpResponse {
+	def status: Status
+
+	def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext): Future[Status]
 }
 
-case class HttpRedirectResponse(location:List[String], params: Option[String] = None) extends HttpResponse{
+case class HttpRedirectResponse(location: List[String], params: Option[String] = None) extends HttpResponse {
 	val status = Found
-	
-	override def applyToHttpServletResponse(httpServletResponse:HttpServletResponse)(implicit context:Context, ec:ExecutionContext):Future[Status] = {
-		Future{
+
+	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext): Future[Status] = {
+		Future {
 			httpServletResponse.setStatus(status.code)
 			httpServletResponse.setHeader("Location", location.mkString("/", "/", "") + params.map("?" + _ + "=redirect").getOrElse(""))
 			status
@@ -34,16 +34,15 @@ case class HttpRedirectResponse(location:List[String], params: Option[String] = 
 	}
 }
 
-object NotFoundResponse extends HtmlResponse{
+object NotFoundResponse extends HtmlResponse {
 	override final val status = NotFound
-	override def content(implicit ec:ExecutionContext):Future[String] = Future.successful(
-		<html><head><title>404</title></head><body>404</body></html>.toString
-	)
+	override def content(implicit ec: ExecutionContext): Future[String] = Future.successful(
+		<html><head><title>404</title></head><body>404</body></html>.toString)
 }
 
-case class ErrorResponse(override val status:Status, ot: Option[Throwable]) extends HtmlResponse{
-	
-	lazy val throwableString:String = {
+case class ErrorResponse(override val status: Status, ot: Option[Throwable]) extends HtmlResponse {
+
+	lazy val throwableString: String = {
 		ot.map(t => {
 			val sw = new StringWriter
 			val pw = new PrintWriter(sw)
@@ -51,43 +50,42 @@ case class ErrorResponse(override val status:Status, ot: Option[Throwable]) exte
 			sw.toString()
 		}).getOrElse("")
 	}
-	
-	def content(implicit ec:ExecutionContext):Future[String] = Future{ 
+
+	def content(implicit ec: ExecutionContext): Future[String] = Future {
 		<html>
-			<head><title>{status.code}</title></head>
-			<body><h1>{status.code}</h1><h2>{ot.map(_.getMessage).getOrElse("")}</h2><pre>{throwableString}</pre></body>
+			<head><title>{ status.code }</title></head>
+			<body><h1>{ status.code }</h1><h2>{ ot.map(_.getMessage).getOrElse("") }</h2><pre>{ throwableString }</pre></body>
 		</html>.toString
 	}
 }
 
-case class HttpResourceResponse(status:Status = OK, path:List[String]) extends HttpResponse with Loggable {
+case class HttpResourceResponse(status: Status = OK, path: List[String]) extends HttpResponse with Loggable {
 	lazy val pathString = path.mkString("/", "/", "")
-	
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context:Context, ec:ExecutionContext):Future[Status] = Future{
+
+	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext): Future[Status] = Future {
 		LadderBoot.resource(pathString)
 	}.flatMap(file => {
 		debug("HttpResourceResponse - print: " + file)
-		if(file != null){
-			Future{
+		if (file != null) {
+			Future {
 				httpServletResponse.setStatus(status.code)
-				path.reverse.headOption.foreach(contentType => 
-					httpServletResponse.setContentType(LadderBoot.mimeType(contentType))
-				)
+				path.reverse.headOption.foreach(contentType =>
+					httpServletResponse.setContentType(LadderBoot.mimeType(contentType)))
 				val content = LadderBoot.resourceAsStream(pathString)
 				val out = httpServletResponse.getOutputStream()
-		    Iterator.continually (content.read).takeWhile (-1 !=).foreach(out.write)
-		    status
+				Iterator.continually(content.read).takeWhile(-1 !=).foreach(out.write)
+				status
 			}
-		}else{
+		} else {
 			LadderBoot.notFound.applyToHttpServletResponse(httpServletResponse)
 		}
 	})
 }
 
-case class XmlResponse(content:NodeSeq) extends HttpResponse{
-	def status:Status = OK
-	def contentType = "text/xml"	
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context:Context, ec:ExecutionContext) = Future{
+case class XmlResponse(content: NodeSeq) extends HttpResponse {
+	def status: Status = OK
+	def contentType = "text/xml"
+	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext) = Future {
 		httpServletResponse.setStatus(status.code)
 		httpServletResponse.setContentType(contentType)
 		httpServletResponse.getWriter().append(content.mkString).flush()
@@ -95,21 +93,21 @@ case class XmlResponse(content:NodeSeq) extends HttpResponse{
 	}
 }
 
-case class JsonResponse(content:String) extends HttpResponse{
-	def status:Status = OK
-	def contentType = "text/json"	
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context:Context, ec:ExecutionContext) = Future{
+case class JsonResponse(content: String) extends HttpResponse {
+	def status: Status = OK
+	def contentType = "text/json"
+	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext) = Future {
 		httpServletResponse.setStatus(status.code)
 		httpServletResponse.setContentType(contentType)
 		httpServletResponse.getWriter().append(content).flush()
 		status
 	}
 }
-case class JsCmdResponse(cmd: JsCmd) extends HttpResponse with Loggable{
-	val status:Status = OK
-	val contentType = "text/javascript"	
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context:Context, ec:ExecutionContext) = Future{
-		debug(this)	
+case class JsCmdResponse(cmd: JsCmd) extends HttpResponse with Loggable {
+	val status: Status = OK
+	val contentType = "text/javascript"
+	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext) = Future {
+		debug(this)
 		httpServletResponse.setStatus(status.code)
 		httpServletResponse.setContentType(contentType)
 		httpServletResponse.getWriter().append(cmd.toCmd).flush()
@@ -117,11 +115,11 @@ case class JsCmdResponse(cmd: JsCmd) extends HttpResponse with Loggable{
 	}
 }
 
-case class PullResponse(messages:List[PushMessage]) extends HttpResponse with Loggable{
-	val status:Status = OK
-	val contentType = "text/json"	
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context:Context, ec:ExecutionContext) = Future{
-		debug(this)	
+case class PullResponse(messages: List[PushMessage]) extends HttpResponse with Loggable {
+	val status: Status = OK
+	val contentType = "text/json"
+	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext) = Future {
+		debug(this)
 		httpServletResponse.setStatus(status.code)
 		httpServletResponse.setContentType(contentType)
 		httpServletResponse.getWriter().append(messages.map(_.asJson).mkString("""{"messages":[""", ",", "]}")).flush()
@@ -129,11 +127,11 @@ case class PullResponse(messages:List[PushMessage]) extends HttpResponse with Lo
 	}
 }
 
-trait HtmlResponse extends HttpResponse{
-	def status:Status = OK
-	def contentType = "text/html"	
-	def content(implicit ec:ExecutionContext):Future[String]
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context:Context, ec:ExecutionContext) = 
+trait HtmlResponse extends HttpResponse {
+	def status: Status = OK
+	def contentType = "text/html"
+	def content(implicit ec: ExecutionContext): Future[String]
+	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext) =
 		content.map(cont => {
 			httpServletResponse.setStatus(status.code)
 			httpServletResponse.setContentType(contentType)
@@ -142,23 +140,22 @@ trait HtmlResponse extends HttpResponse{
 		})
 }
 
-object HtmlResponse{
-	
-	def apply(html: String) = new HtmlResponse{
-		def content(implicit ec:ExecutionContext) = Future.successful(html)
+object HtmlResponse {
+
+	def apply(html: String) = new HtmlResponse {
+		def content(implicit ec: ExecutionContext) = Future.successful(html)
 	}
 }
 
-trait Stateful{
-	self: HtmlResponse => 
-	def statefullContent(implicit context:Context, ec:ExecutionContext):Future[String]
-	final override def content(implicit ec:ExecutionContext) = Future("") 
+trait Stateful {
+	self: HtmlResponse =>
+	def statefullContent(implicit context: Context, ec: ExecutionContext): Future[String]
+	final override def content(implicit ec: ExecutionContext) = Future("")
 }
 
-trait StatefulHtmlResponse extends HtmlResponse with Stateful{
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context:Context, ec:ExecutionContext) = 
+trait StatefulHtmlResponse extends HtmlResponse with Stateful {
+	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext) =
 		statefullContent.map(content => {
-			println("=======================>")
 			httpServletResponse.setStatus(status.code)
 			httpServletResponse.setContentType(contentType)
 			httpServletResponse.getWriter().append(content).flush()
@@ -166,29 +163,28 @@ trait StatefulHtmlResponse extends HtmlResponse with Stateful{
 		})
 }
 
-
-trait HtmlPage extends StatefulHtmlResponse with Loggable{
+trait HtmlPage extends StatefulHtmlResponse with Loggable {
 	val source: String
-	
+
 	private val xml: Promise[NodeSeq] = Promise()
-	
+
 	def addPush(implicit context: Context): NodeSeq => NodeSeq = {
-		"body" #+> <script type="text/javascript">{"$(function(){ladder.push('" + context.contextID + "');})"}</script>
+		"body" #+> <script type="text/javascript">{ "$(function(){ladder.push('" + context.contextID + "');})" }</script>
 	}
 
-	def render(implicit context: Context, ec:ExecutionContext): Future[NodeSeq => NodeSeq]
-	override def statefullContent(implicit context:Context, ec:ExecutionContext):Future[String] = {
-		for{
-			x <- xml.completeWith(Future{
-					val resouce = LadderBoot.resource(source)
-					XML.load(resouce)
-				}).future
+	def render(implicit context: Context, ec: ExecutionContext): Future[NodeSeq => NodeSeq]
+	override def statefullContent(implicit context: Context, ec: ExecutionContext): Future[String] = {
+		for {
+			x <- xml.completeWith(Future {
+				val resouce = LadderBoot.resource(source)
+				XML.load(resouce)
+			}).future
 			r <- render
 		} yield "<!DOCTYPE html>\n" + Xhtml.toXhtml(addPush.apply(r(x)))
 	}
 }
 
-sealed abstract class Status(val code:Int)
+sealed abstract class Status(val code: Int)
 
 object Continue extends Status(100)
 object SwitchingProtocols extends Status(101)
