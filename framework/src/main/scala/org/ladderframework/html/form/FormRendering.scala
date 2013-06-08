@@ -19,13 +19,15 @@ case class Ajax[M <: Mapping](form: Form[M])
 		(callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => Future[JsCmd])(rendering: FormContext => M => (NodeSeq => NodeSeq))
 		(implicit context: Context) extends FormRendering{
 	val id = Utils.uuid
-	context.addAjaxFormSubmitCallback(req => {
+	val submitPath = context.addAjaxFormSubmitCallback(req => {
 		val boundForm = form.bindFromRequest(req.parameters.mapValues(_.toSeq))
 		val either = if(boundForm.hasErrors) Left[Form[M], Option[M#T]](boundForm) else Right[Form[M], Option[M#T]](boundForm.value)
 		callback(either, id)
 	})
 	
-	def transform(ns: NodeSeq): NodeSeq = <form id={id}>{rendering(form.context)(form.mapping)(ns)}</form>
+	def transform(ns: NodeSeq): NodeSeq = <form id={id} onsubmit="javascript:ladder.post(event)" action={submitPath}>{
+			rendering(form.context)(form.mapping)(ns)
+		}</form>
 }
 
 abstract class StatefullForm[M <: Mapping](
