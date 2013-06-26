@@ -91,6 +91,7 @@ class LadderFrameworkFilter extends Filter with Loggable {
 
 	def destroy() {
 		config = null
+		LadderBoot.onShutdown()
 		system.shutdown()
 	}
 	

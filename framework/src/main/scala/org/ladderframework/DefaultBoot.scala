@@ -23,6 +23,8 @@ trait DefaultBoot {
 		case (s, ot) => ErrorResponse(s, ot)
 	}
 	
+	def onShutdown(){}
+	
 	var timeToLivePage: Int = 10 * 60 * 1000
 	
 	//def resourcePath(resource:String):URL = getClass().getClassLoader().getResource(resource) 
