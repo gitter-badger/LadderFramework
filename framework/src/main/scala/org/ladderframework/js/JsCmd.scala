@@ -1,11 +1,31 @@
+
 package org.ladderframework{
 
+	import org.json4s.JsonAST.JValue
+	import org.json4s.jackson.JsonMethods._
 	import scala.xml.NodeSeq
 	
 	package object js{
 		implicit def string2JsArg(string:String):JsStringArg = JsStringArg(string)
 		implicit def nodeSeq2JsNodeSeqArg(ns:NodeSeq):JsNodeSeqArg = JsNodeSeqArg(ns)
 		
+		
+		implicit class JSInterpolation(val sc: StringContext) extends AnyVal {
+			def js(args: JValue*): JsCmd = {
+				val strings = sc.parts.iterator
+				val expressions = args.iterator
+				val buf = new StringBuffer(strings.next)
+				while(strings.hasNext) {
+					buf append compact(render(expressions.next))
+					buf append strings.next
+				}
+				JsRaw(buf.toString)
+			}
+		}
+		
+		private case class JsRaw(cmd: String) extends JsCmd{
+			def toCmd = cmd
+		} 
 		
 	}
 	
