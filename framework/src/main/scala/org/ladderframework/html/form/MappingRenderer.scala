@@ -236,7 +236,7 @@ package form{
 	
 	object CheckboxFieldRenderer{
 		
-		implicit object StringFieldRenderer extends PasswordFieldRenderer[Boolean]{
+		implicit object BooleanFieldRenderer extends CheckboxFieldRenderer[Boolean]{
 			def apply(mapping: FieldMapping[Boolean], label: String, attrs: Map[Symbol, String], context: FormContext, errorTransformer: ErrorMessageTransformer): NodeSeq = {
 				
 				val id = attrs.getOrElse('id, Utils.uuid)
