@@ -10,6 +10,9 @@ Still here?
 
 I'm a fool for writing this code. There are thousands of bright people that have created great frameworks. True frameworks. So why did I spend time putting together this code? I could say that other frameworks are horrible. They are not. However I think framework developers have to make a lot of choices. By writing this code I have had to make these choises as well. It has provided me with better understanding of other frameworks as well.  
 
+> Good artists copy, great artists steal.
+> - Pablo Picasso
+
 So what have I done. I've looked a different frameworks that I really like. So I've picket the best parts and put them together. Lets have a look:
 * Routing draws inspiration from Unfiltered. Super simple and powerfull part of Scala. Can't believe that other frameworks haven't picked it up. (Lift uses it for something though).
 * Forms are great in Play. They should have been more typesafe so I changed that part.
