@@ -220,6 +220,8 @@ trait ResponseContainer extends Actor with ActorLogging{
 
 class PullActor(asyncContext: AsyncContext, res:HttpServletResponse) extends Actor with ActorLogging {
 	
+	object TimeToClose
+	
 	val asyncListener = new AsyncListener{
 		def onComplete(event: AsyncEvent) {
 			context.self ! PoisonPill
@@ -235,7 +237,11 @@ class PullActor(asyncContext: AsyncContext, res:HttpServletResponse) extends Act
 	
 	asyncContext.addListener(asyncListener)
 	
+	context.system.scheduler.scheduleOnce(24000 millis, context.self, TimeToClose)
+	
 	def receive = {
+		case TimeToClose => 
+			send(Nil)
 		case Nil =>
 		case msg : PushMessage =>
 			send(List(msg))

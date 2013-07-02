@@ -19,21 +19,29 @@ var ladder = (function() {
 				postData = postData + "&" + lastClick.button + "=clicked";
 			}
 
-			$.ajax({
-				url : url,
-				type : 'POST',
-				data : postData,
-				dataType : "script",
-				cache : false,
-				beforeSend : function(xhr) {
-					console.log("sending: " + xhr)
-				},
-				success : function(data) {
-					if (console && console.log) {
-						console.log('Sample of data:', data);
-					}
+			var error = function error(XMLHttpRequest, textStatus, errorThrown) {
+				console.log("error: " + XMLHttpRequest + " --- " + textStatus + " --- " + errorThrown);
+			};
+			
+			var success = function success(data) {
+				if (console && console.log) {
+					console.log('Sample of data:', data);
 				}
-			});
+				eval(data);
+			};
+			
+			var r = new XMLHttpRequest();
+			var noCache = Math.random();
+			r.open("POST", url, true);
+			r.onreadystatechange = function () {
+			  if (r.readyState != 4) return;
+			  if(r.status != 200) {
+				  error(r, r.statusText, r.responseText);
+			  }else{
+				  success(r.responseText);
+			  }
+			};
+			r.send(postData);
 		},
 
 		clickedLast : function(form, event) {
@@ -49,37 +57,42 @@ var ladder = (function() {
 			var val = $(event.target).val();
 			
 			console.log("url: " + url + ", val: " + val + ", name: " + name);
-			$.ajax({
-				url : url + "?" + name + "=" + val,
-				type : 'GET',
-				dataType : "script",
-				cache : false,
-				beforeSend : function(xhr) {
-					console.log("sending: " + xhr)
-				},
-				success : function(data) {
-					if (console && console.log) {
-						console.log('Sample of data:', data);
-					}
+			
+			var error = function error(XMLHttpRequest, textStatus, errorThrown) {
+				console.log("error: " + XMLHttpRequest + " --- " + textStatus + " --- " + errorThrown);
+			};
+			
+			var success = function success(data) {
+				if (console && console.log) {
+					console.log('Sample of data:', data);
 				}
-			});
+				eval(data);
+			};
+			
+			var r = new XMLHttpRequest();
+			var noCache = Math.random();
+			r.open("GET", url + "?" + name + "=" + val, true);
+			r.onreadystatechange = function () {
+			  if (r.readyState != 4) return;
+			  if(r.status != 200) {
+				  error(r, r.statusText, r.responseText);
+			  }else{
+				  success(r.responseText);
+			  }
+			};
+			r.send();
 		},
 
 		push : function push(pageId) {
 			var postData = '';
 			if(recievedIdArray.length > 0) {
 				var lastId = recievedIdArray.pop();
-				postData = "lastId=" + lastId
+				postData = "lastId=" + lastId + "&";
 			}
-			$.ajax({
-				url : "/pull/" + pageId + "/wait?" + postData,
-				//url: "/js/test.js",
-				type : "GET",
-				async : true,
-				cache : false,
-				timeout : 25000,
-				dataType : "json",
-				success : function(data) { 
+			
+			var success = function success(successData) { 
+				try{
+					var data = jQuery.parseJSON(successData);
 					$.each(data.messages, function(index, msg){
 						console.log("msg.id: " + msg.id)
 						recievedIdArray.push(msg.id);
@@ -90,16 +103,32 @@ var ladder = (function() {
 							console.log("error message: " + err);
 						}
 					});
-					ladder.push(pageId);
-				},
-				error : function(XMLHttpRequest, textStatus, errorThrown) {
-					if(textStatus != "timeout" || errorThrown != "timeout"){
-						// TODO error function
-						console.log("error: " + XMLHttpRequest + " --- " + textStatus + " --- " + errorThrown);
-					}
-					setTimeout('ladder.push("' + pageId + '")', 1000);
+				}catch(e){
+					console.log("Problems with message: " + e);
 				}
-			});
+				ladder.push(pageId);
+			};
+			
+			var error = function error(XMLHttpRequest, textStatus, errorThrown) {
+				if(textStatus != "timeout" || errorThrown != "timeout"){
+					// TODO error function
+					console.log("error: " + XMLHttpRequest + " --- " + textStatus + " --- " + errorThrown);
+				}
+				setTimeout('ladder.push("' + pageId + '")', 1000);
+			};
+			
+			var r = new XMLHttpRequest();
+			var noCache = Math.random();
+			r.open("GET", "/pull/" + pageId + "/wait?" + postData + "_=" + noCache, true);
+			r.onreadystatechange = function () {
+			  if (r.readyState != 4) return;
+			  if(r.status != 200) {
+				  error(r, r.statusText, r.responseText);
+			  }else{
+				  success(r.responseText);
+			  }
+			};
+			r.send();
 		}
 	}
 

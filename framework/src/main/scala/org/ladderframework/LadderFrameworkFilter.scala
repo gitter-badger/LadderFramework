@@ -32,14 +32,18 @@ class LadderFrameworkFilter extends Filter with Loggable {
 	var config: FilterConfig = _
 	
 	lazy val asyncListener = new AsyncListener{
-		def onStartAsync(evt: AsyncEvent) { debug("startAsync: " + evt.getSuppliedRequest().getLocalName())}
+		def onStartAsync(evt: AsyncEvent) { debug("startAsync: " + evt.getSuppliedRequest().asInstanceOf[HttpServletRequest].getRequestURI())}
 		def onError(evt: AsyncEvent) {
-			warn("Error" + evt.getSuppliedRequest().getLocalName())
+			warn("Error" + evt.getSuppliedRequest().asInstanceOf[HttpServletRequest].getRequestURI())
 			evt.getAsyncContext().complete()
+			evt.getAsyncContext.getResponse.getWriter.close()
+			evt.getSuppliedResponse.getWriter.close()
 		}
 		def onTimeout(evt: AsyncEvent){
-			info("timeout: " + evt.getSuppliedRequest().asInstanceOf[HttpServletRequest].getRequestURI())
+			debug("timeout: " + evt.getSuppliedRequest.asInstanceOf[HttpServletRequest].getRequestURI())
 			evt.getAsyncContext().complete()
+			evt.getAsyncContext.getResponse.getWriter.close()
+			evt.getSuppliedResponse.getWriter.close()
 		}
 		def onComplete(evt: AsyncEvent){debug("complete: " + evt.getSuppliedRequest().asInstanceOf[HttpServletRequest].getRequestURI())}
 	}
