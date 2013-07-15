@@ -12,6 +12,7 @@ import org.ladderframework.test.response._
 import bootstrap.LadderBoot
 import org.scalatest.concurrent.Futures
 import scala.util.Success
+import scala.util.Try
 
 class PageContentSpec extends FunSpec with GivenWhenThen with Futures{
 
@@ -22,7 +23,7 @@ class PageContentSpec extends FunSpec with GivenWhenThen with Futures{
 	implicit val context: Context = Context(
 		contextID = Utils.uuid, 
 		addResponse = (path: List[String], res: HttpResponse) => "", 
-		update = (str: JsCmd) => Unit )
+		update = (str: JsCmd) => Try{Unit} )
 		
 	val indexResponse = new IndexResponse
 	

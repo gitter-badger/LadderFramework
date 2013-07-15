@@ -133,8 +133,11 @@ trait ResponseContainer extends Actor with ActorLogging{
 		case (s, ot) => ErrorResponse(s, ot)
 	}
 	
-	def update(message: JsCmd) {
-		context.self ! PushMessage(message = message.toCmd)
+	def update(message: JsCmd): Try[Unit] = {
+		Option(self) match {
+			case Some(ref) if !ref.isTerminated => Try{(ref ! PushMessage(message = message.toCmd))} 
+			case _ => Failure(new IllegalStateException("page is closed"))
+		}
 	}
 	
 	implicit val statefulContext = new Context(uuid, addResponse, update)
@@ -256,7 +259,7 @@ class PullActor(asyncContext: AsyncContext, res:HttpServletResponse) extends Act
 		response.applyToHttpServletResponse(res).onComplete{
 			case Success(status) => 
 				asyncContext.complete()
-				log.debug("pull completed - fail, status: " + status)
+				log.debug("pull completed - success, status: " + status)
 			case Failure(throwable) =>
 				log.warning("pull problem completing fail result", throwable)
 				asyncContext.complete()

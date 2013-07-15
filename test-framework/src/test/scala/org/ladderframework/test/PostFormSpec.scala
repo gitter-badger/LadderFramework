@@ -10,6 +10,7 @@ import org.ladderframework.test.page._
 import org.ladderframework.js._
 import org.ladderframework.HttpResponse
 import org.ladderframework.Utils
+import scala.util.Try
 
 class PostFormSpec extends FunSpec with GivenWhenThen {
 	
@@ -20,7 +21,7 @@ class PostFormSpec extends FunSpec with GivenWhenThen {
 	implicit val context: Context = Context(
 		contextID = Utils.uuid, 
 		addResponse = (path: List[String], res: HttpResponse) => "", 
-		update = (str: JsCmd) => Unit )
+		update = (str: JsCmd) => Try{} )
 		
 	val indexResponse = new IndexResponse
 	

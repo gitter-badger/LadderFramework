@@ -11,6 +11,7 @@ import org.ladderframework.logging.Loggable
 import bootstrap.LadderBoot
 import scala.concurrent.Future
 import scala.collection.concurrent._
+import scala.util.Try
 
 object Context{
 	private val lineSeparator = System.getProperty("line.separator")
@@ -38,7 +39,7 @@ object Context{
 case class Context(
 		val contextID: String, 
 		addResponse: (List[String], HttpResponse) => String, 
-		update: JsCmd => Unit) extends Loggable {
+		update: JsCmd => Try[Unit]) extends Loggable {
 	
 	type Params = HttpRequest
 	
