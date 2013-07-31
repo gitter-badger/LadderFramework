@@ -24,8 +24,9 @@ import java.util.concurrent.TimeUnit
 import org.ladderframework.js.JsCall
 import org.ladderframework.js.JsCmd
 import org.junit.runner.RunWith
+import org.scalatest.WordSpecLike
 
-class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpec with GivenWhenThen with BeforeAndAfterAll{
+class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike with GivenWhenThen with BeforeAndAfterAll{
 
 	def this() = this(ActorSystem("WebSystem"))
 	

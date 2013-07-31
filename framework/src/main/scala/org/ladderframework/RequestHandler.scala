@@ -53,7 +53,7 @@ class SessionActor(sessionID:String) extends Actor with ActorLogging{
 			// If request to existing find actor. Find and send
 			path match {
 				case ("ajax" | "post" | "pull") :: id :: _ => //Match mer
-					context.actorFor(id) ! hi
+					context.actorSelection(id) ! hi
 				case _ if hi.req.parameters.headOption.flatMap(_._2.headOption).map( _ == "redirect").getOrElse(false) =>
 					log.debug("redirect")
 					context.children.map(_.path).foreach(p => log.debug(p.toString))
@@ -107,13 +107,20 @@ trait ResponseContainer extends Actor with ActorLogging{
 	private var messages: List[PushMessage] = Nil
 	private var lastAccess = System.currentTimeMillis	
 	
+	var isTerminated = false
+	
 	def updateLastAccess(){
 		context.system.scheduler.scheduleOnce(LadderBoot.timeToLivePage millis, context.self, Tick)
 		lastAccess = System.currentTimeMillis
 	}
 	
-	override def preStart() = {
+	override def preStart() {
 		updateLastAccess()
+		isTerminated = false
+	}
+	
+	override def postStop() {
+		isTerminated = true
 	}
 	
 	def addResponse(path: List[String], response: HttpResponse): String = {
@@ -134,9 +141,10 @@ trait ResponseContainer extends Actor with ActorLogging{
 	}
 	
 	def update(message: JsCmd): Try[Unit] = {
-		Option(self) match {
-			case Some(ref) if !ref.isTerminated => Try{(ref ! PushMessage(message = message.toCmd))} 
-			case _ => Failure(new IllegalStateException("page is closed"))
+		if(!isTerminated){
+			Try{(self ! PushMessage(message = message.toCmd))}
+		}else{
+			Failure(new IllegalStateException("page is closed"))
 		}
 	}
 	

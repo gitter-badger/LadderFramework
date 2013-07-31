@@ -12,8 +12,9 @@ import org.ladderframework.mock.HttpServletResponseMock
 import org.ladderframework.mock.AsyncContextMock
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
+import org.scalatest.WordSpecLike
 
-class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpec with GivenWhenThen with BeforeAndAfterAll{
+class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpecLike with GivenWhenThen with BeforeAndAfterAll{
 	
 	implicit val webSystem = system
 	

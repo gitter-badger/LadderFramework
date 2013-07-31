@@ -13,8 +13,9 @@ import org.ladderframework.mock.AsyncContextMock
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import bootstrap.LadderBoot
+import org.scalatest.WordSpecLike
 
-class ResponseContainerActorSpec (system: ActorSystem) extends TestKit(system) with WordSpec with GivenWhenThen with BeforeAndAfterAll{
+class ResponseContainerActorSpec (system: ActorSystem) extends TestKit(system) with WordSpecLike with GivenWhenThen with BeforeAndAfterAll{
 	
 	implicit val webSystem = system
 	
