@@ -401,7 +401,7 @@ trait Mapping {
 	 * @param f1 Transform value of T to a value of B
 	 * @param f2 Transform value of B to a value of T
 	 */
-	def transform[B](f1: self.T => B, f2: B => self.T) = WrappedMapping[T, B](self, f1, f2)
+	def transform[B](f1: self.T => B, f2: B => self.T) = WrappedMapping[T, B, self.type](self, f1, f2)
 
 	// Internal utilities
 
@@ -431,9 +431,9 @@ trait Mapping {
  * @param f2 Transformation function from B to A
  * @param additionalConstraints Additional constraints of type B
  */
-case class WrappedMapping[A, B](wrapped: Mapping{type T = A}, f1: A => B, f2: B => A, val additionalConstraints: Seq[Constraint[B]] = Nil) extends NestedMapping {
+case class WrappedMapping[A, B, M <: Mapping{type T = A}](wrapped: M, f1: A => B, f2: B => A, val additionalConstraints: Seq[Constraint[B]] = Nil) extends NestedMapping {
 	type T = B
-	type S = Mapping{type T = A}
+	type S = M
 
 	/**
 	 * The field key.
@@ -527,10 +527,10 @@ object RepeatedMapping {
  *
  * @param wrapped The wrapped mapping
  */
-case class RepeatedMapping[RT](wrapped: Mapping{type T = RT}, val key: String = "", val constraints: Seq[Constraint[List[RT]]] = Nil) extends NestedMapping {
+case class RepeatedMapping[RT, M <: Mapping{type T = RT}](wrapped: M, val key: String = "", val constraints: Seq[Constraint[List[RT]]] = Nil) extends NestedMapping {
 
 	type T = List[RT]
-	type S = Mapping{type T = RT}
+	type S = M
 	
 	/**
 	 * The Format expected for this field, if it exists.
@@ -603,10 +603,10 @@ case class RepeatedMapping[RT](wrapped: Mapping{type T = RT}, val key: String = 
  *
  * @param wrapped the wrapped mapping
  */
-case class OptionalMapping[OT](wrapped: Mapping{type T = OT}, val constraints: Seq[Constraint[Option[OT]]] = Nil) extends NestedMapping {
+case class OptionalMapping[OT, M <: Mapping{type T = OT}](wrapped: M, val constraints: Seq[Constraint[Option[OT]]] = Nil) extends NestedMapping {
 
 	type T = Option[OT]
-	type S = Mapping{type T = OT}
+	type S = M
 	
 	override val format: Option[(String, Seq[Any])] = wrapped.format
 

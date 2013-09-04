@@ -281,7 +281,7 @@ import Formats._
    *
    * @param mapping The mapping to make optional.
    */
-  def optional[A](mapping: FieldMapping[A]): OptionalMapping[A] = OptionalMapping(mapping)
+  def optional[A](mapping: FieldMapping[A]): OptionalMapping[A, mapping.type] = OptionalMapping(mapping)
 
   /**
    * Defines an default mapping, if the parameter is not present, provide a default value.
@@ -295,7 +295,7 @@ import Formats._
    * @param mapping The mapping to make optional.
    * @param value The default value when mapping and the field is not present.
    */
-  def default[A, M <: Mapping](mapping: M{type T = A}, value:A) = OptionalMapping(mapping).transform[A](_.getOrElse(value), Some(_))
+  def default[A, M <: Mapping{type T = A}](mapping: M, value:A) = OptionalMapping[A, M](mapping).transform[A](_.getOrElse(value), Some(_))
 
   /**
    * Defines a repeated mapping.
@@ -307,7 +307,7 @@ import Formats._
    *
    * @param mapping The mapping to make repeated.
    */
-  def list[A, M <: Mapping](mapping: M{type T = A}) = RepeatedMapping(mapping)
+  def list[A, M <: Mapping{type T = A}](mapping: M) = RepeatedMapping[A, M](mapping)
 
   /**
    * Defines a repeated mapping.
@@ -319,7 +319,7 @@ import Formats._
    * 
    * @param mapping The mapping to make repeated.
    */
-  def seq[A, M <: Mapping](mapping: M{type T = A}) = RepeatedMapping(mapping).transform[Seq[A]](_.toSeq, _.toList)
+  def seq[A, M <: Mapping{type T = A}](mapping: M) = RepeatedMapping[A, M](mapping).transform[Seq[A]](_.toSeq, _.toList)
 
   /**
    * Constructs a simple mapping for a date field.
