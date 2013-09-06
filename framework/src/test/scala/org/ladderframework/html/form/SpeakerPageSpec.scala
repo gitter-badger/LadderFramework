@@ -71,6 +71,9 @@ class SpeakerPageSpec extends FunSpec{
 		it("should handle fill"){
 			assert(form.fill(per).value.get === per)
 		}
+		it("should find size of list"){
+			assert(form.fill(per).context.sizeOfRecursive("addresses") === 2)
+		}
 	}
 }
 

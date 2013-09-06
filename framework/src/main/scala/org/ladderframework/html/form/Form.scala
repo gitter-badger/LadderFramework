@@ -132,18 +132,11 @@ case class Form[M <: Mapping[M]](mapping: M, data: Map[String, String], errors: 
 	 */
 	def fold[R](hasErrors: Form[M] => R, success: M#T => R): R = value.map(success(_)).getOrElse(hasErrors(this))
 
-	/**
-	 * Retrieves a field.
-	 *
-	 * For example:
-	 * {{{
-	 * val usernameField = field
-	 * }}}
-	 *
-	 * @param key the field name
-	 * @return the field, returned even if the field does not exist
-	 */
-	def context: FormContext = FormContext(data.get, errors)
+	def context: FormContext = FormContext(data.get, key => {
+		val Key = (key + """\[(\d+)\].*""").r
+		data.keys.filter(_.startsWith(key)).map{case Key(i) => i.toInt}.max + 1
+	}, errors)
+
 
 	/**
 	 * Retrieves the first global error, if it exists, i.e. an error without any key.
