@@ -11,10 +11,19 @@ package org.ladderframework.html.form
  * @param fa a mapping for field `A`
  * @param constraints constraints associated with this mapping
  */
-case class ObjectMapping1[R, A1, M1 <: Mapping{type T = A1}](apply: Function1[A1, R], unapply: Function1[R, Option[(A1)]], field1: M1, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping1[R, A1, M1 <: Mapping[M1]{type T = A1}](
+		apply: Function1[A1, R], 
+		unapply: Function1[R, Option[(A1)]], 
+		f1: M1, 
+		val key: String = "", 
+		val constraints: Seq[Constraint[R]] = Nil
+) extends NestedMapping[ObjectMapping1[R, A1, M1]] with ObjectMapping {
 
 	type T = R
-	type S = (M1)
+	type S = M1
+	
+	val field1: M1 = f1.withPrefix(key)
+	
   def bind(data: Map[String, String]) = {
     merge(field1.bind(data)) match {
       case Left(errors) => Left(errors)
@@ -46,10 +55,20 @@ case class ObjectMapping1[R, A1, M1 <: Mapping{type T = A1}](apply: Function1[A1
 
 }
 
-case class ObjectMapping2[R, A1, A2, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}](apply: Function2[A1, A2, R], unapply: Function1[R, Option[(A1, A2)]], field1: M1, field2: M2, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping2[R, A1, A2, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}](
+		apply: Function2[A1, A2, R], 
+		unapply: Function1[R, Option[(A1, A2)]], 
+		f1: M1, 
+		f2: M2, 
+		val key: String = "", 
+		val constraints: Seq[Constraint[R]] = Nil
+) extends NestedMapping[ObjectMapping2[R, A1, A2, M1, M2]] with ObjectMapping {
 
 	type T = R
 	type S = (M1, M2)
+	
+	val field1: M1 = f1.withPrefix(key)
+	val field2: M2 = f2.withPrefix(key)
 	
   def bind(data: Map[String, String]): Either[Seq[FormError], R] = {
     merge(field1.bind(data), field2.bind(data)) match {
@@ -84,8 +103,23 @@ case class ObjectMapping2[R, A1, A2, M1 <: Mapping{type T = A1}, M2 <: Mapping{t
 
 }
 
-case class ObjectMapping3[R, A1, A2, A3, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}](apply: Function3[A1, A2, A3, R], unapply: Function1[R, Option[(A1, A2, A3)]], field1: M1, field2: M2, field3: M3, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping3[R, A1, A2, A3, 
+	M1 <: Mapping[M1]{type T = A1}, 
+	M2 <: Mapping[M2]{type T = A2}, 
+	M3 <: Mapping[M3]{type T = A3}
+](
+		apply: Function3[A1, A2, A3, R], 
+		unapply: Function1[R, Option[(A1, A2, A3)]], 
+		f1: M1, 
+		f2: M2, 
+		f3: M3, 
+		val key: String = "", 
+		val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping3[R, A1, A2, A3, M1, M2, M3]] with ObjectMapping {
 
+	val field1: M1 = f1.withPrefix(key)
+	val field2: M2 = f2.withPrefix(key)
+	val field3: M3 = f3.withPrefix(key)
+	
 	type T = R
 	type S = (M1, M2, M3)
 	
@@ -114,7 +148,8 @@ case class ObjectMapping3[R, A1, A2, A3, M1 <: Mapping{type T = A1}, M2 <: Mappi
     }.getOrElse(Map.empty -> Seq(FormError(key, "unbind.failed")))
   }
 
-  def withPrefix(prefix: String): ObjectMapping3[R, A1, A2, A3, M1, M2, M3] = addPrefix(prefix).map(newKey => this.copy(key = newKey)).getOrElse(this)
+  def withPrefix(prefix: String): ObjectMapping3[R, A1, A2, A3, M1, M2, M3] = 
+  		addPrefix(prefix).map(newKey => this.copy(key = newKey)).getOrElse(this)
 
   def verifying(addConstraints: Constraint[R]*): ObjectMapping3[R, A1, A2, A3, M1, M2, M3] = {
     this.copy(constraints = constraints ++ addConstraints.toSeq)
@@ -124,7 +159,12 @@ case class ObjectMapping3[R, A1, A2, A3, M1 <: Mapping{type T = A1}, M2 <: Mappi
 
 }
 
-case class ObjectMapping4[R, A1, A2, A3, A4, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}](apply: Function4[A1, A2, A3, A4, R], unapply: Function1[R, Option[(A1, A2, A3, A4)]], field1: M1, field2: M2, field3: M3, field4: M4, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping4[R, A1, A2, A3, A4, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}, M3 <: Mapping[M3]{type T = A3}, M4 <: Mapping[M4]{type T = A4}](
+		apply: Function4[A1, A2, A3, A4, R], 
+		unapply: Function1[R, Option[(A1, A2, A3, A4)]], 
+		field1: M1, field2: M2, field3: M3, 
+		field4: M4, val key: String = "", 
+		val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping4[R, A1, A2, A3, A4, M1, M2, M3, M4]] with ObjectMapping {
 	
 	type T = R
 	type S = (M1, M2, M3, M4)
@@ -166,7 +206,7 @@ case class ObjectMapping4[R, A1, A2, A3, A4, M1 <: Mapping{type T = A1}, M2 <: M
 
 }
 
-case class ObjectMapping5[R, A1, A2, A3, A4, A5, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}](apply: Function5[A1, A2, A3, A4, A5, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping5[R, A1, A2, A3, A4, A5, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}, M3 <: Mapping[M3]{type T = A3}, M4 <: Mapping[M4]{type T = A4}, M5 <: Mapping[M5]{type T = A5}](apply: Function5[A1, A2, A3, A4, A5, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping5[R, A1, A2, A3, A4, A5, M1, M2, M3, M4, M5]] with ObjectMapping {
 
 	type T = R
 	type S = (M1, M2, M3, M4, M5)
@@ -210,7 +250,7 @@ case class ObjectMapping5[R, A1, A2, A3, A4, A5, M1 <: Mapping{type T = A1}, M2 
 
 }
 
-case class ObjectMapping6[R, A1, A2, A3, A4, A5, A6, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}](apply: Function6[A1, A2, A3, A4, A5, A6, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping6[R, A1, A2, A3, A4, A5, A6, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}, M3 <: Mapping[M3]{type T = A3}, M4 <: Mapping[M4]{type T = A4}, M5 <: Mapping[M5]{type T = A5}, M6 <: Mapping[M6]{type T = A6}](apply: Function6[A1, A2, A3, A4, A5, A6, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping6[R, A1, A2, A3, A4, A5, A6, M1, M2, M3, M4, M5, M6]] with ObjectMapping {
 
 	type T = R
 	type S = (M1, M2, M3, M4, M5, M6)
@@ -256,7 +296,7 @@ case class ObjectMapping6[R, A1, A2, A3, A4, A5, A6, M1 <: Mapping{type T = A1},
 
 }
 
-case class ObjectMapping7[R, A1, A2, A3, A4, A5, A6, A7, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}](apply: Function7[A1, A2, A3, A4, A5, A6, A7, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping7[R, A1, A2, A3, A4, A5, A6, A7, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}, M3 <: Mapping[M3]{type T = A3}, M4 <: Mapping[M4]{type T = A4}, M5 <: Mapping[M5]{type T = A5}, M6 <: Mapping[M6]{type T = A6}, M7 <: Mapping[M7]{type T = A7}](apply: Function7[A1, A2, A3, A4, A5, A6, A7, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping7[R, A1, A2, A3, A4, A5, A6, A7, M1, M2, M3, M4, M5, M6, M7]] with ObjectMapping {
 
 	type T = R
 	type S = (M1, M2, M3, M4, M5, M6, M7)
@@ -266,7 +306,6 @@ case class ObjectMapping7[R, A1, A2, A3, A4, A5, A6, A7, M1 <: Mapping{type T = 
       case Left(errors) => Left(errors)
       case Right(values) => {
         applyConstraints(apply(
-
           values(0).asInstanceOf[A1],
           values(1).asInstanceOf[A2],
           values(2).asInstanceOf[A3],
@@ -304,7 +343,7 @@ case class ObjectMapping7[R, A1, A2, A3, A4, A5, A6, A7, M1 <: Mapping{type T = 
 
 }
 
-case class ObjectMapping8[R, A1, A2, A3, A4, A5, A6, A7, A8, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}](apply: Function8[A1, A2, A3, A4, A5, A6, A7, A8, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping8[R, A1, A2, A3, A4, A5, A6, A7, A8, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}, M3 <: Mapping[M3]{type T = A3}, M4 <: Mapping[M4]{type T = A4}, M5 <: Mapping[M5]{type T = A5}, M6 <: Mapping[M6]{type T = A6}, M7 <: Mapping[M7]{type T = A7}, M8 <: Mapping[M8]{type T = A8}](apply: Function8[A1, A2, A3, A4, A5, A6, A7, A8, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping8[R, A1, A2, A3, A4, A5, A6, A7, A8, M1, M2, M3, M4, M5, M6, M7, M8]] with ObjectMapping {
 
 	type T = R
 	type S = (M1, M2, M3, M4, M5, M6, M7, M8)
@@ -354,7 +393,7 @@ case class ObjectMapping8[R, A1, A2, A3, A4, A5, A6, A7, A8, M1 <: Mapping{type 
 
 }
 
-case class ObjectMapping9[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}](apply: Function9[A1, A2, A3, A4, A5, A6, A7, A8, A9, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping9[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}, M3 <: Mapping[M3]{type T = A3}, M4 <: Mapping[M4]{type T = A4}, M5 <: Mapping[M5]{type T = A5}, M6 <: Mapping[M6]{type T = A6}, M7 <: Mapping[M7]{type T = A7}, M8 <: Mapping[M8]{type T = A8}, M9 <: Mapping[M9]{type T = A9}](apply: Function9[A1, A2, A3, A4, A5, A6, A7, A8, A9, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping9[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, M1, M2, M3, M4, M5, M6, M7, M8, M9]] with ObjectMapping {
 
 	type T = R
 	type S = (M1, M2, M3, M4, M5, M6, M7, M8, M9)
@@ -406,7 +445,7 @@ case class ObjectMapping9[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, M1 <: Mapping{t
 
 }
 
-case class ObjectMapping10[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}](apply: Function10[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping10[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}, M3 <: Mapping[M3]{type T = A3}, M4 <: Mapping[M4]{type T = A4}, M5 <: Mapping[M5]{type T = A5}, M6 <: Mapping[M6]{type T = A6}, M7 <: Mapping[M7]{type T = A7}, M8 <: Mapping[M8]{type T = A8}, M9 <: Mapping[M9]{type T = A9}, M10 <: Mapping[M10]{type T = A10}](apply: Function10[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping10[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10]] with ObjectMapping {
 
 	type T = R
 	type S = (M1, M2, M3, M4, M5, M6, M7, M8, M9, M10)
@@ -460,7 +499,7 @@ case class ObjectMapping10[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, M1 <: Map
 
 }
 
-case class ObjectMapping11[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}](apply: Function11[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping11[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}, M3 <: Mapping[M3]{type T = A3}, M4 <: Mapping[M4]{type T = A4}, M5 <: Mapping[M5]{type T = A5}, M6 <: Mapping[M6]{type T = A6}, M7 <: Mapping[M7]{type T = A7}, M8 <: Mapping[M8]{type T = A8}, M9 <: Mapping[M9]{type T = A9}, M10 <: Mapping[M10]{type T = A10}, M11 <: Mapping[M11]{type T = A11}](apply: Function11[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping11[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11]] with ObjectMapping {
 
 	type T = R
 	type S = (M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11)
@@ -516,7 +555,7 @@ case class ObjectMapping11[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, M1 <
 
 }
 
-case class ObjectMapping12[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}](apply: Function12[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, field12: M12, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping12[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}, M3 <: Mapping[M3]{type T = A3}, M4 <: Mapping[M4]{type T = A4}, M5 <: Mapping[M5]{type T = A5}, M6 <: Mapping[M6]{type T = A6}, M7 <: Mapping[M7]{type T = A7}, M8 <: Mapping[M8]{type T = A8}, M9 <: Mapping[M9]{type T = A9}, M10 <: Mapping[M10]{type T = A10}, M11 <: Mapping[M11]{type T = A11}, M12 <: Mapping[M12]{type T = A12}](apply: Function12[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, field12: M12, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping12[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12]] with ObjectMapping {
 
 	type T = R
 	type S = (M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12)
@@ -574,7 +613,7 @@ case class ObjectMapping12[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12,
 
 }
 
-case class ObjectMapping13[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}](apply: Function13[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, field12: M12, field13: M13, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping13[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}, M3 <: Mapping[M3]{type T = A3}, M4 <: Mapping[M4]{type T = A4}, M5 <: Mapping[M5]{type T = A5}, M6 <: Mapping[M6]{type T = A6}, M7 <: Mapping[M7]{type T = A7}, M8 <: Mapping[M8]{type T = A8}, M9 <: Mapping[M9]{type T = A9}, M10 <: Mapping[M10]{type T = A10}, M11 <: Mapping[M11]{type T = A11}, M12 <: Mapping[M12]{type T = A12}, M13 <: Mapping[M13]{type T = A13}](apply: Function13[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, field12: M12, field13: M13, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping13[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13]] with ObjectMapping {
 
 	type T = R
 	type S = (M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13)
@@ -634,7 +673,7 @@ case class ObjectMapping13[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12,
 
 }
 
-case class ObjectMapping14[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}](apply: Function14[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, field12: M12, field13: M13, field14: M14, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping14[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}, M3 <: Mapping[M3]{type T = A3}, M4 <: Mapping[M4]{type T = A4}, M5 <: Mapping[M5]{type T = A5}, M6 <: Mapping[M6]{type T = A6}, M7 <: Mapping[M7]{type T = A7}, M8 <: Mapping[M8]{type T = A8}, M9 <: Mapping[M9]{type T = A9}, M10 <: Mapping[M10]{type T = A10}, M11 <: Mapping[M11]{type T = A11}, M12 <: Mapping[M12]{type T = A12}, M13 <: Mapping[M13]{type T = A13}, M14 <: Mapping[M14]{type T = A14}](apply: Function14[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, field12: M12, field13: M13, field14: M14, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping14[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14]] with ObjectMapping {
 
 	type T = R
 	type S = (M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14)
@@ -696,7 +735,7 @@ case class ObjectMapping14[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12,
 
 }
 
-case class ObjectMapping15[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}](apply: Function15[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, field12: M12, field13: M13, field14: M14, field15: M15, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping15[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}, M3 <: Mapping[M3]{type T = A3}, M4 <: Mapping[M4]{type T = A4}, M5 <: Mapping[M5]{type T = A5}, M6 <: Mapping[M6]{type T = A6}, M7 <: Mapping[M7]{type T = A7}, M8 <: Mapping[M8]{type T = A8}, M9 <: Mapping[M9]{type T = A9}, M10 <: Mapping[M10]{type T = A10}, M11 <: Mapping[M11]{type T = A11}, M12 <: Mapping[M12]{type T = A12}, M13 <: Mapping[M13]{type T = A13}, M14 <: Mapping[M14]{type T = A14}, M15 <: Mapping[M15]{type T = A15}](apply: Function15[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, field12: M12, field13: M13, field14: M14, field15: M15, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping15[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15]] with ObjectMapping {
 
 	type T = R
 	type S = (M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15)
@@ -760,7 +799,7 @@ case class ObjectMapping15[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12,
 
 }
 
-case class ObjectMapping16[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}, M16 <: Mapping{type T = A16}](apply: Function16[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, field12: M12, field13: M13, field14: M14, field15: M15, field16: M16, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping16[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}, M3 <: Mapping[M3]{type T = A3}, M4 <: Mapping[M4]{type T = A4}, M5 <: Mapping[M5]{type T = A5}, M6 <: Mapping[M6]{type T = A6}, M7 <: Mapping[M7]{type T = A7}, M8 <: Mapping[M8]{type T = A8}, M9 <: Mapping[M9]{type T = A9}, M10 <: Mapping[M10]{type T = A10}, M11 <: Mapping[M11]{type T = A11}, M12 <: Mapping[M12]{type T = A12}, M13 <: Mapping[M13]{type T = A13}, M14 <: Mapping[M14]{type T = A14}, M15 <: Mapping[M15]{type T = A15}, M16 <: Mapping[M16]{type T = A16}](apply: Function16[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, field12: M12, field13: M13, field14: M14, field15: M15, field16: M16, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping16[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16]] with ObjectMapping {
 
 	type T = R
 	type S = (M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16)
@@ -826,7 +865,7 @@ case class ObjectMapping16[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12,
 
 }
 
-case class ObjectMapping17[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}, M16 <: Mapping{type T = A16}, M17 <: Mapping{type T = A17}](apply: Function17[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, field12: M12, field13: M13, field14: M14, field15: M15, field16: M16, field17: M17, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping17[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}, M3 <: Mapping[M3]{type T = A3}, M4 <: Mapping[M4]{type T = A4}, M5 <: Mapping[M5]{type T = A5}, M6 <: Mapping[M6]{type T = A6}, M7 <: Mapping[M7]{type T = A7}, M8 <: Mapping[M8]{type T = A8}, M9 <: Mapping[M9]{type T = A9}, M10 <: Mapping[M10]{type T = A10}, M11 <: Mapping[M11]{type T = A11}, M12 <: Mapping[M12]{type T = A12}, M13 <: Mapping[M13]{type T = A13}, M14 <: Mapping[M14]{type T = A14}, M15 <: Mapping[M15]{type T = A15}, M16 <: Mapping[M16]{type T = A16}, M17 <: Mapping[M17]{type T = A17}](apply: Function17[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, field12: M12, field13: M13, field14: M14, field15: M15, field16: M16, field17: M17, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping17[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16, M17]] with ObjectMapping {
 
 	type T = R
 	type S = (M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16, M17)
@@ -894,7 +933,7 @@ case class ObjectMapping17[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12,
 
 }
 
-case class ObjectMapping18[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, M1 <: Mapping{type T = A1}, M2 <: Mapping{type T = A2}, M3 <: Mapping{type T = A3}, M4 <: Mapping{type T = A4}, M5 <: Mapping{type T = A5}, M6 <: Mapping{type T = A6}, M7 <: Mapping{type T = A7}, M8 <: Mapping{type T = A8}, M9 <: Mapping{type T = A9}, M10 <: Mapping{type T = A10}, M11 <: Mapping{type T = A11}, M12 <: Mapping{type T = A12}, M13 <: Mapping{type T = A13}, M14 <: Mapping{type T = A14}, M15 <: Mapping{type T = A15}, M16 <: Mapping{type T = A16}, M17 <: Mapping{type T = A17}, M18 <: Mapping{type T = A18}](apply: Function18[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, field12: M12, field13: M13, field14: M14, field15: M15, field16: M16, field17: M17, field18: M18, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping with ObjectMapping {
+case class ObjectMapping18[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, M1 <: Mapping[M1]{type T = A1}, M2 <: Mapping[M2]{type T = A2}, M3 <: Mapping[M3]{type T = A3}, M4 <: Mapping[M4]{type T = A4}, M5 <: Mapping[M5]{type T = A5}, M6 <: Mapping[M6]{type T = A6}, M7 <: Mapping[M7]{type T = A7}, M8 <: Mapping[M8]{type T = A8}, M9 <: Mapping[M9]{type T = A9}, M10 <: Mapping[M10]{type T = A10}, M11 <: Mapping[M11]{type T = A11}, M12 <: Mapping[M12]{type T = A12}, M13 <: Mapping[M13]{type T = A13}, M14 <: Mapping[M14]{type T = A14}, M15 <: Mapping[M15]{type T = A15}, M16 <: Mapping[M16]{type T = A16}, M17 <: Mapping[M17]{type T = A17}, M18 <: Mapping[M18]{type T = A18}](apply: Function18[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, R], unapply: Function1[R, Option[(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18)]], field1: M1, field2: M2, field3: M3, field4: M4, field5: M5, field6: M6, field7: M7, field8: M8, field9: M9, field10: M10, field11: M11, field12: M12, field13: M13, field14: M14, field15: M15, field16: M16, field17: M17, field18: M18, val key: String = "", val constraints: Seq[Constraint[R]] = Nil) extends NestedMapping[ObjectMapping18[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16, M17, M18]] with ObjectMapping {
 
 	type T = R
 	type S = (M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16, M17, M18)

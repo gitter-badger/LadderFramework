@@ -27,56 +27,76 @@ package object form{
 		}
 	}
 	
-	implicit class NestedMappingRender1[A1 <: Mapping](nestedMapping: NestedMapping{type S = A1}){
+	implicit class NestedMappingRender1[A1](nestedMapping: NestedMapping[_]{type S = A1}){
 		def render(transform: (A1) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform(nestedMapping.mappings)
 	}
 	
-	implicit class NestedMappingRender2[A1, A2](nestedMapping: NestedMapping{type S = Tuple2[A1, A2]}){
+	implicit class NestedMappingRender2[A1, A2](nestedMapping: NestedMapping[_]{type S = Tuple2[A1, A2]}){
 		def render(transform: (A1, A2) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
 	}
 	
-	implicit class NestedMappingRender3[A1, A2, A3](nestedMapping: NestedMapping{type S = Tuple3[A1, A2, A3]}){
+	implicit class NestedMappingRender3[A1, A2, A3](nestedMapping: NestedMapping[_]{type S = Tuple3[A1, A2, A3]}){
 		def render(transform: (A1, A2, A3) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
 	}
 	
-	implicit class NestedMappingRender4[A1, A2, A3, A4](nestedMapping: NestedMapping{type S = Tuple4[A1, A2, A3, A4]}){
+	implicit class NestedMappingRender4[A1, A2, A3, A4](nestedMapping: NestedMapping[_]{type S = Tuple4[A1, A2, A3, A4]}){
 		def render(transform: (A1, A2, A3, A4) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
 	}
 	
-	implicit class NestedMappingRender5[A1, A2, A3, A4, A5](nestedMapping: NestedMapping{type S = Tuple5[A1, A2, A3, A4, A5]}){
+	implicit class NestedMappingRender5[A1, A2, A3, A4, A5](nestedMapping: NestedMapping[_]{type S = Tuple5[A1, A2, A3, A4, A5]}){
 		def render(transform: (A1, A2, A3, A4, A5) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
 	}
 
-	implicit class NestedMappingRender6[A1, A2, A3, A4, A5, A6](nestedMapping: NestedMapping{type S = Tuple6[A1, A2, A3, A4, A5, A6]}){
+	implicit class NestedMappingRender6[A1, A2, A3, A4, A5, A6](nestedMapping: NestedMapping[_]{type S = Tuple6[A1, A2, A3, A4, A5, A6]}){
 		def render(transform: (A1, A2, A3, A4, A5, A6) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
 	}
 	
-	implicit class NestedMappingRender7[A1, A2, A3, A4, A5, A6, A7](nestedMapping: NestedMapping{type S = Tuple7[A1, A2, A3, A4, A5, A6, A7]}){
+	implicit class NestedMappingRender7[A1, A2, A3, A4, A5, A6, A7](nestedMapping: NestedMapping[_]{type S = Tuple7[A1, A2, A3, A4, A5, A6, A7]}){
 		def render(transform: (A1, A2, A3, A4, A5, A6, A7) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
 	}
 
-	implicit class NestedMappingRender8[A1, A2, A3, A4, A5, A6, A7, A8](nestedMapping: NestedMapping{type S = Tuple8[A1, A2, A3, A4, A5, A6, A7, A8]}){
+	implicit class NestedMappingRender8[A1, A2, A3, A4, A5, A6, A7, A8](nestedMapping: NestedMapping[_]{type S = Tuple8[A1, A2, A3, A4, A5, A6, A7, A8]}){
 		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
 	}
 	
-	implicit class NestedMappingRender9[A1, A2, A3, A4, A5, A6, A7, A8, A9](nestedMapping: NestedMapping{type S = Tuple9[A1, A2, A3, A4, A5, A6, A7, A8, A9]}){
+	implicit class NestedMappingRender9[A1, A2, A3, A4, A5, A6, A7, A8, A9](nestedMapping: NestedMapping[_]{type S = Tuple9[A1, A2, A3, A4, A5, A6, A7, A8, A9]}){
 		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
 	}
 
-	implicit class NestedMappingRender10[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10](nestedMapping: NestedMapping{type S = Tuple10[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10]}){
+	implicit class NestedMappingRender10[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10](nestedMapping: NestedMapping[_]{type S = Tuple10[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10]}){
 		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
 	}
 	
-	implicit class NestedMappingRender11[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11](nestedMapping: NestedMapping{type S = Tuple11[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11]}){
+	implicit class NestedMappingRender11[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11](nestedMapping: NestedMapping[_]{type S = Tuple11[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11]}){
 		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
 	}
 	
-	implicit class NestedMappingRender12[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12](nestedMapping: NestedMapping{type S = Tuple12[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12]}){
+	implicit class NestedMappingRender12[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12](nestedMapping: NestedMapping[_]{type S = Tuple12[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12]}){
 		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
 	}
 
-	implicit class NestedMappingRender13[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13](nestedMapping: NestedMapping{type S = Tuple13[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13]}){
+	implicit class NestedMappingRender13[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13](nestedMapping: NestedMapping[_]{type S = Tuple13[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13]}){
 		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
+	}
+	
+	implicit class NestedMappingRender14[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14](nestedMapping: NestedMapping[_]{type S = Tuple14[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14]}){
+		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
+	}
+	
+	implicit class NestedMappingRender15[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15](nestedMapping: NestedMapping[_]{type S = Tuple15[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15]}){
+		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
+	}
+	
+	implicit class NestedMappingRender16[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16](nestedMapping: NestedMapping[_]{type S = Tuple16[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16]}){
+		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
+	}
+	
+	implicit class NestedMappingRender17[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17](nestedMapping: NestedMapping[_]{type S = Tuple17[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17]}){
+		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
+	}
+	
+	implicit class NestedMappingRender18[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18](nestedMapping: NestedMapping[_]{type S = Tuple18[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18]}){
+		def render(transform: (A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18) => NodeSeq => NodeSeq): NodeSeq => NodeSeq = transform.tupled(nestedMapping.mappings)
 	}
 }
 

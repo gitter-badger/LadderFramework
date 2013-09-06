@@ -15,7 +15,7 @@ trait FormRendering {
 	
 }
 
-case class Ajax[M <: Mapping](form: Form[M])
+case class Ajax[M <: Mapping[M]](form: Form[M])
 		(callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => Future[JsCmd])(rendering: FormContext => M => (NodeSeq => NodeSeq))
 		(implicit context: Context) extends FormRendering{
 	val id = Utils.uuid
@@ -30,7 +30,7 @@ case class Ajax[M <: Mapping](form: Form[M])
 		}</form>
 }
 
-abstract class StatefullForm[M <: Mapping](
+abstract class StatefullForm[M <: Mapping[M]](
 			method: String, 
 			form: Form[M], 
 			callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => Future[(List[String], HttpResponse)], 
@@ -46,11 +46,11 @@ abstract class StatefullForm[M <: Mapping](
 	def transform(ns: NodeSeq): NodeSeq = <form id={id} method={method} action={actionPath.mkString("/", "/", "")}>{rendering(form.context)(form.mapping)(ns)}</form>
 }
 
-case class StatefullPost[M <: Mapping](form: Form[M])
+case class StatefullPost[M <: Mapping[M]](form: Form[M])
 		(callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => Future[(List[String], HttpResponse)])(rendering: FormContext => M => (NodeSeq => NodeSeq))
 		(implicit context: Context) extends StatefullForm[M]("POST", form, callback, rendering)
 		
-case class StatefullGet[M <: Mapping](form: Form[M])
+case class StatefullGet[M <: Mapping[M]](form: Form[M])
 	(callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => Future[(List[String], HttpResponse)])(rendering: FormContext => M => (NodeSeq => NodeSeq))
 	(implicit context: Context) extends StatefullForm[M]("GET", form, callback, rendering)
 

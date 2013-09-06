@@ -26,7 +26,7 @@ import org.ladderframework.Utils
  * @param errors the collection of errors associated with this form
  * @param value a concrete value of type `T` if the form submission was successful
  */
-case class Form[M <: Mapping](mapping: M, data: Map[String, String], errors: Seq[FormError], value: Option[M#T]) {
+case class Form[M <: Mapping[M]](mapping: M, data: Map[String, String], errors: Seq[FormError], value: Option[M#T]) {
 	
 	/* *
 	 * Constraints associated with this form, indexed by field name.
@@ -247,7 +247,7 @@ object Form {
 	 * @param mapping the form mapping
 	 * @return a form definition
 	 */
-	def apply[M <: Mapping](mapping: M): Form[M] = Form(mapping, Map.empty, Nil, None)
+	def apply[M <: Mapping[M]](mapping: M): Form[M] = Form(mapping, Map.empty, Nil, None)
 
 }
 

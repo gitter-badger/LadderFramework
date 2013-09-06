@@ -2,7 +2,7 @@ package org.ladderframework.html.form
 
 import org.ladderframework.Utils
 
-trait NestedMapping extends Mapping{
+trait NestedMapping[M <: NestedMapping[M]] extends Mapping[M]{
 	type S
 	def mappings: S
 }
@@ -10,7 +10,7 @@ trait NestedMapping extends Mapping{
 /**
  * A mapping is a two-way binder to handle a form field.
  */
-trait Mapping {
+trait Mapping[M <: Mapping[M]] {
 	self =>
 		
 	type T
@@ -52,7 +52,7 @@ trait Mapping {
 	 * @param prefix the prefix to add to the key
 	 * @return the same mapping, with only the key changed
 	 */
-	def withPrefix(prefix: String): Mapping{type T = self.T}
+	def withPrefix(prefix: String): M // Mapping{type T = self.T}
 
 	/**
 	 * Constructs a new Mapping based on this one, by adding new constraints.
@@ -68,7 +68,7 @@ trait Mapping {
 	 * @param constraints the constraints to add
 	 * @return the new mapping
 	 */
-	def verifying(constraints: Constraint[T]*): Mapping{type T = self.T}
+	def verifying(constraints: Constraint[T]*): M
 
 	/**
 	 * Constructs a new Mapping based on this one, by adding a new ad-hoc constraint.
@@ -84,7 +84,7 @@ trait Mapping {
 	 * @param constraint a function describing the constraint that returns `false` on failure
 	 * @return the new mapping
 	 */
-	def verifying(constraint: (T => Boolean)): Mapping{type T = self.T} = verifying("error.unknown", constraint)
+	def verifying(constraint: (T => Boolean)): M = verifying("error.unknown", constraint)
 
 	/**
 	 * Constructs a new Mapping based on this one, by adding a new ad-hoc constraint.
@@ -101,24 +101,13 @@ trait Mapping {
 	 * @param constraint a function describing the constraint that returns `false` on failure
 	 * @return the new mapping
 	 */
-	def verifying(error: => String, constraint: (self.T => Boolean)): Mapping{type T = self.T} = {
+	def verifying(error: => String, constraint: (self.T => Boolean)): M = {
 		verifying(Constraint { t: T =>
 			if (constraint(t)) Valid else Invalid(Seq(ValidationError(error)))
 		})
 	}
 
-	/**
-	 * Transform this Mapping[T] to a Mapping[B].
-	 *
-	 * @tparam B The type of the new mapping.
-	 * @param f1 Transform value of T to a value of B
-	 * @param f2 Transform value of B to a value of T
-	 */
-	def transform[B](f1: self.T => B, f2: B => self.T) = WrappedMapping[T, B, self.type](self, f1, f2)
-
-	// Internal utilities
-
-	protected def addPrefix(prefix: String) = {
+	protected def addPrefix(prefix: String): Option[String] = {
 		Option(prefix).filterNot(_.isEmpty).map(p => p + Option(key).filterNot(_.isEmpty).map("." + _).getOrElse(""))
 	}
 
@@ -144,9 +133,9 @@ trait Mapping {
  * @param f2 Transformation function from B to A
  * @param additionalConstraints Additional constraints of type B
  */
-case class WrappedMapping[A, B, M <: Mapping](wrapped: M{type T = A}, f1: A => B, f2: B => A, val additionalConstraints: Seq[Constraint[B]] = Nil) extends NestedMapping {
+case class WrappedMapping[A, B, M <: Mapping[M]{type T = A}](wrapped: M, f1: A => B, f2: B => A, val additionalConstraints: Seq[Constraint[B]] = Nil) extends NestedMapping[WrappedMapping[A, B, M]] {
 	type T = B
-	type S = M{type T = A}
+	type S = M
 
 	/**
 	 * The field key.
@@ -198,9 +187,7 @@ case class WrappedMapping[A, B, M <: Mapping](wrapped: M{type T = A}, f1: A => B
 	 * @param prefix the prefix to add to the key
 	 * @return the same mapping, with only the key changed
 	 */
-	def withPrefix(prefix: String): Mapping{type T = B} = {
-		copy(wrapped = wrapped.withPrefix(prefix))
-	}
+	def withPrefix(prefix: String) = copy(wrapped = wrapped.withPrefix(prefix))
 
 	/**
 	 * Constructs a new Mapping based on this one, by adding new constraints.
@@ -216,7 +203,7 @@ case class WrappedMapping[A, B, M <: Mapping](wrapped: M{type T = A}, f1: A => B
 	 * @param constraints the constraints to add
 	 * @return the new mapping
 	 */
-	def verifying(constraints: Constraint[B]*): Mapping{type T = B} = copy(additionalConstraints = additionalConstraints ++ constraints)
+	def verifying(constraints: Constraint[B]*) = copy(additionalConstraints = additionalConstraints ++ constraints)
 
 }
 
@@ -240,7 +227,7 @@ object RepeatedMapping {
  *
  * @param wrapped The wrapped mapping
  */
-case class RepeatedMapping[RT, M <: Mapping](wrapped: M{type T = RT}, val key: String = "", val constraints: Seq[Constraint[List[RT]]] = Nil) extends NestedMapping {
+case class RepeatedMapping[RT, M <: Mapping[M]{type T = RT}](wrapped: M{type T = RT}, val key: String = Utils.uuid, val constraints: Seq[Constraint[List[RT]]] = Nil) extends NestedMapping[RepeatedMapping[RT, M]] {
 
 	type T = List[RT]
 	type S = M{type T = RT}
@@ -300,7 +287,7 @@ case class RepeatedMapping[RT, M <: Mapping](wrapped: M{type T = RT}, val key: S
 	 * @param prefix the prefix to add to the key
 	 * @return the same mapping, with only the key changed
 	 */
-	def withPrefix(prefix: String): Mapping{type T = List[RT]} = {
+	def withPrefix(prefix: String) = {
 		addPrefix(prefix).map(newKey => this.copy(key = newKey)).getOrElse(this)
 	}
 
@@ -316,7 +303,7 @@ case class RepeatedMapping[RT, M <: Mapping](wrapped: M{type T = RT}, val key: S
  *
  * @param wrapped the wrapped mapping
  */
-case class OptionalMapping[OT, M <: Mapping](wrapped: M{type T = OT}, val constraints: Seq[Constraint[Option[OT]]] = Nil) extends NestedMapping {
+case class OptionalMapping[OT, M <: Mapping[M]{type T = OT}](wrapped: M{type T = OT}, val constraints: Seq[Constraint[Option[OT]]] = Nil) extends NestedMapping[OptionalMapping[OT, M]] {
 
 	type T = Option[OT]
 	type S = M{type T = OT}
@@ -342,10 +329,7 @@ case class OptionalMapping[OT, M <: Mapping](wrapped: M{type T = OT}, val constr
 	 * @param constraints the constraints to add
 	 * @return the new mapping
 	 */
-	def verifying(addConstraints: Constraint[Option[OT]]*): Mapping{
-		type T = Option[OT]
-		type S = Mapping{type T = OT}
-	} = {
+	def verifying(addConstraints: Constraint[Option[OT]]*) = {
 		this.copy(constraints = constraints ++ addConstraints.toSeq)
 	}
 
@@ -380,12 +364,7 @@ case class OptionalMapping[OT, M <: Mapping](wrapped: M{type T = OT}, val constr
 	 * @param prefix the prefix to add to the key
 	 * @return the same mapping, with only the key changed
 	 */
-	def withPrefix(prefix: String): Mapping{
-		type T = Option[OT]
-		type S = Mapping{type T = OT}
-	} = {
-		copy(wrapped = wrapped.withPrefix(prefix))
-	}
+	def withPrefix(prefix: String) = copy(wrapped = wrapped.withPrefix(prefix))
 
 	/** Sub-mappings (these can be seen as sub-keys). */
 	val mappings = wrapped
@@ -398,7 +377,7 @@ case class OptionalMapping[OT, M <: Mapping](wrapped: M{type T = OT}, val constr
  * @param key the field key
  * @param constraints the constraints associated with this field.
  */
-case class FieldMapping[FT](val key: String = Utils.uuid, val constraints: Seq[Constraint[FT]] = Nil)(implicit val binder: Formatter[FT]) extends Mapping {
+case class FieldMapping[FT](val key: String = Utils.uuid, val constraints: Seq[Constraint[FT]] = Nil)(implicit val binder: Formatter[FT]) extends Mapping[FieldMapping[FT]] {
 	
 	type T = FT
 
