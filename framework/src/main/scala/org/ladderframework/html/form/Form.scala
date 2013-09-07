@@ -132,10 +132,7 @@ case class Form[M <: Mapping[M]](mapping: M, data: Map[String, String], errors: 
 	 */
 	def fold[R](hasErrors: Form[M] => R, success: M#T => R): R = value.map(success(_)).getOrElse(hasErrors(this))
 
-	def context: FormContext = FormContext(data.get, key => {
-		val Key = (key + """\[(\d+)\].*""").r
-		data.keys.filter(_.startsWith(key)).map{case Key(i) => i.toInt}.max + 1
-	}, errors)
+	def context: FormContext = FormContext(data.get, key => RepeatedMapping.indexes(key, data), errors)
 
 
 	/**

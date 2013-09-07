@@ -7,7 +7,7 @@ import org.ladderframework.Utils
 import org.ladderframework.HttpResponse
 import scala.concurrent.Future
 
-case class FormContext(data: String => Option[String], sizeOfRecursive: String => Int, errors: Seq[FormError])
+case class FormContext(data: String => Option[String], indexesOf: String => Seq[Int], errors: Seq[FormError])
 
 trait FormRendering {
 	def transform(ns: NodeSeq): NodeSeq
