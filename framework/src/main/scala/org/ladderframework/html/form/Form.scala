@@ -132,7 +132,7 @@ case class Form[M <: Mapping[M]](mapping: M, data: Map[String, String], errors: 
 	 */
 	def fold[R](hasErrors: Form[M] => R, success: M#T => R): R = value.map(success(_)).getOrElse(hasErrors(this))
 
-	def context: FormContext = FormContext(data.get, key => RepeatedMapping.indexes(key, data), errors)
+	def context: FormContext = FormContext(data, key => RepeatedMapping.indexes(key, data), errors)
 
 
 	/**

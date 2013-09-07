@@ -143,7 +143,7 @@ package form{
 							name={mapping.key} 
 							id={id} 
 							placeholder={attrs.getOrElse('placeholder, "")} 
-							value={context.data(mapping.key).getOrElse("")}/>
+							value={context.data.get(mapping.key).getOrElse("")}/>
 						{
 							if(mapping.constraints.map(_.name).exists(_ == Constraints.nonEmpty.name)) <span>*</span> else NodeSeq.Empty
 						}
@@ -168,7 +168,7 @@ package form{
 							name={mapping.key} 
 							id={id} 
 							placeholder={attrs.getOrElse('placeholder, "")} 
-							value={context.data(mapping.key).getOrElse("")}/>
+							value={context.data.get(mapping.key).getOrElse("")}/>
 						{
 							if(mapping.constraints.map(_.name).exists(_ == Constraints.nonEmpty.name)) <span>*</span> else NodeSeq.Empty
 						}
@@ -204,7 +204,7 @@ package form{
 							name={mapping.key} 
 							id={id} 
 							placeholder={attrs.getOrElse('placeholder, "")} 
-							value={context.data(mapping.key).getOrElse("")}/>
+							value={context.data.get(mapping.key).getOrElse("")}/>
 						{
 							if(mapping.constraints.map(_.name).exists(_ == Constraints.nonEmpty.name)) <span>*</span> else NodeSeq.Empty
 						}
@@ -237,7 +237,7 @@ package form{
 							name={mapping.key} 
 							id={id} 
 							placeholder={attrs.getOrElse('placeholder, "")} 
-							value={context.data(mapping.key).getOrElse("")}/>
+							value={context.data.get(mapping.key).getOrElse("")}/>
 						{
 							if(mapping.constraints.map(_.name).exists(_ == Constraints.nonEmpty.name)) <span>*</span> else NodeSeq.Empty
 						}
@@ -269,7 +269,7 @@ package form{
 							<input type="checkbox"
 								name={mapping.key} 
 								id={id}
-								checked={if(context.data(mapping.key).exists(_ == true.toString)) Some(Seq(Text("checked"))) else None}
+								checked={if(context.data.get(mapping.key).exists(_ == true.toString)) Some(Seq(Text("checked"))) else None}
 								value="true"
 							/> {label}
 						</label>
