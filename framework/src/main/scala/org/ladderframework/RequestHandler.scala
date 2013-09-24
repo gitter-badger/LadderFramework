@@ -12,15 +12,11 @@ import java.util.UUID
 import akka.actor._
 import akka.routing.RoundRobinRouter
 import bootstrap.LadderBoot
-import javax.servlet.http.HttpServletResponse
-import javax.servlet.AsyncContext
-import javax.servlet.AsyncListener
-import javax.servlet.AsyncEvent
 import org.ladderframework.js.JsCmd
 import scala.concurrent.Promise
 
-case class HttpInteraction(asyncContext: AsyncContext, req:HttpRequest, res: HttpServletResponse)
-case class RenderInital(res: HttpServletResponse, asyncContext:AsyncContext)
+case class HttpInteraction(asyncHandler: AsyncRequestHandler, req:HttpRequest, res: HttpResponseOutput)
+case class RenderInital(res: HttpResponseOutput, asyncHandler:AsyncRequestHandler)
 case class CreateSession(sessionId: String)
 case class RemoveSession(sessionId: String)
 case class AddResponse(path: List[String], uuid:String, response: HttpResponse){}
@@ -64,17 +60,17 @@ class SessionActor(sessionID:String) extends Actor with ActorLogging{
 							context.child(id).getOrElse{
 								val uuid:String = UUID.randomUUID.toString
 								context.actorOf(Props(new InitalResponseContainer(context.self, hi.req, uuid)), name = uuid)
-							} ! RenderInital(hi.res, hi.asyncContext)
+							} ! RenderInital(hi.res, hi.asyncHandler)
 						case _ => 
 							val uuid:String = UUID.randomUUID.toString
 							val resonseContainerRef = context.actorOf(Props(new InitalResponseContainer(context.self, hi.req, uuid)), name = uuid)
-							resonseContainerRef ! RenderInital(hi.res, hi.asyncContext)
+							resonseContainerRef ! RenderInital(hi.res, hi.asyncHandler)
 					} 
 					
 				case _ => 
 					val uuid:String = UUID.randomUUID.toString
 					val resonseContainerRef = context.actorOf(Props(new InitalResponseContainer(context.self, hi.req, uuid)), name = uuid)
-					resonseContainerRef ! RenderInital(hi.res, hi.asyncContext)
+					resonseContainerRef ! RenderInital(hi.res, hi.asyncHandler)
 			}
 		case AddResponse(path, uuid, response) =>
 			context.actorOf(Props(new RedirectResponseContainer(context.self, Promise().success(response), uuid)), name = uuid)
@@ -229,24 +225,23 @@ trait ResponseContainer extends Actor with ActorLogging{
 	
 }
 
-class PullActor(asyncContext: AsyncContext, res:HttpServletResponse) extends Actor with ActorLogging {
+class PullActor(asyncHandler: AsyncRequestHandler, res:HttpResponseOutput) extends Actor with ActorLogging {
 	
 	object TimeToClose
 	
-	val asyncListener = new AsyncListener{
-		def onComplete(event: AsyncEvent) {
-			context.self ! PoisonPill
-		}
-		def onError(event: AsyncEvent){
-			context.self ! PoisonPill
-		}
-		def onStartAsync(event: AsyncEvent){}
-		def onTimeout(event: AsyncEvent){
-			context.self ! PoisonPill
-		}
+	val onComplete = () => {
+		context.self ! PoisonPill
+	}
+	val onError = () => {
+		print("onError")
+		context.self ! PoisonPill
+	}
+	val onStart = () => {}
+	val onTimeout = () => {
+		context.self ! PoisonPill
 	}
 	
-	asyncContext.addListener(asyncListener)
+	asyncHandler.addListeners(onComplete, onError, onStart, onTimeout)
 	
 	context.system.scheduler.scheduleOnce(24000 millis, context.self, TimeToClose)
 	
@@ -266,11 +261,11 @@ class PullActor(asyncContext: AsyncContext, res:HttpServletResponse) extends Act
 		implicit val context:Context = null
 		response.applyToHttpServletResponse(res).onComplete{
 			case Success(status) => 
-				asyncContext.complete()
+				asyncHandler.complete()
 				log.debug("pull completed - success, status: " + status)
 			case Failure(throwable) =>
 				log.warning("pull problem completing fail result", throwable)
-				asyncContext.complete()
+				asyncHandler.complete()
 		}
 	}
 }

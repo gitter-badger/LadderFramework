@@ -8,11 +8,11 @@ import org.scalatest.GivenWhenThen
 import org.scalatest.BeforeAndAfterAll
 import akka.actor.Props
 import javax.servlet.AsyncContext
-import org.ladderframework.mock.HttpServletResponseMock
-import org.ladderframework.mock.AsyncContextMock
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import org.scalatest.WordSpecLike
+import org.ladderframework.mock.HttpResponseOutputMock
+import org.ladderframework.mock.AsyncRequestHandlerMock
 
 class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpecLike with GivenWhenThen with BeforeAndAfterAll{
 	
@@ -23,31 +23,31 @@ class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpecL
 	"The pull actor" when {
 		"handle polling" should {
 			"handle pushing message" in {
-				val httpServletResponse = new HttpServletResponseMock()
-				val asyncContext = new AsyncContextMock(httpServletResponse)
-				val pullActor = system.actorOf(Props(new PullActor(asyncContext, httpServletResponse)))
+				val httpResponseOutput = new HttpResponseOutputMock()
+				val asyncRequestHandler = new AsyncRequestHandlerMock(httpResponseOutput)
+				val pullActor = system.actorOf(Props(new PullActor(asyncRequestHandler, httpResponseOutput)))
 				val uuid = Utils.uuid
 				pullActor ! PushMessage(uuid, "sendMessage")
-				asyncContext.latch.await(1, TimeUnit.SECONDS)
-				assert(httpServletResponse.getStatus === OK.code)
-				assert(httpServletResponse.contentType === "text/json")
-				val text = httpServletResponse.text
+				asyncRequestHandler.latch.await(1, TimeUnit.SECONDS)
+				assert(httpResponseOutput.status === OK)
+				assert(httpResponseOutput.contentType === "text/json")
+				val text = httpResponseOutput.text
 				assert(text.contains(uuid))
 				assert(text.contains("sendMessage"))
 			}
 			"handle pushing messages" in {
-				val httpServletResponse = new HttpServletResponseMock()
-				val asyncContext = new AsyncContextMock(httpServletResponse)
-				val pullActor = system.actorOf(Props(new PullActor(asyncContext, httpServletResponse)))
+				val httpResponseOutput = new HttpResponseOutputMock()
+				val asyncRequestHandler = new AsyncRequestHandlerMock(httpResponseOutput)
+				val pullActor = system.actorOf(Props(new PullActor(asyncRequestHandler, httpResponseOutput)))
 				val uuid = Utils.uuid
 				val uuid2 = Utils.uuid
 				val message1 = "sendMessage1"
 				val message2 = "sendMessage2"
 				pullActor ! List(PushMessage(uuid, message1), PushMessage(uuid2, message2))
-				asyncContext.latch.await(1, TimeUnit.SECONDS)
-				assert(httpServletResponse.getStatus === OK.code)
-				assert(httpServletResponse.contentType === "text/json")
-				val text = httpServletResponse.text
+				asyncRequestHandler.latch.await(1, TimeUnit.SECONDS)
+				assert(httpResponseOutput.status === OK)
+				assert(httpResponseOutput.contentType === "text/json")
+				val text = httpResponseOutput.text
 				assert(text.contains(uuid))
 				assert(text.contains(message1))
 				assert(text.contains(uuid2))
@@ -55,28 +55,30 @@ class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpecL
 			}
 			
 			"handle pushing no messages" in {
-				val httpServletResponse = new HttpServletResponseMock()
-				val asyncContext = new AsyncContextMock(httpServletResponse)
-				val pullActor = TestActorRef(new PullActor(asyncContext, httpServletResponse))
-				asyncContext.latch.await(200, TimeUnit.MILLISECONDS)
-				assert(httpServletResponse.getStatus === 0)
-				assert(httpServletResponse.contentType === "")
-				val text = httpServletResponse.text
+				val httpResponseOutput = new HttpResponseOutputMock()
+				val asyncRequestHandler = new AsyncRequestHandlerMock(httpResponseOutput)
+				val pullActor = system.actorOf(Props(new PullActor(asyncRequestHandler, httpResponseOutput)))
+				asyncRequestHandler.latch.await(200, TimeUnit.MILLISECONDS)
+				assert(httpResponseOutput.status === NotImplemented)
+				assert(httpResponseOutput.contentType === "")
+				val text = httpResponseOutput.text
 				assert(text.contains(""))
 			}
 			
 			"handle timeout" in {
-				val httpServletResponse = new HttpServletResponseMock()
-				val asyncContext = new AsyncContextMock(httpServletResponse)
-				val pullActor = TestActorRef(new PullActor(asyncContext, httpServletResponse))
-				asyncContext.sendTimeout
+				val httpResponseOutput = new HttpResponseOutputMock()
+				val asyncRequestHandler = new AsyncRequestHandlerMock(httpResponseOutput)
+				val pullActor = system.actorOf(Props(new PullActor(asyncRequestHandler, httpResponseOutput)))
+				awaitCond(!asyncRequestHandler.timeoutListeners.isEmpty, 200 millis, 10 millis)
+				asyncRequestHandler.sendTimeout()
 				awaitCond(pullActor.isTerminated, 200 millis, 10 millis)
 			}
 			"handle error" in {
-				val httpServletResponse = new HttpServletResponseMock()
-				val asyncContext = new AsyncContextMock(httpServletResponse)
-				val pullActor = TestActorRef(new PullActor(asyncContext, httpServletResponse))
-				asyncContext.sendError
+				val httpResponseOutput = new HttpResponseOutputMock()
+				val asyncRequestHandler = new AsyncRequestHandlerMock(httpResponseOutput)
+				val pullActor = system.actorOf(Props(new PullActor(asyncRequestHandler, httpResponseOutput)))
+				awaitCond(!asyncRequestHandler.errorListeners.isEmpty, 200 millis, 10 millis)
+				asyncRequestHandler.sendError()
 				awaitCond(pullActor.isTerminated, 200 millis, 10 millis)
 			}
 		}

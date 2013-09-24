@@ -87,7 +87,7 @@ class LadderFrameworkFilter extends Filter with Loggable {
 							warn("wrong httpServletResponse")
 							httpServletResponse
 				}
-				requestHandler ! HttpInteraction(asyncContext, request, response)
+				requestHandler ! HttpInteraction(new AsyncServletContext(asyncContext), request, new HttpServletResponseOutput(response))
 			case _ =>
 				chain.doFilter(servletRequest, servletResponse);
 		}

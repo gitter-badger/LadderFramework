@@ -2,7 +2,6 @@ package org.ladderframework
 
 import scala.xml.NodeSeq
 import scala.xml.XML
-import javax.servlet.http.HttpServletResponse
 import bootstrap.LadderBoot
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -19,11 +18,11 @@ trait StatelessHtmlPage extends HtmlResponse{
 		} yield "<!DOCTYPE html>\n" + (r(x)).toString
 	}
 	
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec:ExecutionContext) =
+	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext) =
 		content.map(cont => {
-			httpServletResponse.setStatus(status.code)
-			httpServletResponse.setContentType(contentType)
-			httpServletResponse.getWriter().append(cont).flush()
+			httpResponseOutput.setStatus(status)
+			httpResponseOutput.setContentType(contentType)
+			httpResponseOutput.writer.append(cont).flush()
 			status
 		})
 

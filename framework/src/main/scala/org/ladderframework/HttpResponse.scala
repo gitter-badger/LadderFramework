@@ -3,7 +3,6 @@ package org.ladderframework
 import scala.xml.NodeSeq
 import scala.xml.XML
 import java.io.InputStream
-import javax.servlet.http.HttpServletResponse
 import bootstrap.LadderBoot
 import java.io.File
 import org.ladderframework.logging.Loggable
@@ -19,16 +18,16 @@ import scala.xml.Xhtml
 trait HttpResponse {
 	def status: Status
 
-	def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext): Future[Status]
+	def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext): Future[Status]
 }
 
 case class HttpRedirectResponse(location: List[String], params: Option[String] = None) extends HttpResponse {
 	val status = Found
 
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext): Future[Status] = {
+	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext): Future[Status] = {
 		Future {
-			httpServletResponse.setStatus(status.code)
-			httpServletResponse.setHeader("Location", location.mkString("/", "/", "") + params.map("?" + _ + "=redirect").getOrElse(""))
+			httpResponseOutput.setStatus(status)
+			httpResponseOutput.setHeader("Location", location.mkString("/", "/", "") + params.map("?" + _ + "=redirect").getOrElse(""))
 			status
 		}
 	}
@@ -62,22 +61,22 @@ case class ErrorResponse(override val status: Status, ot: Option[Throwable]) ext
 case class HttpResourceResponse(status: Status = OK, path: List[String]) extends HttpResponse with Loggable {
 	lazy val pathString = path.mkString("/", "/", "")
 
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext): Future[Status] = Future {
+	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext): Future[Status] = Future {
 		LadderBoot.resource(pathString)
 	}.flatMap(file => {
 		debug("HttpResourceResponse - print: " + file)
 		if (file != null) {
 			Future {
-				httpServletResponse.setStatus(status.code)
+				httpResponseOutput.setStatus(status)
 				path.reverse.headOption.foreach(contentType =>
-					httpServletResponse.setContentType(LadderBoot.mimeType(contentType)))
+					httpResponseOutput.setContentType(LadderBoot.mimeType(contentType)))
 				val content = LadderBoot.resourceAsStream(pathString)
-				val out = httpServletResponse.getOutputStream()
+				val out = httpResponseOutput.outputStream
 				Iterator.continually(content.read).takeWhile(-1 !=).foreach(out.write)
 				status
 			}
 		} else {
-			LadderBoot.notFound.applyToHttpServletResponse(httpServletResponse)
+			LadderBoot.notFound.applyToHttpServletResponse(httpResponseOutput)
 		}
 	})
 }
@@ -85,10 +84,10 @@ case class HttpResourceResponse(status: Status = OK, path: List[String]) extends
 case class XmlResponse(content: NodeSeq) extends HttpResponse {
 	def status: Status = OK
 	def contentType = "text/xml"
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext) = Future {
-		httpServletResponse.setStatus(status.code)
-		httpServletResponse.setContentType(contentType)
-		httpServletResponse.getWriter().append(content.mkString).flush()
+	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext) = Future {
+		httpResponseOutput.setStatus(status)
+		httpResponseOutput.setContentType(contentType)
+		httpResponseOutput.writer.append(content.mkString).flush()
 		status
 	}
 }
@@ -96,21 +95,21 @@ case class XmlResponse(content: NodeSeq) extends HttpResponse {
 case class JsonResponse(content: String) extends HttpResponse {
 	def status: Status = OK
 	def contentType = "text/json"
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext) = Future {
-		httpServletResponse.setStatus(status.code)
-		httpServletResponse.setContentType(contentType)
-		httpServletResponse.getWriter().append(content).flush()
+	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext) = Future {
+		httpResponseOutput.setStatus(status)
+		httpResponseOutput.setContentType(contentType)
+		httpResponseOutput.writer.append(content).flush()
 		status
 	}
 }
 case class JsCmdResponse(cmd: JsCmd) extends HttpResponse with Loggable {
 	val status: Status = OK
 	val contentType = "text/javascript"
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext) = Future {
+	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext) = Future {
 		debug(this)
-		httpServletResponse.setStatus(status.code)
-		httpServletResponse.setContentType(contentType)
-		httpServletResponse.getWriter().append(cmd.toCmd).flush()
+		httpResponseOutput.setStatus(status)
+		httpResponseOutput.setContentType(contentType)
+		httpResponseOutput.writer.append(cmd.toCmd).flush()
 		status
 	}
 }
@@ -118,11 +117,11 @@ case class JsCmdResponse(cmd: JsCmd) extends HttpResponse with Loggable {
 case class PullResponse(messages: List[PushMessage]) extends HttpResponse with Loggable {
 	val status: Status = OK
 	val contentType = "text/json"
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext) = Future {
+	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext) = Future {
 		debug(this)
-		httpServletResponse.setStatus(status.code)
-		httpServletResponse.setContentType(contentType)
-		httpServletResponse.getWriter().append(messages.map(_.asJson).mkString("""{"messages":[""", ",", "]}")).flush()
+		httpResponseOutput.setStatus(status)
+		httpResponseOutput.setContentType(contentType)
+		httpResponseOutput.writer.append(messages.map(_.asJson).mkString("""{"messages":[""", ",", "]}")).flush()
 		status
 	}
 }
@@ -131,11 +130,11 @@ trait HtmlResponse extends HttpResponse {
 	def status: Status = OK
 	def contentType = "text/html"
 	def content(implicit ec: ExecutionContext): Future[String]
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext) =
+	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext) =
 		content.map(cont => {
-			httpServletResponse.setStatus(status.code)
-			httpServletResponse.setContentType(contentType)
-			httpServletResponse.getWriter().append(cont).flush()
+			httpResponseOutput.setStatus(status)
+			httpResponseOutput.setContentType(contentType)
+			httpResponseOutput.writer.append(cont).flush()
 			status
 		})
 }
@@ -154,11 +153,11 @@ trait Stateful {
 }
 
 trait StatefulHtmlResponse extends HtmlResponse with Stateful {
-	override def applyToHttpServletResponse(httpServletResponse: HttpServletResponse)(implicit context: Context, ec: ExecutionContext) =
+	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext) =
 		statefullContent.map(content => {
-			httpServletResponse.setStatus(status.code)
-			httpServletResponse.setContentType(contentType)
-			httpServletResponse.getWriter().append(content).flush()
+			httpResponseOutput.setStatus(status)
+			httpResponseOutput.setContentType(contentType)
+			httpResponseOutput.writer.append(content).flush()
 			status
 		})
 }

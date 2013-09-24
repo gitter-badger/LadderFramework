@@ -103,13 +103,13 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 		system.actorFor(sessionID:: Nil) ! PoisonPill
     system.shutdown()
   }
-	
-	def call(request: HttpRequest):HttpServletResponseMock = {
-		val httpServletResponse = new HttpServletResponseMock()
-		val asyncContext = new AsyncContextMock(httpServletResponse)
-		send(HttpInteraction(asyncContext, request, httpServletResponse))
-		assert(asyncContext.latch.await(2, TimeUnit.SECONDS))
-		httpServletResponse
+	val httpResponseOutput = new HttpResponseOutputMock()
+	def call(request: HttpRequest):HttpResponseOutputMock = {
+		val httpResponseOutput = new HttpResponseOutputMock()
+		val asyncRequestHandler = new AsyncRequestHandlerMock(httpResponseOutput)
+		send(HttpInteraction(asyncRequestHandler, request, httpResponseOutput))
+		assert(asyncRequestHandler.latch.await(2, TimeUnit.SECONDS))
+		httpResponseOutput
 	}
 	
 	def httpRequest(givenMethod: Method, givenSession: String, givenPath: List[String], givenParams: Map[String, Array[String]] = Map()) = new HttpRequest{
@@ -124,14 +124,14 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 			
 			"handle simple request" in {
 				val httpServletResponse = call(httpRequest(GET, sessionID,  "hello" :: "world" :: Nil))
-				assert(httpServletResponse.getStatus === OK.code)
+				assert(httpServletResponse.status === OK)
 				assert(httpServletResponse.text === "<html><body>hello world</body></html>")
 				assert(httpServletResponse.contentType === "text/html")
 			}
 			"handle bad request" in {
 				val httpServletResponse = call(httpRequest(GET, sessionID,  "hello" :: "not" :: "found" :: Nil))
 				val content = Await.result(NotFoundResponse.content, 2 seconds)
-				assert(httpServletResponse.getStatus === NotFound.code)
+				assert(httpServletResponse.status === NotFound)
 				assert(httpServletResponse.text === content)
 				assert(httpServletResponse.contentType === "text/html")
 			}
@@ -143,7 +143,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 			"handle simple request" in {
 				val httpServletResponse = call(request)
 				assert(httpServletResponse.text === "<html><body>hello world postedValue</body></html>")
-				assert(httpServletResponse.getStatus === OK.code)
+				assert(httpServletResponse.status === OK)
 				assert(httpServletResponse.contentType === "text/html")
 			}
 		}
@@ -152,7 +152,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 			"serve valid requests" in {
 				val httpServletResponse = call(httpRequest(GET, sessionID, "resources" :: "static.html" :: Nil))
 				assert(httpServletResponse.text === "static")
-				assert(httpServletResponse.getStatus === OK.code)
+				assert(httpServletResponse.status === OK)
 				assert(httpServletResponse.contentType === "text/html")
 			}
 			
@@ -160,19 +160,19 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 				val httpServletResponse = call(httpRequest(GET, sessionID, "resources" :: "notFound.html" :: Nil))
 				val content = Await.result(NotFoundResponse.content, 2 seconds)
 				assert(httpServletResponse.text === content)
-				assert(httpServletResponse.getStatus === NotFound.code)
+				assert(httpServletResponse.status === NotFound)
 				assert(httpServletResponse.contentType === "text/html")
 			}
 			
 			"handle it asyncrounously" in {
-				val httpServletResponse = new HttpServletResponseMock()
-				val asyncContext = new AsyncContextMock(httpServletResponse, 10)
+				val httpResponseOutput = new HttpResponseOutputMock()
+				val asyncRequestHandler = new AsyncRequestHandlerMock(httpResponseOutput, 10)
 				val request = httpRequest(GET, sessionID, "resources" :: "static.html" :: Nil)
 				for(i <- 0 to 10){
-					requestHandler ! HttpInteraction(asyncContext, request, httpServletResponse)
+					requestHandler ! HttpInteraction(asyncRequestHandler, request, httpResponseOutput)
 				}
-				asyncContext.latch.await(1, TimeUnit.SECONDS)
-				assert(asyncContext.latch.getCount === 0)
+				asyncRequestHandler.latch.await(1, TimeUnit.SECONDS)
+				assert(asyncRequestHandler.latch.getCount === 0)
 			}
 		}
 		"recieving a HTTP POST request to an in memory response (Hello World time)" should {
@@ -181,7 +181,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 			"handle simple request" in {
 				val httpServletResponse = call(request)
 				assert(httpServletResponse.text === "<html><body>hello world postedValue</body></html>")
-				assert(httpServletResponse.getStatus === OK.code)
+				assert(httpServletResponse.status === OK)
 				assert(httpServletResponse.contentType === "text/html")
 			}
 		}
@@ -189,26 +189,26 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 		"handle statefull response" should {
 			"handle POST REDIRECT GET" in {
 				val httpServletResponse = call(httpRequest(GET, sessionID,  "statefull" :: "request" :: Nil))
-				assert(httpServletResponse.getStatus === OK.code)
+				assert(httpServletResponse.status === OK)
 				assert(httpServletResponse.contentType === "text/html")
 				val responseText = httpServletResponse.text.split("_")
 				val stateful = responseText(0)
 				val func = responseText(1)
 				
 				val httpServletResponseStatefull = call(httpRequest(POST, sessionID,  "post" :: stateful :: func :: Nil, Map("key" -> Array("value"))))
-				assert(httpServletResponseStatefull.getStatus === Found.code)
+				assert(httpServletResponseStatefull.status === Found)
 				val location = httpServletResponseStatefull.headers("Location")
 				assert(location.startsWith(List("some", "where", "new").mkString("/", "/", "")))
 				
 				val param = location.split("\\?")(1).split("=")
 				val httpServletResponseRedirect = call( httpRequest(GET, sessionID, List("some", "where", "new"), Map(param(0) -> param.tail)))
-				assert(httpServletResponseRedirect.getStatus === OK.code)
+				assert(httpServletResponseRedirect.status === OK)
 				assert(httpServletResponseRedirect.contentType === "text/html")
 				assert(httpServletResponseRedirect.text === "<html><body>redirect post</body></html>")
 			}
 			"handle simple ajax post" in {
 				val httpServletResponse = call(httpRequest(GET, sessionID,  "statefull" :: "ajaxrequest" :: Nil))
-				assert(httpServletResponse.getStatus === OK.code)
+				assert(httpServletResponse.status === OK)
 				assert(httpServletResponse.contentType === "text/html")
 				val text = httpServletResponse.text.split("_")
 				val statefull = text(0)
@@ -216,35 +216,35 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 				
 				val httpServletResponseAjax = call( httpRequest(POST, sessionID, "ajax" :: statefull :: id :: Nil, Map("key" -> Array("value"))))
 				assert(httpServletResponseAjax.text === "callback();")
-				assert(httpServletResponseAjax.getStatus === OK.code)
+				assert(httpServletResponseAjax.status === OK)
 				assert(httpServletResponseAjax.contentType === "text/javascript")
 			}
 			
 			"handle simple ajax callback" in {
 				val request = httpRequest(GET, sessionID, "statefull" :: "ajaxcallback" :: Nil)
 				val httpServletResponse = call(request)
-				assert(httpServletResponse.getStatus === OK.code)
+				assert(httpServletResponse.status === OK)
 				assert(httpServletResponse.contentType === "text/html")
 				val text = httpServletResponse.text.split("_")
 				val statefull = text(0)
 				val key = text(1)
 				
 				val httpServletResponseAjax = call(httpRequest(POST, sessionID,  "ajax" :: statefull :: Nil, Map(key -> Array("inputValue"))))
-				assert(httpServletResponseAjax.getStatus === OK.code)
+				assert(httpServletResponseAjax.status === OK)
 				assert(httpServletResponseAjax.contentType === "text/javascript")
 				assert(httpServletResponseAjax.text === "inputCallback:inputValue();")
 			}
 			"handle simple ajax callback handler" in {
 				val request = httpRequest(GET, sessionID, "statefull" :: "ajaxhandler" :: Nil)
 				val httpServletResponse = call(request)
-				assert(httpServletResponse.getStatus === OK.code)
+				assert(httpServletResponse.status === OK)
 				assert(httpServletResponse.contentType === "text/html")
 				val text = httpServletResponse.text.split("_")
 				val statefull = text(0)
 				val key = text(1)
 				
 				val httpServletResponseAjax = call(httpRequest(POST, sessionID,  "ajax" :: statefull :: key :: Nil, Map(key -> Array("inputValue"))))
-				assert(httpServletResponseAjax.getStatus === OK.code)
+				assert(httpServletResponseAjax.status === OK)
 				assert(httpServletResponseAjax.contentType === "text/html")
 				assert(httpServletResponseAjax.text === "got back here")
 			}
@@ -254,12 +254,12 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 			"handle pushing messages" in {
 				val request = httpRequest(GET, sessionID,  "statefull" :: "pull" :: Nil)
 				val httpServletResponse = call(request)
-				assert(httpServletResponse.getStatus === OK.code)
+				assert(httpServletResponse.status === OK)
 				assert(httpServletResponse.contentType === "text/html")
 				val statefull = httpServletResponse.text
 				
 				val httpServletResponsePull = call(httpRequest(POST, sessionID,  "pull" :: statefull :: Nil))
-				assert(httpServletResponsePull.getStatus === OK.code)
+				assert(httpServletResponsePull.status === OK)
 				assert(httpServletResponsePull.contentType === "text/json")
 				val RegExp = """\{"messages":\[\{"id":"(.*)", "message":"Message\(\);"\}\]\}""".r
 				httpServletResponsePull.text match {

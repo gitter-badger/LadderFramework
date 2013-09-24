@@ -7,13 +7,12 @@ import org.scalatest.WordSpec
 import org.scalatest.GivenWhenThen
 import org.scalatest.BeforeAndAfterAll
 import akka.actor.Props
-import javax.servlet.AsyncContext
-import org.ladderframework.mock.HttpServletResponseMock
-import org.ladderframework.mock.AsyncContextMock
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import bootstrap.LadderBoot
 import org.scalatest.WordSpecLike
+import org.ladderframework.mock.HttpResponseOutputMock
+import org.ladderframework.mock.AsyncRequestHandlerMock
 
 class ResponseContainerActorSpec (system: ActorSystem) extends TestKit(system) with WordSpecLike with GivenWhenThen with BeforeAndAfterAll{
 	
@@ -24,8 +23,8 @@ class ResponseContainerActorSpec (system: ActorSystem) extends TestKit(system) w
 	"The request container actor" when {
 		"handle time to live" should {
 			"handle timing out" in {
-				val httpServletResponse = new HttpServletResponseMock()
-				val asyncContext = new AsyncContextMock(httpServletResponse)
+				val httpResponseOutput = new HttpResponseOutputMock()
+				val asyncRequestHandler = new AsyncRequestHandlerMock(httpResponseOutput)
 				val uuid = Utils.uuid
 				LadderBoot.timeToLivePage = 200
 				val initalResponseContainer = system.actorOf(Props(new InitalResponseContainer(null, null, uuid)))
