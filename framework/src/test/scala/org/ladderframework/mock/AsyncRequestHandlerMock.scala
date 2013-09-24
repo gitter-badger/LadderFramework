@@ -19,17 +19,14 @@ class AsyncRequestHandlerMock(httpResponseOutput: HttpResponseOutputMock, countD
 	var timeoutListeners:List[() => Unit] = Nil
 	
 	def sendTimeout(){
-		println("sendTimeout: " + timeoutListeners)
 		timeoutListeners.foreach(_.apply())
 	}
 	
 	def sendError(){
-		println("sendError: " + errorListeners)
 		errorListeners.foreach(_.apply())
 	}
 	
 	def addListeners(onComplete: () => Unit, onError: () => Unit, onStart: () => Unit, onTimeout: () => Unit){
-		println("addListeners")
 		errorListeners = onError :: errorListeners
 		timeoutListeners = onTimeout :: timeoutListeners
 	}

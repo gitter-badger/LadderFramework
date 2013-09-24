@@ -233,7 +233,6 @@ class PullActor(asyncHandler: AsyncRequestHandler, res:HttpResponseOutput) exten
 		context.self ! PoisonPill
 	}
 	val onError = () => {
-		print("onError")
 		context.self ! PoisonPill
 	}
 	val onStart = () => {}
