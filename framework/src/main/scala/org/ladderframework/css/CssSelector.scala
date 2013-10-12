@@ -10,13 +10,13 @@ import scala.math.Numeric
 
 trait CssSelector {
 	type NSTransform = NodeSeq => NodeSeq
-	def #>(ns: NodeSeq): NodeSeq => NodeSeq
-	def #>(nsf: NodeSeq => NodeSeq): NodeSeq => NodeSeq
-	def #>(e: FormRendering): NodeSeq => NodeSeq
-	def #>(iter: Iterable[NodeSeq => NodeSeq]): NodeSeq => NodeSeq
-	def #>>(ns: NodeSeq): NodeSeq => NodeSeq
-	def #+>(ns: NodeSeq): NodeSeq => NodeSeq
-	def #@>(attrs: Map[String, String]): NodeSeq => NodeSeq
+	def #>(ns: NodeSeq): NSTransform
+	def #>(nsf: NSTransform): NSTransform
+	def #>(e: FormRendering): NSTransform
+	def #>(iter: Iterable[NSTransform]): NSTransform
+	def #>>(ns: NodeSeq): NSTransform
+	def #+>(ns: NodeSeq): NSTransform
+	def #@>(attrs: Map[String, String]): NSTransform
 	def matches(n: Node): Boolean
 
 	class CssTransformer(rr: PartialFunction[Node, Seq[Node]]) extends BasicTransformer {
@@ -65,13 +65,13 @@ object CssSelector {
 }
 
 private[ladderframework] class PassThruSelector(val any: String) extends CssSelector {
-	def #>(ns: NodeSeq): NodeSeq => NodeSeq = ns => ns
-	def #>(nsf: NodeSeq => NodeSeq): NodeSeq => NodeSeq = ns => ns
-	def #>(e: FormRendering): NodeSeq => NodeSeq = ns => ns
-	def #>(iter: Iterable[NodeSeq => NodeSeq]): NodeSeq => NodeSeq = ns => ns
-	def #>>(ns: NodeSeq): NodeSeq => NodeSeq = ns => ns
-	def #+>(ns: NodeSeq): NodeSeq => NodeSeq = ns => ns
-	def #@>(attrs: Map[String, String]): NodeSeq => NodeSeq = ns => ns
+	def #>(ns: NodeSeq): NSTransform = ns => ns
+	def #>(nsf: NSTransform): NSTransform = ns => ns
+	def #>(e: FormRendering): NSTransform = ns => ns
+	def #>(iter: Iterable[NSTransform]): NSTransform = ns => ns
+	def #>>(ns: NodeSeq): NSTransform = ns => ns
+	def #+>(ns: NodeSeq): NSTransform = ns => ns
+	def #@>(attrs: Map[String, String]): NSTransform = ns => ns
 	def matches(n: Node): Boolean = false
 }
 
@@ -79,18 +79,18 @@ private[ladderframework] trait AttribSelector extends CssSelector {
 
 	def attributeMatches(attribs: MetaData): Boolean
 
-	def #>(ns: NodeSeq): NodeSeq => NodeSeq = {
+	def #>(ns: NodeSeq): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = { case Elem(_, _, attribs, _, _*) if attributeMatches(attribs) => ns }
 
 		ns => transform(ns, rr)
 	}
 
-	def #>>(ns: NodeSeq): NodeSeq => NodeSeq = {
+	def #>>(ns: NodeSeq): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = { case Elem(p, l, attribs, s, _*) if attributeMatches(attribs) => Elem(p, l, attribs, s, false, ns: _*) }
 		nodeSeq => transform(nodeSeq, rr)
 	}
 
-	def #+>(ns: NodeSeq): NodeSeq => NodeSeq = {
+	def #+>(ns: NodeSeq): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case Elem(p, l, attribs, s, children @ _*) if attributeMatches(attribs) =>
 				Elem(p, l, attribs, s, false, (children ++ ns): _*)
@@ -98,7 +98,7 @@ private[ladderframework] trait AttribSelector extends CssSelector {
 		nodeSeq => transform(nodeSeq, rr)
 	}
 
-	def #>(nsTransform: NodeSeq => NodeSeq): NodeSeq => NodeSeq = {
+	def #>(nsTransform: NSTransform): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case e @ Elem(p, l, attribs, s, children @ _*) if attributeMatches(attribs) =>
 				val transformedChildren = nsTransform(children)
@@ -106,14 +106,14 @@ private[ladderframework] trait AttribSelector extends CssSelector {
 		}
 		ns => transform(ns, rr)
 	}
-	def #>(e: FormRendering): NodeSeq => NodeSeq = {
+	def #>(e: FormRendering): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case el @ Elem(_, _, attribs, _, _*) if attributeMatches(attribs) =>
 				e.transform(el)
 		}
 		ns => transform(ns, rr)
 	}
-	def #>(iter: Iterable[NodeSeq => NodeSeq]): NodeSeq => NodeSeq = {
+	def #>(iter: Iterable[NSTransform]): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case e if attributeMatches(e.attributes) =>
 				iter.flatMap(_.apply(e)).toSeq
@@ -121,7 +121,7 @@ private[ladderframework] trait AttribSelector extends CssSelector {
 		ns => transform(ns, rr)
 	}
 
-	def #@>(newAttrs: Map[String, String]): NodeSeq => NodeSeq = {
+	def #@>(newAttrs: Map[String, String]): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case e @ Elem(p, l, attribs, n, children @ _*) if attributeMatches(attribs) =>
 				val concatenatedAttrs = concatenate(CssSelector.mapToAttribute(newAttrs), attribs)
@@ -162,20 +162,20 @@ object ClassSelector {
 }
 private[ladderframework] class ElementSelector(val element: String) extends CssSelector {
 
-	def #>(ns: NodeSeq): NodeSeq => NodeSeq = {
+	def #>(ns: NodeSeq): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case Elem(_, `element`, _, _, _*) => ns
 		}
 		ns => transform(ns, rr)
 	}
-	def #>>(ns: NodeSeq): NodeSeq => NodeSeq = {
+	def #>>(ns: NodeSeq): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case e @ Elem(p, `element`, attribs, s, _*) =>
 				Elem(p, element, attribs, s, false, ns: _*)
 		}
 		ns => transform(ns, rr)
 	}
-	def #+>(ns: NodeSeq): NodeSeq => NodeSeq = {
+	def #+>(ns: NodeSeq): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case e @ Elem(p, `element`, attribs, s, children @ _*) =>
 				val newChilren = (children ++ ns)
@@ -184,14 +184,14 @@ private[ladderframework] class ElementSelector(val element: String) extends CssS
 		ns => transform(ns, rr)
 	}
 
-	def #>(nsTransform: NodeSeq => NodeSeq): NodeSeq => NodeSeq = {
+	def #>(nsTransform: NSTransform): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case Elem(_, `element`, _, _, children @ _*) =>
 				nsTransform(children)
 		}
 		ns => transform(ns, rr)
 	}
-	def #>(e: FormRendering): NodeSeq => NodeSeq = {
+	def #>(e: FormRendering): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case el @ Elem(_, `element`, _, _, children @ _*) =>
 				e.transform(el)
@@ -199,7 +199,7 @@ private[ladderframework] class ElementSelector(val element: String) extends CssS
 		ns => transform(ns, rr)
 	}
 
-	def #>(iter: Iterable[NodeSeq => NodeSeq]): NodeSeq => NodeSeq = {
+	def #>(iter: Iterable[NSTransform]): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case e @ Elem(p, `element`, a, n, children @ _*) =>
 				iter.flatMap(_.apply(e)).toSeq
@@ -207,7 +207,7 @@ private[ladderframework] class ElementSelector(val element: String) extends CssS
 		ns => transform(ns, rr)
 	}
 
-	def #@>(newAttrs: Map[String, String]): NodeSeq => NodeSeq = {
+	def #@>(newAttrs: Map[String, String]): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case Elem(p, `element`, attribs, n, children @ _*) =>
 				val concatenatedAttrs = concatenate(CssSelector.mapToAttribute(newAttrs), attribs)
@@ -253,14 +253,14 @@ private[ladderframework] class ElementAttributeSelector(tagName: String, attrib:
 	def attributeMatches(attribs: MetaData) = attribs.asAttrMap.get(attrib).
 		exists(attr => (" " + attr + " ") == (" " + value + " "))
 
-	def #>(ns: NodeSeq): NodeSeq => NodeSeq = {
+	def #>(ns: NodeSeq): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case Elem(_, `tagName`, attribs, _, _*) if attributeMatches(attribs) => ns
 		}
 		ns => transform(ns, rr)
 	}
 
-	def #>>(ns: NodeSeq): NodeSeq => NodeSeq = {
+	def #>>(ns: NodeSeq): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case e @ Elem(p, `tagName`, attribs, s, children @ _*) if attributeMatches(attribs) =>
 				Elem(p, tagName, attribs, s, false, ns: _*)
@@ -268,7 +268,7 @@ private[ladderframework] class ElementAttributeSelector(tagName: String, attrib:
 		ns => transform(ns, rr)
 	}
 
-	def #+>(ns: NodeSeq): NodeSeq => NodeSeq = {
+	def #+>(ns: NodeSeq): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case e @ Elem(p, `tagName`, attribs, s, children @ _*) if attributeMatches(attribs) =>
 				val newChildren = (children ++ ns)
@@ -277,7 +277,7 @@ private[ladderframework] class ElementAttributeSelector(tagName: String, attrib:
 		ns => transform(ns, rr)
 	}
 
-	def #>(nsTransform: NodeSeq => NodeSeq): NodeSeq => NodeSeq = {
+	def #>(nsTransform: NSTransform): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case e @ Elem(p, `tagName`, attribs, s, children @ _*) if attributeMatches(attribs) =>
 				val transformedChildren = nsTransform(children)
@@ -286,14 +286,14 @@ private[ladderframework] class ElementAttributeSelector(tagName: String, attrib:
 		ns => transform(ns, rr)
 	}
 
-	def #>(e: FormRendering): NodeSeq => NodeSeq = {
+	def #>(e: FormRendering): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case el @ Elem(_, `tagName`, attribs, _, children @ _*) if attributeMatches(attribs) =>
 				e.transform(el)
 		}
 		ns => transform(ns, rr)
 	}
-	def #>(iter: Iterable[NodeSeq => NodeSeq]): NodeSeq => NodeSeq = {
+	def #>(iter: Iterable[NSTransform]): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case e @ Elem(p, `tagName`, attribs, n, children @ _*) if attributeMatches(attribs) =>
 				iter.flatMap(_.apply(e)).toSeq
@@ -301,7 +301,7 @@ private[ladderframework] class ElementAttributeSelector(tagName: String, attrib:
 		ns => transform(ns, rr)
 	}
 
-	def #@>(newAttrs: Map[String, String]): NodeSeq => NodeSeq = {
+	def #@>(newAttrs: Map[String, String]): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case Elem(p, `tagName`, attribs, n, children @ _*) if attributeMatches(attribs) =>
 				val concatenatedAttrs = concatenate(CssSelector.mapToAttribute(newAttrs), attribs)

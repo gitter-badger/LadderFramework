@@ -25,7 +25,7 @@ case class Ajax[M <: Mapping[M]](form: Form[M])
 		callback(either, id)
 	})
 	
-	def transform(ns: NodeSeq): NodeSeq = <form id={id} onsubmit="javascript:ladder.post(event)" action={submitPath}>{
+	def transform(ns: NodeSeq): NodeSeq = <form id={id} onsubmit="return ladder.post(event);" action={submitPath}>{
 			rendering(form.context)(form.mapping)(ns)
 		}</form>
 }

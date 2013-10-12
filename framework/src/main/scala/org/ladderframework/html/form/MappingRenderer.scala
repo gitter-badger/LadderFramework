@@ -132,7 +132,7 @@ package form{
 		implicit object StringFieldRenderer extends TextFieldRenderer[String]{
 			def apply(mapping: FieldMapping[String], label: String, attrs: Map[Symbol, String], context: FormContext, errorTransformer: ErrorMessageTransformer): NodeSeq = {
 				
-				val id = attrs.getOrElse('id, Utils.uuid)
+				val id = attrs.getOrElse('id, mapping.key)
 				
 				val fieldErrors = context.errors.filter(_.key == mapping.key)
 				
@@ -157,7 +157,7 @@ package form{
 		implicit object IntFieldRenderer extends TextFieldRenderer[Int]{
 			def apply(mapping: FieldMapping[Int], label: String, attrs: Map[Symbol, String], context: FormContext, errorTransformer: ErrorMessageTransformer): NodeSeq = {
 				
-				val id = attrs.getOrElse('id, Utils.uuid)
+				val id = attrs.getOrElse('id, mapping.key)
 				
 				val fieldErrors = context.errors.filter(_.key == mapping.key)
 				
@@ -193,7 +193,7 @@ package form{
 		implicit object StringFieldRenderer extends TextareaFieldRenderer[String]{
 			def apply(mapping: FieldMapping[String], label: String, attrs: Map[Symbol, String], context: FormContext, errorTransformer: ErrorMessageTransformer): NodeSeq = {
 				
-				val id = attrs.getOrElse('id, Utils.uuid)
+				val id = attrs.getOrElse('id, mapping.key)
 				
 				val fieldErrors = context.errors.filter(_.key == mapping.key)
 				
@@ -226,7 +226,7 @@ package form{
 		implicit object StringFieldRenderer extends PasswordFieldRenderer[String]{
 			def apply(mapping: FieldMapping[String], label: String, attrs: Map[Symbol, String], context: FormContext, errorTransformer: ErrorMessageTransformer): NodeSeq = {
 				
-				val id = attrs.getOrElse('id, Utils.uuid)
+				val id = attrs.getOrElse('id, mapping.key)
 				
 				val fieldErrors = context.errors.filter(_.key == mapping.key)
 				
@@ -259,7 +259,7 @@ package form{
 		implicit object BooleanFieldRenderer extends CheckboxFieldRenderer[Boolean]{
 			def apply(mapping: FieldMapping[Boolean], label: String, attrs: Map[Symbol, String], context: FormContext, errorTransformer: ErrorMessageTransformer): NodeSeq = {
 				
-				val id = attrs.getOrElse('id, Utils.uuid)
+				val id = attrs.getOrElse('id, mapping.key)
 				
 				val fieldErrors = context.errors.filter(_.key == mapping.key)
 				
