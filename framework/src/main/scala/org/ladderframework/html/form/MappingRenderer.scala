@@ -200,11 +200,10 @@ package form{
 				<div class={"control-group" + {if(fieldErrors.isEmpty) "" else " error"}} >
 					<label class="control-label" for={id} >{label}</label>
 					<div class="controls">
-						<input type="text" 
+						<textarea
 							name={mapping.key} 
 							id={id} 
-							placeholder={attrs.getOrElse('placeholder, "")} 
-							value={context.data.get(mapping.key).getOrElse("")}/>
+							placeholder={attrs.getOrElse('placeholder, "")}>{context.data.get(mapping.key).getOrElse("")}</textarea>
 						{
 							if(mapping.constraints.map(_.name).exists(_ == Constraints.nonEmpty.name)) <span>*</span> else NodeSeq.Empty
 						}
