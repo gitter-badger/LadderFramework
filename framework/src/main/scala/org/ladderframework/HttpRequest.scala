@@ -2,9 +2,9 @@ package org.ladderframework
 
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.JavaConverters.mapAsScalaMapConverter
-
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.Part
+import org.ladderframework.logging.Loggable
 
 trait HttpRequest{
 	def method:Method
@@ -18,15 +18,17 @@ trait HttpRequest{
 	def partAsString(name: String): Option[String] = part(name).map(part => Context.stream2String(part.getInputStream))
 }
 
-class ServletHttpRequest(req: HttpServletRequest) extends HttpRequest{
+class ServletHttpRequest(req: HttpServletRequest) extends HttpRequest with Loggable{
 	val method:Method = Method(req.getMethod())
 	override val headers: String => Option[String] = s => Option(req.getHeader(s))
 	val sessionID:String = req.getSession().getId()
 	val path:List[String] = req.getServletPath.split("/").filterNot(_.isEmpty).toList
 	val parameters: Map[String,Array[String]]  = req.getParameterMap.asScala.toMap
+	debug("Parameters: " + parameters)
 	//TODO S wrap Part in something appropriate
 	override val parts = if(Option(req.getContentType).exists(_.startsWith("multipart/form-data"))) 
 					req.getParts.toList else Nil
+	debug("pars: " + parts)
 }
 
 object HttpRequest{
