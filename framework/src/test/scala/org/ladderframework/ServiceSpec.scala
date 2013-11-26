@@ -197,7 +197,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 				
 				val httpServletResponseStatefull = call(httpRequest(POST, sessionID,  "post" :: stateful :: func :: Nil, Map("key" -> Array("value"))))
 				assert(httpServletResponseStatefull.status === Found)
-				val location = httpServletResponseStatefull.headers("Location")
+				val location = httpServletResponseStatefull.headers(Location)
 				assert(location.startsWith(List("some", "where", "new").mkString("/", "/", "")))
 				
 				val param = location.split("\\?")(1).split("=")

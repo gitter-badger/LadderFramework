@@ -7,6 +7,7 @@ import org.ladderframework.NotImplemented
 import org.ladderframework.Status
 import javax.servlet.ServletOutputStream
 import java.io.OutputStream
+import org.ladderframework.Header
 
 class HttpResponseOutputMock extends HttpResponseOutput {
 
@@ -16,10 +17,10 @@ class HttpResponseOutputMock extends HttpResponseOutput {
 	
 	var status: Status = NotImplemented
 	var contentType = ""
-	var headers:Map[String, String] = Map()
+	var headers:Map[Header, String] = Map()
 		
 	def setStatus(status: Status) {this.status = status}
-	def setHeader(key: String, value: String) {
+	def setHeader(key: Header, value: String) {
 		headers += (key -> value)
 	}
 	def setContentType(contentType: String) {

@@ -1,21 +1,25 @@
+var console = console || {};
+console.log = console.log || function() {};
 var ladder = (function() {
 	var clickedLastArray = [];
 	var recievedIdArray = [];
 	return {
 		post : function(event) {
 
-			event.preventDefault();
+			event.preventDefault = true;
+			event.returnValue = false;
 
 			/* get some values from elements on the page: */
 			var $form = $(event.target);
 			console.log("$form: " + $form);
 			var postData = $form.serialize();
 			console.log("term: " + postData);
-			var url = $form.attr('action');
+			var url = "/" + $form.attr('action');
 			console.log("url: " + url);
+			
 
 			var lastClick = clickedLastArray.pop();
-			if (lastClick.form == url) {
+			if (lastClick && lastClick.form == url) {
 				postData = postData + "&" + lastClick.button + "=clicked";
 			}
 
@@ -33,6 +37,7 @@ var ladder = (function() {
 			var r = new XMLHttpRequest();
 			var noCache = Math.random();
 			r.open("POST", url, true);
+			r.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 			r.onreadystatechange = function () {
 			  if (r.readyState != 4) return;
 			  if(r.status != 200) {
@@ -42,6 +47,7 @@ var ladder = (function() {
 			  }
 			};
 			r.send(postData);
+			return false;
 		},
 
 		clickedLast : function(form, event) {
@@ -130,6 +136,6 @@ var ladder = (function() {
 			};
 			r.send();
 		}
-	}
+	};
 
 })();

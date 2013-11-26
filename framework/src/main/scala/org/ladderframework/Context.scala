@@ -215,10 +215,20 @@ case class Context(
 				val (key, value) = param
 				clickMap.get(key).foreach(_.apply())
 			})
-			val jsCmd: Future[JsCmd] = ajaxPostMap(func)(request)
-			debug("result: " + jsCmd)
+			
 			import LadderBoot.executionContext
-			jsCmd.map(JsCmdResponse)
+
+			//TODO ExceptionHandling
+			val jsCmd: Future[JsCmd] = try{
+				ajaxPostMap(func)(request)
+			} catch {
+				case t: Throwable => Future.failed(t)
+			}
+			debug("result: " + jsCmd)
+			jsCmd.map(JsCmdResponse).recover{
+				case ni: NotImplementedError => ErrorResponse(NotImplemented, Option(ni))
+				case t: Throwable => ErrorResponse(InternalServerError, Option(t))
+			}
 		case request @ HttpRequest(_, "ajax" :: `contextID` :: func :: Nil) if ajaxClickMap.contains(func) =>
 			debug("ajax click func: " + func + " --- " + ajaxClickMap(func)) 
 			

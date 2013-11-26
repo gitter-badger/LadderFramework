@@ -50,7 +50,7 @@ class SessionActor(sessionID:String) extends Actor with ActorLogging{
 			path match {
 				case ("ajax" | "post" | "pull") :: id :: _ => //Match mer
 					context.actorSelection(id) ! hi
-				case _ if hi.req.parameters.headOption.flatMap(_._2.headOption).map( _ == "redirect").getOrElse(false) =>
+				case _ if hi.req.parameters.headOption.flatMap(_._2.headOption).exists( _ == "redirect") =>
 					log.debug("redirect")
 					context.children.map(_.path).foreach(p => log.debug(p.toString))
 					hi.req.parameters.headOption.map(_._1) match {

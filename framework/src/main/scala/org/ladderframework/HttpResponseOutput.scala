@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletResponse
 trait HttpResponseOutput {
 	def setStatus(status: Status): Unit
 	def setContentType(contentType: String): Unit
-	def setHeader(name: String, value: String): Unit
+	def setHeader(key: Header, value: String): Unit
 	def outputStream: OutputStream
 	def writer: Writer
 }
@@ -22,8 +22,8 @@ class HttpServletResponseOutput(hsr: HttpServletResponse) extends HttpResponseOu
 		hsr.setContentType(contentType)
 	}
 	
-	def setHeader(name: String, value: String){
-		hsr.setHeader(name, value)
+	def setHeader(key: Header, value: String){
+		hsr.setHeader(key.name, value)
 	}
 	
 	def outputStream: OutputStream = hsr.getOutputStream()

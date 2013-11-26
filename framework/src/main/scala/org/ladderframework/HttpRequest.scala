@@ -196,54 +196,58 @@ object IfNoneMatch extends Header{
 	val name = "If-None-Match"
 }
 /** If the entity is unchanged, send me the part(s) that I am missing; otherwise, send me the entire new entity	If-Range: "737060cd8c284d8af7ad3082f209582d" */
-object IfRange {
+object IfRange extends Header{
 	val name = "If-Range"
 }
 /** Only send the response if the entity has not been modified since a specific time.	If-Unmodified-Since: Sat, 29 Oct 1994 19:43:31 GMT */
-object IfUnmodifiedSince {
+object IfUnmodifiedSince extends Header{
 	val name = "If-Unmodified-Since"
 }
+object Location extends Header{
+	val name = "Location"
+}
+
 /** Limit the number of times the message can be forwarded through proxies or gateways.	Max-Forwards: 10 */
-object MaxForwards {
+object MaxForwards extends Header{
 	val name = "Max-Forwards"
 }
 /** Initiates a request for cross-origin resource sharing (asks server for an 'Access-Control-Allow-Origin' response header) .	Origin: http://www.example-social-network.com */
-object Origin {
+object Origin extends Header{
 	val name = "Origin"
 }
 /** Implementation-specific headers that may have various effects anywhere along the request-response chain.	Pragma: no-cache */
-object Pragma {
+object Pragma extends Header{
 	val name = "Pragma"
 }
 /** Authorization credentials for connecting to a proxy.	Proxy-Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ== */
-object ProxyAuthorization {
+object ProxyAuthorization extends Header{
 	val name = "Proxy-Authorization"
 }
 /** Request only part of an entity. Bytes are numbered from 0.	Range: bytes=500-999 */
-object Range {
+object Range extends Header{
 	val name = "Range"
 }
 /** This is the address of the previous web page from which a link to the currently requested page was followed. (The word “referrer” is misspelled in the RFC as well as in most implementations.)	Referer: http://en.wikipedia.org/wiki/Main_Page */
-object Referer {
+object Referer extends Header{
 	val name = "Referer"
 }
 /** The transfer encodings the user agent is willing to accept: the same values as for the response header Transfer-Encoding can be used, plus the "trailers" value (related to the "chunked" transfer method) to notify the server it expects to receive additional headers (the trailers) after the last, zero-sized, chunk.	TE: trailers, deflate */
-object TE {
+object TE extends Header{
 	val name = "TE"
 }
 /** Ask the server to upgrade to another protocol.	Upgrade: HTTP/2.0, SHTTP/1.3, IRC/6.9, RTA/x11 */
-object Upgrade {
+object Upgrade extends Header{
 	val name = "Upgrade"
 }
 /** The user agent string of the user agent	User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:12.0) Gecko/20100101 Firefox/12.0 */
-object UserAgent {
+object UserAgent extends Header{
 	val name = "User-Agent"
 }
 /** Informs the server of proxies through which the request was sent.	Via: 1.0 fred, 1.1 example.com (Apache/1.1) */
-object Via {
+object Via extends Header{
 	val name = "Via"
 }
 /** A general warning about possible problems with the entity body.	Warning: 199 Miscellaneous warning */
-object Warning {
+object Warning extends Header{
 	val name = "Warning"
 }
