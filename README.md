@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ladderframework/LadderFramework.png?branch=master)](https://travis-ci.org/ladderframework/LadderFramework)}
+[![Build Status](https://travis-ci.org/ladderframework/LadderFramework.png?branch=master)](https://travis-ci.org/ladderframework/LadderFramework)
 
 &#8803; LadderFramework
 =======================
