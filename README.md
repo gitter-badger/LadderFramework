@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/ladderframework/LadderFramework.png?branch=master)](https://travis-ci.org/ladderframework/LadderFramework)}
+
 &#8803; LadderFramework
 =======================
 This isn't a framwork for you to use. It's by no means production ready. There are many great framworks and toolkits that you should look at before even waisting time on this one. 
