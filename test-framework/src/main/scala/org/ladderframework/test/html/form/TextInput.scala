@@ -11,8 +11,7 @@ import org.ladderframework.FileInfo
 import org.ladderframework.HttpResponse
 import org.ladderframework.StatefulHtmlResponse
 import org.ladderframework.css.CssSelector
-import org.ladderframework.css.CssSelector.pimpNodeSeq
-import org.ladderframework.css.CssSelector.stringToCssSelector
+import org.ladderframework.css.CssSelector._
 import org.ladderframework.test.page.PageObjectContext
 
 trait Element{
