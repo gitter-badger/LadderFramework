@@ -6,7 +6,6 @@ import org.scalatest.FunSpec
 import org.scalatest.GivenWhenThen
 import org.scalatest.FeatureSpec
 import org.ladderframework.js._
-import org.json4s.JsonDSL._
 
 @RunWith(classOf[JUnitRunner])
 class JsCmdSpec extends FunSpec with GivenWhenThen {

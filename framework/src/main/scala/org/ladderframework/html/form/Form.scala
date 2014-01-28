@@ -2,6 +2,7 @@ package org.ladderframework.html.form
 
 import scala.annotation.implicitNotFound
 import org.ladderframework.Utils
+import org.ladderframework.json.JValue
 
 /**
  * Helper to manage HTML form description, submission and validation.
@@ -55,13 +56,33 @@ case class Form[M <: Mapping[M]](mapping: M, data: Map[String, String], errors: 
 		errors => this.copy(data = data, errors = errors, value = None),
 		value => this.copy(data = data, errors = Nil, value = Some(value)))
 
-	//  /**
-	//   * Binds data to this form, i.e. handles form submission.
-	//   *
-	//   * @param data Json data to submit
-	//   * @return a copy of this form, filled with the new data
-	//   */
-	//  def bind(data: play.api.libs.json.JsValue): Form[T] = bind(FormUtils.fromJson(js = data))
+	  /**
+	   * Binds data to this form, i.e. handles form submission.
+	   *
+	   * @param data Json data to submit
+	   * @return a copy of this form, filled with the new data
+	   */
+	  def bind(data: JValue): Form[M] = {
+		 	import org.ladderframework.json._
+		  def fromJson(prefix: String = "", js: JValue): Map[String, String] = js match {
+		    case JObject(fields) => {
+		      fields.map { case (key, value) => 
+		      	fromJson(Option(prefix).filterNot(_.isEmpty).map(_ + ".").getOrElse("") + key, value) 
+		      }.foldLeft(Map.empty[String, String])(_ ++ _)
+		    }
+		    case arr:JArray => {
+		      arr.values.zipWithIndex.map { case (value, i) => fromJson(prefix + "[" + i + "]", value) }.foldLeft(Map.empty[String, String])(_ ++ _)
+		    }
+		    case JNull => Map.empty
+		    case JBoolean(value) => Map(prefix -> value.toString)
+		    case JInt(value) => Map(prefix -> value.toString)
+		    case JDouble(value) => Map(prefix -> value.toString)
+		    case JString(value) => Map(prefix -> value.toString)
+		    case _ => Map.empty
+		  }
+
+			bind(fromJson(js = data))
+		}
 
 	//  /**
 	//   * Binds request data to this form, i.e. handles form submission.
@@ -241,25 +262,6 @@ object Form {
 
 }
 
-private[form] object FormUtils {
-
-	//  import play.api.libs.json._
-	//
-	//  def fromJson(prefix: String = "", js: JsValue): Map[String, String] = js match {
-	//    case JsObject(fields) => {
-	//      fields.map { case (key, value) => fromJson(Option(prefix).filterNot(_.isEmpty).map(_ + ".").getOrElse("") + key, value) }.foldLeft(Map.empty[String, String])(_ ++ _)
-	//    }
-	//    case JsArray(values) => {
-	//      values.zipWithIndex.map { case (value, i) => fromJson(prefix + "[" + i + "]", value) }.foldLeft(Map.empty[String, String])(_ ++ _)
-	//    }
-	//    case JsNull => Map.empty
-	//    case JsUndefined(_) => Map.empty
-	//    case JsBoolean(value) => Map(prefix -> value.toString)
-	//    case JsNumber(value) => Map(prefix -> value.toString)
-	//    case JsString(value) => Map(prefix -> value.toString)
-	//  }
-
-}
 
 /**
  * A form error.

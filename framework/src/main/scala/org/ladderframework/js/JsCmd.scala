@@ -1,9 +1,8 @@
 
 package org.ladderframework{
 
-	import org.json4s.JsonAST.JValue
-	import org.json4s.jackson.JsonMethods._
 	import scala.xml.NodeSeq
+	import org.ladderframework.json._
 	
 	package object js{
 		implicit def string2JsArg(string:String):JsStringArg = JsStringArg(string)
@@ -16,7 +15,7 @@ package org.ladderframework{
 				val expressions = args.iterator
 				val buf = new StringBuffer(strings.next)
 				while(strings.hasNext) {
-					buf append compact(render(expressions.next))
+					buf append expressions.next.nospace
 					buf append strings.next
 				}
 				JsRaw(buf.toString)

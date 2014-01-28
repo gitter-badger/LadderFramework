@@ -15,7 +15,7 @@ import org.ladderframework.js.JsCmd
 import org.ladderframework.js.JsNoCmd
 import org.ladderframework.css.CssSelector._
 
-class SpeakerPageSpec extends FunSpec{
+class FormBindingSpec extends FunSpec{
 	
 	val dateMapping = mapping(Date.apply _)( Date.unapply _)(of[Int]("date.day"), of[Int]("date.month"), of[Int]("date.year"))
 	
@@ -73,6 +73,23 @@ class SpeakerPageSpec extends FunSpec{
 		}
 		it("should find size of list"){
 			assert(form.fill(per).context.indexesOf("addresses").size === 2)
+		}
+	}
+	
+	describe("Form bind from json"){
+		import org.ladderframework.json._
+		val per = Speaker("Per", Date(1, 12, 1924), Some("jalla"), List(true -> Address("street", "city", 1), false -> Address("highway", "town", 2)))
+		it("should handle bind"){
+			val bound = form.bind(JObject("name" -> "Per", 
+				"date" -> JObject("day" -> 1, "month" -> 12, "year" -> 1924), 
+				"info" -> "jalla",
+				"addresses" -> JArray(
+					JObject("selected" -> true, "street" -> "street", "city" -> "city", "code" -> 1),
+					JObject("selected" -> false, "street" -> "highway", "city" -> "town", "code" -> 2) 
+				)
+			))
+			println("bound: " +bound)
+			assert(bound.get === per)
 		}
 	}
 }

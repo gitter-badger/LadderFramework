@@ -49,7 +49,7 @@ object Dependencies {
 
 	val testkit = Seq(Test.scalatest, Test.junit, Test.akkaTest)
 
-	val framework = Seq(scalaActor, servletApi, akkaActor, akkaLogging, json4sJackson) ++ slf4j
+	val framework = Seq(scalaActor, servletApi, akkaActor, akkaLogging) ++ slf4j
 	val test_framework = Seq(scalaActor, servletApi) ++ slf4j
 
 }
@@ -79,8 +79,6 @@ object Dependency {
 
 	lazy val akkaActor = "com.typesafe.akka" %% "akka-actor" % V.akka
 	lazy val akkaLogging = "com.typesafe.akka" %% "akka-slf4j" % V.akka
-
-	lazy val json4sJackson = "org.json4s" %% "json4s-jackson" % "3.2.4"
 
 	object Test {
 		val junit = "junit" % "junit" % "4.10" % "test" // Common Public License 1.0

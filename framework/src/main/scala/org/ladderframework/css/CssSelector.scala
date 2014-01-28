@@ -55,9 +55,26 @@ object CssSelector {
 		stringToCssSelector(css).matches
 	}
 
-	implicit def pimpNodeSeq(ns: NodeSeq) = new NodeSeqPimper(ns)
+	implicit class NodeSeqPimper(ns: NodeSeq) {
+		def extract(cssSelector: CssSelector): Seq[Node] = {
+			def find(searchIn: Seq[Node]): Seq[Node] = {
+				searchIn.flatMap(n => {
+					if (cssSelector.matches(n)) {
+						n ++ find(n.child)
+					} else {
+						find(n.child)
+					}
+				})
+			}
+			find(ns)
+		}
+	}
 
-	implicit def pimpNodeSeqFunc(nsf: NodeSeq => NodeSeq) = new NodeSeqFuncPimper(nsf)
+	implicit class NodeSeqFuncPimper(nsf: NodeSeq => NodeSeq) {
+		def &(other: NodeSeq => NodeSeq): NodeSeq => NodeSeq = {
+			nsf.andThen(other)
+		}
+	}
 
 	implicit def stringToTextNode(text: String): Node = Text(Option(text).getOrElse(""))
 
@@ -331,23 +348,4 @@ object ElementAttributeSelector {
 	}
 }
 
-class NodeSeqPimper(ns: NodeSeq) {
-	def extract(cssSelector: CssSelector): Seq[Node] = {
-		def find(searchIn: Seq[Node]): Seq[Node] = {
-			searchIn.flatMap(n => {
-				if (cssSelector.matches(n)) {
-					n ++ find(n.child)
-				} else {
-					find(n.child)
-				}
-			})
-		}
-		find(ns)
-	}
-}
-class NodeSeqFuncPimper(nsf: NodeSeq => NodeSeq) {
-	def &(other: NodeSeq => NodeSeq): NodeSeq => NodeSeq = {
-		nsf.andThen(other)
-	}
-}
 
