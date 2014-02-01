@@ -13,6 +13,7 @@ import bootstrap.LadderBoot
 import org.scalatest.WordSpecLike
 import org.ladderframework.mock.HttpResponseOutputMock
 import org.ladderframework.mock.AsyncRequestHandlerMock
+import akka.testkit.TestProbe
 
 class ResponseContainerActorSpec (system: ActorSystem) extends TestKit(system) with WordSpecLike with GivenWhenThen with BeforeAndAfterAll{
 	
@@ -28,7 +29,10 @@ class ResponseContainerActorSpec (system: ActorSystem) extends TestKit(system) w
 				val uuid = Utils.uuid
 				LadderBoot.timeToLivePage = 200
 				val initalResponseContainer = system.actorOf(Props(new InitalResponseContainer(null, null, uuid)))
-				awaitCond(initalResponseContainer.isTerminated, 2000 millis, 25 millis)
+				val probe = TestProbe()
+				probe watch initalResponseContainer
+				asyncRequestHandler.sendError()
+				probe.expectTerminated(initalResponseContainer)
 			}
 		}
 	}

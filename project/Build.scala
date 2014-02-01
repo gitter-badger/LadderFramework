@@ -4,7 +4,7 @@ import sbtrelease.ReleasePlugin._
 
 object LadderFrameworkBuild extends Build {
 
-	val buildScalaVersion = "2.10.2"
+	val buildScalaVersion = "2.10.3"
 	
 	lazy val buildSettings = Defaults.defaultSettings ++ Seq(
 		organization := "org.ladderframework",
@@ -59,17 +59,17 @@ object Dependency {
 	// Versions
 
 	object V {
-		val logback = "1.0.7"
-		val scalatest = "2.0.M6-SNAP34"
-		val slf4j = "1.6.4"
-		val akka = "2.2.0"
-		val scalaVersion = "2.10.2"
+		val logback = "1.0.13"
+		val scalatest = "2.0"
+		val slf4j = "1.7.5"
+		val akka = "2.2.3"
+		val scalaVersion = "2.10.3"
 	}
 
 	// Compile
-	lazy val jetty = "org.eclipse.jetty" % "jetty-webapp" % "9.0.0.RC0" % "test,container"
+	lazy val jetty = "org.eclipse.jetty" % "jetty-webapp" % "9.1.1.v20140108" % "test,container"
 
-	lazy val servletApi = "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided"
+	lazy val servletApi = "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided"
 
 	lazy val slf4jApi = "org.slf4j" % "slf4j-api" % V.slf4j
 	lazy val logback = "ch.qos.logback" % "logback-classic" % V.logback
@@ -81,7 +81,7 @@ object Dependency {
 	lazy val akkaLogging = "com.typesafe.akka" %% "akka-slf4j" % V.akka
 
 	object Test {
-		val junit = "junit" % "junit" % "4.10" % "test" // Common Public License 1.0
+		val junit = "junit" % "junit" % "4.11" % "test" // Common Public License 1.0
 		val scalatest = "org.scalatest" %% "scalatest" % V.scalatest % "test" // ApacheV2
 		val akkaTest = "com.typesafe.akka" %% "akka-testkit" % V.akka % "test"
 	}

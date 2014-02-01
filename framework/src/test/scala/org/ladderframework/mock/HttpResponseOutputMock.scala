@@ -8,6 +8,7 @@ import org.ladderframework.Status
 import javax.servlet.ServletOutputStream
 import java.io.OutputStream
 import org.ladderframework.Header
+import javax.servlet.WriteListener
 
 class HttpResponseOutputMock extends HttpResponseOutput {
 
@@ -28,8 +29,14 @@ class HttpResponseOutputMock extends HttpResponseOutput {
 	}
 	def writer:PrintWriter = printWriter
 	def outputStream:OutputStream = new ServletOutputStream{
+		override def isReady(): Boolean = true
+		
 		override def write(int: Int): Unit = {
 			stringWriter.write(int)
+		}
+		
+		override def setWriteListener(listener: WriteListener){
+			listener.onWritePossible()
 		}
 	}
 }

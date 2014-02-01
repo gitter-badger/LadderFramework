@@ -13,6 +13,7 @@ import scala.concurrent.duration._
 import org.scalatest.WordSpecLike
 import org.ladderframework.mock.HttpResponseOutputMock
 import org.ladderframework.mock.AsyncRequestHandlerMock
+import akka.testkit.TestProbe
 
 class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpecLike with GivenWhenThen with BeforeAndAfterAll{
 	
@@ -70,16 +71,20 @@ class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpecL
 				val asyncRequestHandler = new AsyncRequestHandlerMock(httpResponseOutput)
 				val pullActor = system.actorOf(Props(new PullActor(asyncRequestHandler, httpResponseOutput)))
 				awaitCond(!asyncRequestHandler.timeoutListeners.isEmpty, 200 millis, 10 millis)
+				val probe = TestProbe()
+				probe watch pullActor
 				asyncRequestHandler.sendTimeout()
-				awaitCond(pullActor.isTerminated, 200 millis, 10 millis)
+				probe.expectTerminated(pullActor)
 			}
 			"handle error" in {
 				val httpResponseOutput = new HttpResponseOutputMock()
 				val asyncRequestHandler = new AsyncRequestHandlerMock(httpResponseOutput)
 				val pullActor = system.actorOf(Props(new PullActor(asyncRequestHandler, httpResponseOutput)))
 				awaitCond(!asyncRequestHandler.errorListeners.isEmpty, 200 millis, 10 millis)
+				val probe = TestProbe()
+				probe watch pullActor
 				asyncRequestHandler.sendError()
-				awaitCond(pullActor.isTerminated, 200 millis, 10 millis)
+				probe.expectTerminated(pullActor)
 			}
 		}
 	}
