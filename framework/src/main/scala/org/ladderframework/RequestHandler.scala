@@ -106,7 +106,7 @@ trait ResponseContainer extends Actor with ActorLogging{
 	var isTerminated = false
 	
 	def updateLastAccess(){
-		context.system.scheduler.scheduleOnce(LadderBoot.timeToLivePage millis, context.self, Tick)
+		context.system.scheduler.scheduleOnce(LadderBoot.timeToLivePage millis, self, Tick)
 		lastAccess = System.currentTimeMillis
 	}
 	
@@ -148,7 +148,7 @@ trait ResponseContainer extends Actor with ActorLogging{
 	
 	def receive = {
 		case Tick => 
-			log.debug("Tick")
+			log.debug("Tick: lastAccess: " + lastAccess + " left: " + (lastAccess - LadderBoot.timeToLivePage + System.currentTimeMillis))
 			if(LadderBoot.timeToLivePage + System.currentTimeMillis > lastAccess) {
 				self ! PoisonPill
 			}
@@ -242,7 +242,7 @@ class PullActor(asyncHandler: AsyncRequestHandler, res:HttpResponseOutput) exten
 	
 	asyncHandler.addListeners(onComplete, onError, onStart, onTimeout)
 	
-	context.system.scheduler.scheduleOnce(24000 millis, context.self, TimeToClose)
+	context.system.scheduler.scheduleOnce(24000 millis, self, TimeToClose)
 	
 	def receive = {
 		case TimeToClose => 
