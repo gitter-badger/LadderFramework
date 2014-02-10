@@ -122,7 +122,8 @@ trait ResponseContainer extends Actor with ActorLogging {
 
 	var isTerminated = false
 
-	def updateLastAccess() {
+	private def updateLastAccess() {
+		log.debug("updateLastAccess from " + lastAccess )
 		context.system.scheduler.scheduleOnce(LadderBoot.timeToLivePage millis, self, Tick)
 		lastAccess = System.currentTimeMillis
 	}
@@ -167,7 +168,7 @@ trait ResponseContainer extends Actor with ActorLogging {
 	def receive = {
 		case Tick =>
 			log.debug("Tick: lastAccess: " + lastAccess + " left: " + (lastAccess - LadderBoot.timeToLivePage + System.currentTimeMillis))
-			if (LadderBoot.timeToLivePage + System.currentTimeMillis > lastAccess) {
+			if (System.currentTimeMillis > lastAccess + LadderBoot.timeToLivePage) {
 				self ! PoisonPill
 			}
 		case RenderInital(res, asyncContext) =>

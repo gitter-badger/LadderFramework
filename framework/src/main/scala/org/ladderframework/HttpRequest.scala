@@ -133,7 +133,7 @@ object CacheControl extends Header{
 object Connection extends Header{
 	val name = "Connection"
 }
-/** an HTTP cookie previously sent by the server with Set-Cookie (below)	Cookie: $Version=1; Skin=new; */
+/** an HTTP cookie previously sent by the server with Set-Cookie (below)	Cookie: Version=1; Skin=new; */
 object Cookie extends Header{
 	val name = "Cookie"
 }
