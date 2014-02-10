@@ -92,7 +92,7 @@ trait ProsessedHttpResponse extends HttpResponse with Loggable{
 		httpResponseOutput.setStatus(status)
 		httpResponseOutput.setContentType(contentType)
 		httpResponseOutput.setHeader(ContentLength, content.length().toString)
-		httpResponseOutput.writer.append(content).flush()
+		httpResponseOutput.writer.append(content).close()
 		status
 	}
 }
@@ -125,7 +125,7 @@ trait HtmlResponse extends HttpResponse {
 			httpResponseOutput.setStatus(status)
 			httpResponseOutput.setContentType(contentType)
 			httpResponseOutput.setHeader(ContentLength, cont.length().toString)
-			httpResponseOutput.writer.append(cont).flush()
+			httpResponseOutput.writer.append(cont).close()
 			status
 		})
 }
@@ -148,7 +148,7 @@ trait StatefulHtmlResponse extends HtmlResponse with Stateful {
 		statefullContent.map(content => {
 			httpResponseOutput.setStatus(status)
 			httpResponseOutput.setContentType(contentType)
-			httpResponseOutput.writer.append(content).flush()
+			httpResponseOutput.writer.append(content).close()
 			status
 		})
 }
