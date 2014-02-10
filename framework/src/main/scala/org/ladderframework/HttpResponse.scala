@@ -14,6 +14,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Promise
 import scala.xml.Xhtml
+import org.ladderframework.json.JValue
 
 trait HttpResponse {
 	def status: Status
@@ -81,49 +82,38 @@ case class HttpResourceResponse(status: Status = OK, path: List[String]) extends
 	})
 }
 
-case class XmlResponse(content: NodeSeq) extends HttpResponse {
+trait ProsessedHttpResponse extends HttpResponse with Loggable{
 	def status: Status = OK
-	def contentType = "text/xml"
+	def content: String
+	def contentType: String
+	
 	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext) = Future {
+		debug("applyToHttpServletResponse: " + this)
 		httpResponseOutput.setStatus(status)
 		httpResponseOutput.setContentType(contentType)
-		httpResponseOutput.writer.append(content.mkString).flush()
-		status
-	}
-}
-
-case class JsonResponse(content: String) extends HttpResponse {
-	def status: Status = OK
-	def contentType = "text/json"
-	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext) = Future {
-		httpResponseOutput.setStatus(status)
-		httpResponseOutput.setContentType(contentType)
+		httpResponseOutput.setHeader(ContentLength, content.length().toString)
 		httpResponseOutput.writer.append(content).flush()
 		status
 	}
 }
-case class JsCmdResponse(cmd: JsCmd) extends HttpResponse with Loggable {
-	val status: Status = OK
-	val contentType = "text/javascript"
-	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext) = Future {
-		debug(this)
-		httpResponseOutput.setStatus(status)
-		httpResponseOutput.setContentType(contentType)
-		httpResponseOutput.writer.append(cmd.toCmd).flush()
-		status
-	}
+
+case class XmlResponse(xmlContent: NodeSeq) extends ProsessedHttpResponse {
+	def contentType = "text/xml"
+	val content = xmlContent.mkString
 }
 
-case class PullResponse(messages: List[PushMessage]) extends HttpResponse with Loggable {
-	val status: Status = OK
+case class JsonResponse(jsonContent: JValue) extends ProsessedHttpResponse {
+	def contentType = "text/json"
+	val content = jsonContent.pretty
+}
+case class JsCmdResponse(cmd: JsCmd) extends ProsessedHttpResponse {
+	val contentType = "text/javascript"
+	val content = cmd.toCmd
+}
+
+case class PullResponse(messages: List[PushMessage]) extends ProsessedHttpResponse with Loggable {
 	val contentType = "text/json"
-	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext) = Future {
-		debug(this)
-		httpResponseOutput.setStatus(status)
-		httpResponseOutput.setContentType(contentType)
-		httpResponseOutput.writer.append(messages.map(_.asJson).mkString("""{"messages":[""", ",", "]}")).flush()
-		status
-	}
+	val content = messages.map(_.asJson).mkString("""{"messages":[""", ",", "]}")
 }
 
 trait HtmlResponse extends HttpResponse {
@@ -134,6 +124,7 @@ trait HtmlResponse extends HttpResponse {
 		content.map(cont => {
 			httpResponseOutput.setStatus(status)
 			httpResponseOutput.setContentType(contentType)
+			httpResponseOutput.setHeader(ContentLength, cont.length().toString)
 			httpResponseOutput.writer.append(cont).flush()
 			status
 		})

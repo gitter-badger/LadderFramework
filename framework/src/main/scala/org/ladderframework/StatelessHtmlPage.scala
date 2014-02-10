@@ -18,15 +18,6 @@ trait StatelessHtmlPage extends HtmlResponse{
 		} yield "<!DOCTYPE html>\n" + (r(x)).toString
 	}
 	
-	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext) =
-		content.map(cont => {
-			httpResponseOutput.setStatus(status)
-			httpResponseOutput.setContentType(contentType)
-			httpResponseOutput.writer.append(cont).flush()
-			status
-		})
-
-	
 	private def xml(implicit ec:ExecutionContext):Future[NodeSeq] = Future{
 		try{
 			XML.load{LadderBoot.resource(source)}

@@ -45,6 +45,10 @@ package org.ladderframework{
 			def arg:String
 		}
 		
+		case class JsonArg(jValue: JValue) extends JsArg{
+			def arg = jValue.nospace
+		}
+		
 		case class JsStringArg(string:String) extends JsArg{
 			def arg = "\"" + string.replaceAll("\"", "\\\"") + "\""
 		}

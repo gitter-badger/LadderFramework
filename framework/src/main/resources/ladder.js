@@ -59,8 +59,7 @@ var ladder = (function() {
 			});
 		},
 		
-		ajax : function(url, name, event) {
-			var val = $(event.target).val();
+		ajax : function(url, name, val) {
 			
 			console.log("url: " + url + ", val: " + val + ", name: " + name);
 			

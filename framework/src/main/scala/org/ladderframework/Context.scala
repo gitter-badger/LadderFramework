@@ -152,7 +152,10 @@ case class Context(
 		
 	case class AjaxCallbackCmd (lookupPath: List[String]) {
 		val name = lookupPath.last
-		val toCmd = "javascript:ladder.ajax('" + lookupPath.take(2).mkString("/", "/", "") + "', '" + name + "', event)"; 
+		val toCmd = "javascript:ladder.ajax('" + lookupPath.take(2).mkString("/", "/", "") + "', '" + name + "', $(event.target).val())"; 
+		def toScriptFunc(functionName: String) = {
+			s"""function $functionName(val){ladder.ajax('${lookupPath.take(2).mkString("/", "/", "")}', '$name', val)}"""
+		}
 	}
 	
 	def addAjaxBooleanCallback(callback: Boolean => Future[JsCmd]): AjaxCallbackCmd = {

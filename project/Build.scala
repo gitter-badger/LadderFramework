@@ -49,7 +49,7 @@ object Dependencies {
 
 	val testkit = Seq(Test.scalatest, Test.junit, Test.akkaTest)
 
-	val framework = Seq(scalaActor, servletApi, akkaActor, akkaLogging) ++ slf4j
+	val framework = Seq(scalaActor, servletApi, websocketApi, akkaActor, akkaLogging) ++ slf4j
 	val test_framework = Seq(scalaActor, servletApi) ++ slf4j
 
 }
@@ -70,6 +70,8 @@ object Dependency {
 	lazy val jetty = "org.eclipse.jetty" % "jetty-webapp" % "9.1.1.v20140108" % "test,container"
 
 	lazy val servletApi = "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided"
+
+	lazy val websocketApi = "javax.websocket" % "javax.websocket-api" % "1.0" % "provided"
 
 	lazy val slf4jApi = "org.slf4j" % "slf4j-api" % V.slf4j
 	lazy val logback = "ch.qos.logback" % "logback-classic" % V.logback
