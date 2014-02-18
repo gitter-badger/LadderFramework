@@ -40,7 +40,9 @@ var ladder = (function() {
 			r.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 			r.onreadystatechange = function () {
 			  if (r.readyState != 4) return;
-			  if(r.status != 200) {
+			  if(r.status == 404){
+				  location.reload();
+			  }else if(r.status != 200) {
 				  error(r, r.statusText, r.responseText);
 			  }else{
 				  success(r.responseText);
@@ -127,7 +129,9 @@ var ladder = (function() {
 			r.open("GET", "/pull/" + pageId + "/wait?" + postData + "_=" + noCache, true);
 			r.onreadystatechange = function () {
 			  if (r.readyState != 4) return;
-			  if(r.status != 200) {
+			  if(r.status == 404){
+				  location.reload();
+			  }else if(r.status != 200) {
 				  error(r, r.statusText, r.responseText);
 			  }else{
 				  success(r.responseText);

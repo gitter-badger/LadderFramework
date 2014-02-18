@@ -66,11 +66,11 @@ package object json{
 	object JsonParser extends JavaTokenParsers {   
 	
 	  def value: Parser[JValue] = obj | array | 
-	                            string | (int ||| double) | nullParser | boolean
+	                            string | ( double ||| int) | nullParser | boolean
 
 	  def string: Parser[JString] = stringLiteral ^^ (JString(_))                          
-	  def int: Parser[JInt] = wholeNumber ^^ (n => JInt(n.toInt))                          
-	  def double: Parser[JDouble] = """-?\d*\.\d+""".r ^^ (n => JDouble(n.toDouble))                          
+	  def int: Parser[JInt] = wholeNumber ^^ (n => JInt(n.toInt))
+	  def double: Parser[JDouble] = floatingPointNumber ^^ (n => JDouble(n.toDouble))                          
 	                            
     def nullParser: Parser[JValue] = "null" ^^ (_ => JNull)
 	                            

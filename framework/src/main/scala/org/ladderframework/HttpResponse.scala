@@ -148,6 +148,7 @@ trait StatefulHtmlResponse extends HtmlResponse with Stateful {
 		statefullContent.map(content => {
 			httpResponseOutput.setStatus(status)
 			httpResponseOutput.setContentType(contentType)
+			httpResponseOutput.setHeader(ContentLength, content.length().toString)
 			httpResponseOutput.writer.append(content).close()
 			status
 		})

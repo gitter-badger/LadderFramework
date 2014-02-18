@@ -47,7 +47,7 @@ object Dependencies {
 
 	val slf4j = Seq(slf4jApi, logback)
 
-	val testkit = Seq(Test.scalatest, Test.junit, Test.akkaTest)
+	val testkit = Seq(Test.scalatest, Test.scalacheck, Test.junit, Test.akkaTest)
 
 	val framework = Seq(scalaActor, servletApi, websocketApi, akkaActor, akkaLogging) ++ slf4j
 	val test_framework = Seq(scalaActor, servletApi) ++ slf4j
@@ -61,6 +61,7 @@ object Dependency {
 	object V {
 		val logback = "1.0.13"
 		val scalatest = "2.0"
+		val scalacheck = "1.10.0"
 		val slf4j = "1.7.5"
 		val akka = "2.2.3"
 		val scalaVersion = "2.10.3"
@@ -86,5 +87,6 @@ object Dependency {
 		val junit = "junit" % "junit" % "4.11" % "test" // Common Public License 1.0
 		val scalatest = "org.scalatest" %% "scalatest" % V.scalatest % "test" // ApacheV2
 		val akkaTest = "com.typesafe.akka" %% "akka-testkit" % V.akka % "test"
+		val scalacheck = "org.scalacheck" %% "scalacheck" % V.scalacheck % "test"
 	}
 }

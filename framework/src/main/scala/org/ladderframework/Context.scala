@@ -225,7 +225,9 @@ case class Context(
 			val jsCmd: Future[JsCmd] = try{
 				ajaxPostMap(func)(request)
 			} catch {
-				case t: Throwable => Future.failed(t)
+				case t: Throwable => 
+					warn("problems handling posting", t)
+					Future.failed(t)
 			}
 			debug("result: " + jsCmd)
 			jsCmd.map(JsCmdResponse).recover{
