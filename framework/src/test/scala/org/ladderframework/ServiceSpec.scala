@@ -117,6 +117,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 		override val sessionID = givenSession
 		override def path = givenPath
 		override def parameters = givenParams
+		override def cookies = Nil
 	}
 	
 	"The framework" when {
@@ -130,7 +131,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 			}
 			"handle bad request" in {
 				val httpServletResponse = call(httpRequest(GET, sessionID,  "hello" :: "not" :: "found" :: Nil))
-				val content = Await.result(NotFoundResponse.content, 2 seconds)
+				val content = Await.result(NotFoundDefaultResponse.content, 2 seconds)
 				assert(httpServletResponse.status === NotFound)
 				assert(httpServletResponse.text === content)
 				assert(httpServletResponse.contentType === "text/html")
@@ -158,7 +159,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 			
 			"handle not found (404)" in {
 				val httpServletResponse = call(httpRequest(GET, sessionID, "resources" :: "notFound.html" :: Nil))
-				val content = Await.result(NotFoundResponse.content, 2 seconds)
+				val content = Await.result(NotFoundDefaultResponse.content, 2 seconds)
 				assert(httpServletResponse.text === content)
 				assert(httpServletResponse.status === NotFound)
 				assert(httpServletResponse.contentType === "text/html")
@@ -197,7 +198,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 				
 				val httpServletResponseStatefull = call(httpRequest(POST, sessionID,  "post" :: stateful :: func :: Nil, Map("key" -> Array("value"))))
 				assert(httpServletResponseStatefull.status === Found)
-				val location = httpServletResponseStatefull.headers(Location)
+				val location = httpServletResponseStatefull.headers(Header.Location)
 				assert(location.startsWith(List("some", "where", "new").mkString("/", "/", "")))
 				
 				val param = location.split("\\?")(1).split("=")

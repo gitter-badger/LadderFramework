@@ -15,6 +15,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Promise
 import scala.xml.Xhtml
 import org.ladderframework.json.JValue
+import Header._
 
 trait HttpResponse {
 	def status: Status
@@ -34,7 +35,7 @@ case class HttpRedirectResponse(location: List[String], params: Option[String] =
 	}
 }
 
-object NotFoundResponse extends HtmlResponse {
+object NotFoundDefaultResponse extends HtmlResponse {
 	override final val status = NotFound
 	override def content(implicit ec: ExecutionContext): Future[String] = Future.successful(
 		<html><head><title>404</title></head><body>404</body></html>.toString)

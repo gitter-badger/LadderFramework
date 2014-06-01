@@ -75,7 +75,6 @@ case class ObjectMapping2[R, A1, A2, M1 <: Mapping[M1]{type T = A1}, M2 <: Mappi
       case Left(errors) => Left(errors)
       case Right(values) => {
         applyConstraints(apply(
-
           values(0).asInstanceOf[A1],
           values(1).asInstanceOf[A2]))
       }
@@ -83,8 +82,7 @@ case class ObjectMapping2[R, A1, A2, M1 <: Mapping[M1]{type T = A1}, M2 <: Mappi
   }
 
   def unbind(value: R): (Map[String, String], Seq[FormError]) = {
-    unapply(value).map { fields =>
-      val (v1, v2) = fields
+    unapply(value).map { case (v1, v2) =>
       val a1 = field1.unbind(v1)
       val a2 = field2.unbind(v2)
 
@@ -137,8 +135,7 @@ case class ObjectMapping3[R, A1, A2, A3,
   }
 
   def unbind(value: R): (Map[String, String], Seq[FormError]) = {
-    unapply(value).map { fields =>
-      val (v1, v2, v3) = fields
+    unapply(value).map { case (v1, v2, v3) =>
       val a1 = field1.unbind(v1)
       val a2 = field2.unbind(v2)
       val a3 = field3.unbind(v3)
@@ -184,8 +181,7 @@ case class ObjectMapping4[R, A1, A2, A3, A4, M1 <: Mapping[M1]{type T = A1}, M2 
   }
 
   def unbind(value: R): (Map[String, String], Seq[FormError]) = {
-    unapply(value).map { fields =>
-      val (v1, v2, v3, v4) = fields
+    unapply(value).map { case (v1, v2, v3, v4) =>
       val a1 = field1.unbind(v1)
       val a2 = field2.unbind(v2)
       val a3 = field3.unbind(v3)
@@ -898,8 +894,7 @@ case class ObjectMapping17[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12,
   }
 
   def unbind(value: R): (Map[String, String], Seq[FormError]) = {
-    unapply(value).map { fields =>
-      val (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17) = fields
+    unapply(value).map { case (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17)  =>
       val a1 = field1.unbind(v1)
       val a2 = field2.unbind(v2)
       val a3 = field3.unbind(v3)

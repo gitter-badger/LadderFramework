@@ -17,10 +17,12 @@ trait DefaultBoot {
 	
 	def site:PartialFunction[HttpRequest, Future[HttpResponse]]
 	
-	def notFound:HttpResponse = NotFoundResponse
+	def notFound:HttpResponse = NotFoundDefaultResponse
+	def error(status: Status, ot: Option[Throwable]): HttpResponse = ErrorResponse(status, ot)
+	
 	def errorHandle:PartialFunction[(Status, Option[Throwable]), HttpResponse] = {
-		case (NotFound, _) => NotFoundResponse
-		case (s, ot) => ErrorResponse(s, ot)
+		case (NotFound, _) => notFound
+		case (s, ot) => error(s, ot)
 	}
 	
 	def onShutdown(){}

@@ -65,7 +65,7 @@ class HttpRequestSpec extends FunSpec with GivenWhenThen {
   	}
   	it("should match on path and json content"){
   		assert(HttpReq(GET, Map("Accept" -> Option("application/json")), "sessionID", "path" :: Nil) match {
-  			case Path("path" :: Nil) & Session(session) & Accept("application/json") => session == "sessionID"
+  			case Path("path" :: Nil) & Session(session) & Header.Accept("application/json") => session == "sessionID"
   		})
   	}
   	
@@ -77,12 +77,14 @@ class HttpRequestSpec extends FunSpec with GivenWhenThen {
   		override def sessionID = ""
   		override def path = givenPath
   		override def parameters = Map()
+  		override def cookies = Nil
   	}
   	def apply(givenMethod: Method, givenSession: String, givenPath: List[String]) = new HttpRequest{
   		override val method = givenMethod
   		override def sessionID = givenSession
   		override def path = givenPath
   		override def parameters = Map()
+  		override def cookies = Nil
   	}
   	def apply(givenMethod: Method, givenHeaders: Map[String, Option[String]], givenSession: String, givenPath: List[String]) = new HttpRequest{
   		override val method = givenMethod
@@ -90,6 +92,7 @@ class HttpRequestSpec extends FunSpec with GivenWhenThen {
 			override def path = givenPath
 			override def headers = givenHeaders
 			override def parameters = Map()
+			override def cookies = Nil
   	}
   }
   
