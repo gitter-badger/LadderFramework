@@ -9,6 +9,7 @@ import javax.servlet.ServletOutputStream
 import java.io.OutputStream
 import org.ladderframework.Header
 import javax.servlet.WriteListener
+import org.ladderframework.Cookie
 
 class HttpResponseOutputMock extends HttpResponseOutput {
 
@@ -39,4 +40,6 @@ class HttpResponseOutputMock extends HttpResponseOutput {
 			listener.onWritePossible()
 		}
 	}
+	
+	def addCookie(cookie: Cookie){}
 }
