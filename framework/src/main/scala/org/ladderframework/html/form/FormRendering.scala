@@ -16,12 +16,12 @@ trait FormRendering {
 }
 
 case class Ajax[M <: Mapping[M]](form: Form[M])
-		(callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => Future[JsCmd])(rendering: FormContext => M => (NodeSeq => NodeSeq))
+		(callback: (Either[Form[M], M#T], FormRendering#FormId) => Future[JsCmd])(rendering: FormContext => M => (NodeSeq => NodeSeq))
 		(implicit context: Context) extends FormRendering{
 	val id = Utils.uuid
 	val submitPath = context.addAjaxFormSubmitCallback(req => {
 		val boundForm = form.bindFromRequest(req.parameters.mapValues(_.toSeq))
-		val either = if(boundForm.hasErrors) Left[Form[M], Option[M#T]](boundForm) else Right[Form[M], Option[M#T]](boundForm.value)
+		val either = if(boundForm.hasErrors) Left[Form[M], M#T](boundForm) else boundForm.value.toRight(boundForm)
 		callback(either, id)
 	})
 	
@@ -33,13 +33,13 @@ case class Ajax[M <: Mapping[M]](form: Form[M])
 abstract class StatefullForm[M <: Mapping[M]](
 			method: String, 
 			form: Form[M], 
-			callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => Future[(List[String], HttpResponse)], 
+			callback: (Either[Form[M], M#T], FormRendering#FormId) => Future[(List[String], HttpResponse)], 
 			rendering: FormContext => M => (NodeSeq => NodeSeq)
 		)(implicit context: Context) extends FormRendering{
 	val id = Utils.uuid
 	val actionPath = context.addSubmitCallback(req => {
 		val boundForm = form.bindFromRequest(req.parameters.mapValues(_.toSeq))
-		val either = if(boundForm.hasErrors) Left[Form[M], Option[M#T]](boundForm) else Right[Form[M], Option[M#T]](boundForm.value)
+		val either = if(boundForm.hasErrors) Left[Form[M], M#T](boundForm) else boundForm.value.toRight(boundForm)
 		callback(either, id)
 	})
 	
@@ -47,11 +47,11 @@ abstract class StatefullForm[M <: Mapping[M]](
 }
 
 case class StatefullPost[M <: Mapping[M]](form: Form[M])
-		(callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => Future[(List[String], HttpResponse)])(rendering: FormContext => M => (NodeSeq => NodeSeq))
+		(callback: (Either[Form[M], M#T], FormRendering#FormId) => Future[(List[String], HttpResponse)])(rendering: FormContext => M => (NodeSeq => NodeSeq))
 		(implicit context: Context) extends StatefullForm[M]("POST", form, callback, rendering)
 		
 case class StatefullGet[M <: Mapping[M]](form: Form[M])
-	(callback: (Either[Form[M], Option[M#T]], FormRendering#FormId) => Future[(List[String], HttpResponse)])(rendering: FormContext => M => (NodeSeq => NodeSeq))
+	(callback: (Either[Form[M], M#T], FormRendering#FormId) => Future[(List[String], HttpResponse)])(rendering: FormContext => M => (NodeSeq => NodeSeq))
 	(implicit context: Context) extends StatefullForm[M]("GET", form, callback, rendering)
 
 
