@@ -6,6 +6,10 @@ import org.ladderframework.Context
 import org.ladderframework.Utils
 import org.ladderframework.HttpResponse
 import scala.concurrent.Future
+import bootstrap.LadderBoot
+import org.ladderframework.Status
+import org.ladderframework.NotImplemented
+import org.ladderframework.InternalServerError
 
 case class FormContext(data: Map[String, String], indexesOf: String => Seq[Int], errors: Seq[FormError])
 
@@ -40,7 +44,11 @@ abstract class StatefullForm[M <: Mapping[M]](
 	val actionPath = context.addSubmitCallback(req => {
 		val boundForm = form.bindFromRequest(req.parameters.mapValues(_.toSeq))
 		val either = if(boundForm.hasErrors) Left[Form[M], M#T](boundForm) else boundForm.value.toRight(boundForm)
-		callback(either, id)
+		import LadderBoot.executionContext
+		callback(either, id).recover{
+			case t:NotImplementedError => List("error", NotImplemented.code.toString) -> LadderBoot.error(NotImplemented, Some(t))
+			case t => List("error", InternalServerError.code.toString) -> LadderBoot.error(InternalServerError, Some(t))
+		}
 	})
 	
 	def transform(ns: NodeSeq): NodeSeq = <form id={id} method={method} action={actionPath.mkString("/", "/", "")}>{rendering(form.context)(form.mapping)(ns)}</form>

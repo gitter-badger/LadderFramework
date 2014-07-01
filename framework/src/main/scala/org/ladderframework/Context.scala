@@ -221,7 +221,6 @@ case class Context(
 			
 			import LadderBoot.executionContext
 
-			//TODO ExceptionHandling
 			val jsCmd: Future[JsCmd] = try{
 				ajaxPostMap(func)(request)
 			} catch {
