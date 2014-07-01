@@ -35,11 +35,11 @@ class HttpServletResponseOutput(hsr: HttpServletResponse) extends HttpResponseOu
 	def addCookie(cookie: Cookie){
 		import cookie._
 		val sCookie = new SCookie(name, value)
-		sCookie.setComment(comment)
-		sCookie.setDomain(domain)
+		comment.foreach(sCookie.setComment)
+		domain.foreach(sCookie.setDomain)
 		sCookie.setHttpOnly(httpOnly)
 		sCookie.setMaxAge(maxAge)
-		sCookie.setPath(path)
+		path.foreach(sCookie.setPath)
 		sCookie.setSecure(secure)
 		sCookie.setVersion(version)
 		hsr.addCookie(sCookie)
