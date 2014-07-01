@@ -3,11 +3,13 @@ package org.ladderframework
 import java.io.OutputStream
 import java.io.Writer
 import javax.servlet.http.HttpServletResponse
+import javax.servlet.http.{Cookie => SCookie} 
 
 trait HttpResponseOutput {
-	def setStatus(status: Status): Unit
-	def setContentType(contentType: String): Unit
-	def setHeader(key: Header, value: String): Unit
+	def setStatus(status: Status)
+	def setContentType(contentType: String)
+	def setHeader(key: Header, value: String)
+	def addCookie(cookie: Cookie)
 	def outputStream: OutputStream
 	def writer: Writer
 }
@@ -29,4 +31,17 @@ class HttpServletResponseOutput(hsr: HttpServletResponse) extends HttpResponseOu
 	def outputStream: OutputStream = hsr.getOutputStream()
 	
 	def writer: Writer = hsr.getWriter()
+	
+	def addCookie(cookie: Cookie){
+		import cookie._
+		val sCookie = new SCookie(name, value)
+		sCookie.setComment(comment)
+		sCookie.setDomain(domain)
+		sCookie.setHttpOnly(httpOnly)
+		sCookie.setMaxAge(maxAge)
+		sCookie.setPath(path)
+		sCookie.setSecure(secure)
+		sCookie.setVersion(version)
+		hsr.addCookie(sCookie)
+	}
 }
