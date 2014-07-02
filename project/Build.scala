@@ -4,7 +4,7 @@ import sbtrelease.ReleasePlugin._
 
 object LadderFrameworkBuild extends Build {
 
-	val buildScalaVersion = "2.10.3"
+	val buildScalaVersion = "2.11.1"
 	
 	lazy val buildSettings = Defaults.defaultSettings ++ Seq(
 		organization := "org.ladderframework",
@@ -49,8 +49,8 @@ object Dependencies {
 
 	val testkit = Seq(Test.scalatest, Test.scalacheck, Test.junit, Test.akkaTest)
 
-	val framework = Seq(scalaActor, servletApi, websocketApi, akkaActor, akkaLogging) ++ slf4j
-	val test_framework = Seq(scalaActor, servletApi) ++ slf4j
+	val framework = Seq(servletApi, websocketApi, akkaActor, akkaLogging, scalaXml, scalaParserCompinators) ++ slf4j
+	val test_framework = Seq(servletApi) ++ slf4j
 
 }
 
@@ -60,11 +60,11 @@ object Dependency {
 
 	object V {
 		val logback = "1.0.13"
-		val scalatest = "2.0"
-		val scalacheck = "1.10.0"
+		val scalatest = "2.2.0"
+		val scalacheck = "1.11.4"
 		val slf4j = "1.7.5"
-		val akka = "2.2.3"
-		val scalaVersion = "2.10.3"
+		val akka = "2.3.4"
+		val scalaVersion = "2.11.1"
 	}
 
 	// Compile
@@ -77,8 +77,8 @@ object Dependency {
 	lazy val slf4jApi = "org.slf4j" % "slf4j-api" % V.slf4j
 	lazy val logback = "ch.qos.logback" % "logback-classic" % V.logback
 
-	lazy val scalaActor = "org.scala-lang" % "scala-actors" % V.scalaVersion % "test"
-	lazy val scalaReflect = "prg.scala-lang" % "scala-reflect" % V.scalaVersion % "test"
+	lazy val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.2"
+	lazy val scalaParserCompinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.1"
 
 	lazy val akkaActor = "com.typesafe.akka" %% "akka-actor" % V.akka
 	lazy val akkaLogging = "com.typesafe.akka" %% "akka-slf4j" % V.akka

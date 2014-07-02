@@ -12,7 +12,7 @@ import bootstrap.LadderBoot.executionContext
 trait Component {
 	def source:String
 	
-	lazy val xml:Promise[NodeSeq] = promise[NodeSeq].completeWith(future{
+	lazy val xml:Promise[NodeSeq] = Promise[NodeSeq].completeWith(Future{
 		val resouce = LadderBoot.resource(source)
 		XML.load(resouce)
 	})

@@ -11,34 +11,41 @@ import org.scalatest.prop.PropertyChecks
 class JsonSpec extends FunSpec with Checkers {
 
 	implicit lazy val jValue: Arbitrary[JValue] = Arbitrary {
-		val maxDepth = 100
-		def jString: Gen[JString] = for { st <- arbitrary[String] if st.matches("""([^"\p{Cntrl}\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""")} yield JString(st)
-		def jInt: Gen[JInt] = for { i <- arbitrary[Int]} yield JInt(i)
-		def jDouble: Gen[JDouble] = for { i <- arbitrary[Double]} yield JDouble(i)
-		def jBoolean: Gen[JBoolean] = for { i <- arbitrary[Boolean]} yield JBoolean(i)
-		def jNull = value(JNull)
-		def jObject(depth: Int): Gen[JObject] = {
+		val jString: Gen[JString] = for { st <- arbitrary[String] if st.matches("""([^"\p{Cntrl}\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""")} yield JString(st)
+		val jInt: Gen[JInt] = for { i <- arbitrary[Int]} yield JInt(i)
+		val jDouble: Gen[JDouble] = for { i <- arbitrary[Double]} yield JDouble(i)
+		val jBoolean: Gen[JBoolean] = for { i <- arbitrary[Boolean]} yield JBoolean(i)
+		def jNull = Gen.const(JNull)
+		
+		lazy val arrayParams = Gen.resize(5, containerOf[Array, JValue](jVal))
+		
+		lazy val jArray: Gen[JArray] = for{
+				ar <- arrayParams
+		} yield JArray(ar: _*)
+		
+		lazy val objParams = Gen.resize(5, containerOf[Array, (String, JValue)]( 
+				for{
+					key <- jString 
+					value <- jVal
+				} yield key.value -> value
+		))
+		
+		lazy val jObject: Gen[JObject] = {
 			for{ 
-				obj <- sized(s => containerOfN[Array, (String, JValue)](math.min(s, maxDepth), for{
-					key <- arbitrary[String] if key.matches("""([^"\p{Cntrl}\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""")
-					value <- jVal(depth)
-				} yield key -> value)) if depth < maxDepth
+				obj <- objParams
 			} yield JObject(obj:_*)
 		}
-		def jArray(depth: Int): Gen[JArray] = for{
-				ar <- sized(s => containerOfN[Array, JValue](math.min(s, maxDepth), jVal(depth + 1)))  if depth < maxDepth
-			} yield JArray(ar: _*)
-	
-		def jVal(depth: Int) = oneOf(jString, jInt, jDouble, jBoolean, jArray(depth + 1), jNull, jObject(depth + 1))
+
+		lazy val jVal = Gen.lzy(oneOf(jString, jInt, jDouble, jBoolean, jArray, jNull, jObject))
 		
-		jVal(0)
+		jVal
 	}
 	
-	it("parse nospace") {
+	it("should parse nospace") {
 		check(forAll{(value: JValue) => value.nospace.toJson.get == value})
 	}
 	
-	it("parse pretty"){
+	it("should parse pretty"){
 		check(forAll{(value: JValue) => value.pretty.toJson.get == value})
 	}
 	

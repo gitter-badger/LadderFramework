@@ -1,12 +1,18 @@
 package org.ladderframework.css
 
+import scala.xml.Attribute
+import scala.xml.Elem
+import scala.xml.MetaData
+import scala.xml.MetaData.concatenate
+import scala.xml.Node
+import scala.xml.NodeSeq
+import scala.xml.NodeSeq.seqToNodeSeq
+import scala.xml.Null
+import scala.xml.Text
 import scala.xml._
-import scala.xml.transform._
-import MetaData._
+import scala.xml.transform.BasicTransformer
 import org.ladderframework.html.form.FormRendering
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
-import scala.math.Numeric
+import scala.collection.mutable.ArrayBuffer
 
 trait CssSelector {
 	type NSTransform = NodeSeq => NodeSeq
@@ -25,9 +31,8 @@ trait CssSelector {
 			ns.flatMap(rr.orElse { case (n: Node) => Seq(n) })
 		}
 
-		override def transform(ns: Seq[Node]): Seq[Node] = {
-			if (ns.isEmpty) ns
-			else transform(ns.head) ++ transform(ns.tail)
+		override final def transform(ns: Seq[Node]): Seq[Node] = {
+			ns.iterator.foldLeft(new ArrayBuffer[Node])(_ ++= transform(_)).toSeq
 		}
 	}
 
