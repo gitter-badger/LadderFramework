@@ -54,18 +54,18 @@ class HttpRequestSpec extends FunSpec with GivenWhenThen {
   		})
   	}
   	it("should extract on Session id"){
-  		assert(HttpReq(GET, "sessionID", "path" :: Nil) match {
-  			case Session(session) => session == "sessionID"
+  		assert(HttpReq(GET, SessionId("sessionID"), "path" :: Nil) match {
+  			case Session(session) => session == SessionId("sessionID")
   		})
   	}
   	it("should match on path and extract on Session id"){
-  		assert(HttpReq(GET, "sessionID", "path" :: Nil) match {
-  			case Path("path" :: Nil) & Session(session) => session == "sessionID"
+  		assert(HttpReq(GET, SessionId("sessionID"), "path" :: Nil) match {
+  			case Path("path" :: Nil) & Session(session) => session == SessionId("sessionID")
   		})
   	}
   	it("should match on path and json content"){
-  		assert(HttpReq(GET, Map("Accept" -> Option("application/json")), "sessionID", "path" :: Nil) match {
-  			case Path("path" :: Nil) & Session(session) & Header.Accept("application/json") => session == "sessionID"
+  		assert(HttpReq(GET, Map("Accept" -> Option("application/json")), SessionId("sessionID"), "path" :: Nil) match {
+  			case Path("path" :: Nil) & Session(session) & Header.Accept("application/json") => session == SessionId("sessionID")
   		})
   	}
   	
@@ -74,19 +74,19 @@ class HttpRequestSpec extends FunSpec with GivenWhenThen {
   object HttpReq{
   	def apply(givenMethod: Method, givenPath: List[String]) = new HttpRequest{
   		override val method = givenMethod
-  		override def sessionID = ""
+  		override def sessionID = SessionId("")
   		override def path = givenPath
   		override def parameters = Map()
   		override def cookies = Nil
   	}
-  	def apply(givenMethod: Method, givenSession: String, givenPath: List[String]) = new HttpRequest{
+  	def apply(givenMethod: Method, givenSession: SessionId, givenPath: List[String]) = new HttpRequest{
   		override val method = givenMethod
   		override def sessionID = givenSession
   		override def path = givenPath
   		override def parameters = Map()
   		override def cookies = Nil
   	}
-  	def apply(givenMethod: Method, givenHeaders: Map[String, Option[String]], givenSession: String, givenPath: List[String]) = new HttpRequest{
+  	def apply(givenMethod: Method, givenHeaders: Map[String, Option[String]], givenSession: SessionId, givenPath: List[String]) = new HttpRequest{
   		override val method = givenMethod
   		override def sessionID = givenSession
 			override def path = givenPath

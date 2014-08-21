@@ -9,7 +9,7 @@ import org.ladderframework.logging.Loggable
 trait HttpRequest{
 	def method:Method
 	def headers: String => Option[String] = s => None
-	def sessionID:String
+	def sessionID:SessionId
 	def path:List[String]
 	def parameters: Map[String,Array[String]]
 	//TODO S wrap Part in something appropriate
@@ -23,7 +23,7 @@ class ServletHttpRequest(req: HttpServletRequest) extends HttpRequest with Logga
 	val method:Method = Method(req.getMethod())
 	override val cookies = req.getCookies().toSeq.map(c => Cookie(c))
 	override val headers: String => Option[String] = s => Option(req.getHeader(s))
-	val sessionID:String = req.getSession().getId()
+	val sessionID:SessionId = SessionId(req.getSession().getId())
 	val path:List[String] = req.getServletPath.split("/").filterNot(_.isEmpty).toList
 	val parameters: Map[String,Array[String]]  = req.getParameterMap.asScala.toMap
 	debug("Parameters: " + parameters)
@@ -48,6 +48,8 @@ sealed trait Method{
 		if(method == this) Some(method) else None
 	}
 }
+
+case class SessionId(value: String) extends AnyVal
 
 object Method{
 	def apply(method:String):Method = method.toUpperCase match{
@@ -89,7 +91,7 @@ object Json{
 }
 
 object Session{
-	def unapply(req: HttpRequest): Option[String] = {
+	def unapply(req: HttpRequest): Option[SessionId] = {
 		Option(req.sessionID)
 	}
 }

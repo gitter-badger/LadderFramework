@@ -45,22 +45,22 @@ class RequestHandler extends Actor with ActorLogging {
 			log.debug("receive - HttpInteraction: " + hi)
 			val sessionID = hi.req.sessionID
 			// If request to existing find actor. Find and send
-			val session = context.system.actorSelection("user/" + sessionID)
+			val session = context.system.actorSelection("user/" + sessionID.value)
 			session ! hi
 		case ws: WsConnect =>
 			log.debug("receive - WsInteraction: " + ws)
 			val sessionID = ws.sessionID
-			val session = context.system.actorSelection("user/" + sessionID)
+			val session = context.system.actorSelection("user/" + sessionID.value)
 			session ! ws
 	}
 
 }
 
 object SessionActor {
-	def apply(sessionID: String): Props = Props(new SessionActor(sessionID))
+	def apply(sessionID: SessionId): Props = Props(new SessionActor(sessionID))
 }
 
-class SessionActor(sessionID: String) extends Actor with ActorLogging {
+class SessionActor(sessionID: SessionId) extends Actor with ActorLogging {
 	def receive = {
 		case hi: HttpInteraction =>
 			// If request to existing find actor. Find and send
@@ -131,18 +131,18 @@ trait ResponseContainer extends Actor with ActorLogging {
 
 	var isTerminated = false
 
-	private def updateLastAccess() {
+	private def updateLastAccess() = {
 		log.debug("updateLastAccess from " + lastAccess )
 		context.system.scheduler.scheduleOnce(LadderBoot.timeToLivePage millis, self, Tick)
 		lastAccess = System.currentTimeMillis
 	}
 
-	override def preStart() {
+	override def preStart() = {
 		updateLastAccess()
 		isTerminated = false
 	}
 
-	override def postStop() {
+	override def postStop() = {
 		log.debug("Closing Page: " + uuid)
 		isTerminated = true
 	}
@@ -339,7 +339,7 @@ class WsActor() extends Actor with ActorLogging {
 	}
 	
 	def connected(session: WsSession, httpSessionId: String): Actor.Receive = {
-		def send(msgs: List[PushMessage]) {
+		def send(msgs: List[PushMessage]) = {
 			if (session.isOpen()){
 				val text = msgs.map(_.asJson).mkString("""{"messages":[""", ",", "]}")
 				try {
@@ -353,7 +353,7 @@ class WsActor() extends Actor with ActorLogging {
 			}
 		}
 		
-		def ping(){
+		def ping() = {
 			if (session.isOpen()){
 				try {
 					session.getBasicRemote.sendPing(java.nio.ByteBuffer.wrap("LadderPing".getBytes()))
@@ -369,7 +369,7 @@ class WsActor() extends Actor with ActorLogging {
 		{
 			case InitWsPage(page) => 
 				session.addMessageHandler(new MessageHandler.Whole[String](){
-					override def onMessage(msg: String){
+					override def onMessage(msg: String) = {
 						msg.toJson match {
 							case Success(json:JObject) =>
 								log.debug("new message: " + json)
@@ -383,7 +383,7 @@ class WsActor() extends Actor with ActorLogging {
 					}
 				})
 				session.addMessageHandler(new MessageHandler.Whole[PongMessage](){
-					override def onMessage(msg: PongMessage){
+					override def onMessage(msg: PongMessage) = {
 						page ! Ping
 					}
 				})

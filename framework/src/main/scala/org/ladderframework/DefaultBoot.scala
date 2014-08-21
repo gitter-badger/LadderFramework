@@ -8,6 +8,7 @@ import com.typesafe.config.ConfigFactory
 import akka.actor.ActorSystem
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import akka.actor.PoisonPill
 
 trait DefaultBoot {
 	
@@ -23,6 +24,10 @@ trait DefaultBoot {
 	def errorHandle:PartialFunction[(Status, Option[Throwable]), HttpResponse] = {
 		case (NotFound, _) => notFound
 		case (s, ot) => error(s, ot)
+	}
+	
+	def removeSession(session: SessionId): Unit = {
+		system.actorSelection(s"/user/${session.value}") ! PoisonPill
 	}
 	
 	def onShutdown(){}

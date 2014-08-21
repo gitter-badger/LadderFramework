@@ -18,19 +18,19 @@ class AsyncRequestHandlerMock(httpResponseOutput: HttpResponseOutputMock, countD
 	var errorListeners:List[() => Unit] = Nil
 	var timeoutListeners:List[() => Unit] = Nil
 	
-	def sendTimeout(){
+	def sendTimeout() = {
 		timeoutListeners.foreach(_.apply())
 	}
 	
-	def sendError(){
+	def sendError() = {
 		errorListeners.foreach(_.apply())
 	}
 	
-	def addListeners(onComplete: () => Unit, onError: () => Unit, onStart: () => Unit, onTimeout: () => Unit){
+	def addListeners(onComplete: () => Unit, onError: () => Unit, onStart: () => Unit, onTimeout: () => Unit) = {
 		errorListeners = onError :: errorListeners
 		timeoutListeners = onTimeout :: timeoutListeners
 	}
-	def complete() {
+	def complete() = {
 		if(httpResponseOutput.status == NotImplemented) throw new IllegalStateException("status not set")
 		latch.countDown()
 	}

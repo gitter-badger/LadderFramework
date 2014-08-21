@@ -20,6 +20,7 @@ import javax.servlet.http.HttpSessionEvent
 import javax.servlet.http.HttpSessionListener
 import akka.actor.PoisonPill
 import akka.routing.RoundRobinRouter
+import akka.routing.RoundRobinPool
 
 @WebFilter(urlPatterns = Array("/*"), asyncSupported = true)
 @MultipartConfig(location = "/tmp", fileSizeThreshold = 1048576, maxFileSize = 52428800, maxRequestSize = 52428800)
@@ -28,37 +29,37 @@ class LadderFrameworkFilter extends Filter with Loggable {
 	import bootstrap.LadderBoot.system
 	
   // create the result listener, which will print the result and shutdown the system
-  val requestHandler = system.actorOf(Props[RequestHandler].withRouter(RoundRobinRouter(10)), name = "requestHandler")
+  val requestHandler = system.actorOf(Props[RequestHandler].withRouter(new RoundRobinPool(10)), name = "requestHandler")
 	var config: FilterConfig = _
 	
 	lazy val asyncListener = new AsyncListener{
-		def onStartAsync(evt: AsyncEvent) { debug("startAsync: " + evt.getSuppliedRequest().asInstanceOf[HttpServletRequest].getRequestURI())}
-		def onError(evt: AsyncEvent) {
+		def onStartAsync(evt: AsyncEvent) = { debug("startAsync: " + evt.getSuppliedRequest().asInstanceOf[HttpServletRequest].getRequestURI())}
+		def onError(evt: AsyncEvent) = {
 			warn("Error" + evt.getSuppliedRequest().asInstanceOf[HttpServletRequest].getRequestURI())
 			evt.getAsyncContext().complete()
 			evt.getAsyncContext.getResponse.getWriter.close()
 			evt.getSuppliedResponse.getWriter.close()
 		}
-		def onTimeout(evt: AsyncEvent){
+		def onTimeout(evt: AsyncEvent) = {
 			debug("timeout: " + evt.getSuppliedRequest.asInstanceOf[HttpServletRequest].getRequestURI())
 			evt.getAsyncContext().complete()
 			evt.getAsyncContext.getResponse.getWriter.close()
 			evt.getSuppliedResponse.getWriter.close()
 		}
-		def onComplete(evt: AsyncEvent){debug("complete: " + evt.getSuppliedRequest().asInstanceOf[HttpServletRequest].getRequestURI())}
+		def onComplete(evt: AsyncEvent) = {debug("complete: " + evt.getSuppliedRequest().asInstanceOf[HttpServletRequest].getRequestURI())}
 	}
 
-	def init(config: FilterConfig) {
+	def init(config: FilterConfig) = {
 		debug("init")
 		this.config = config
 		val cxt = config.getServletContext()
 		cxt.addListener(new HttpSessionListener{
-			def sessionCreated(sessionEvent: HttpSessionEvent) {
+			def sessionCreated(sessionEvent: HttpSessionEvent) = {
 				val sessionId = sessionEvent.getSession.getId
 				debug("Create session: " + sessionId)
-				system.actorOf(SessionActor(sessionId), name = sessionId)
+				system.actorOf(SessionActor(SessionId(sessionId)), name = sessionId)
 			} 
-			def sessionDestroyed(sessionEvent: HttpSessionEvent) {
+			def sessionDestroyed(sessionEvent: HttpSessionEvent) = {
 				val sessionId = sessionEvent.getSession.getId
 				debug("Remove session: " + sessionId)
 				system.actorSelection("user/" + sessionId) ! PoisonPill
@@ -72,7 +73,7 @@ class LadderFrameworkFilter extends Filter with Loggable {
 		
 	}
 	
-	def doFilter(servletRequest: ServletRequest, servletResponse: ServletResponse, chain: FilterChain) {
+	def doFilter(servletRequest: ServletRequest, servletResponse: ServletResponse, chain: FilterChain) = {
 		
 		(servletRequest, servletResponse) match {
 			case (httpServletRequest: HttpServletRequest, httpServletResponse: HttpServletResponse) =>
@@ -93,7 +94,7 @@ class LadderFrameworkFilter extends Filter with Loggable {
 		}
 	}
 
-	def destroy() {
+	def destroy() = {
 		config = null
 		LadderBoot.onShutdown()
 		system.shutdown()

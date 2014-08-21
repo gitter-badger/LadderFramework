@@ -91,7 +91,7 @@ trait ProsessedHttpResponse extends HttpResponse with Loggable{
 	def content: String
 	def contentType: String
 	
-	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext) = Future {
+	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext) = Future.successful {
 		debug("applyToHttpServletResponse: " + this)
 		httpResponseOutput.setStatus(status)
 		httpResponseOutput.setContentType(contentType)

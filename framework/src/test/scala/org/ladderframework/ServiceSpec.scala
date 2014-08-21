@@ -25,6 +25,7 @@ import org.ladderframework.js.JsCall
 import org.ladderframework.js.JsCmd
 import org.junit.runner.RunWith
 import org.scalatest.WordSpecLike
+import akka.routing.RoundRobinPool
 
 class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike with GivenWhenThen with BeforeAndAfterAll{
 
@@ -33,9 +34,9 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 	val helloWorldResponse = Future(HtmlResponse("<html><body>hello world</body></html>"))
 	val requestHandler = system.actorOf(Props[RequestHandler].withRouter(RoundRobinRouter(10)), name = "requestHandler")
 	
-	val sessionID = "sessionID"
+	val sessionID = SessionId("sessionID")
 	
-	override def beforeAll {
+	override def beforeAll = {
 		LadderBoot.site = {
 			case req @ HttpRequest(GET, "hello" :: "world" :: Nil) if req.parameters.size == 0 => helloWorldResponse
 			case req @ HttpRequest(POST | GET, "hello" :: "world" :: Nil) => 
@@ -92,15 +93,15 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 			case _ => "NOT FOUND"
 		}
 		
-		system.actorOf(SessionActor(sessionID), name = sessionID)
+		system.actorOf(SessionActor(sessionID), name = sessionID.value)
   }
 	
-	def send(msg:Any) {
+	def send(msg:Any) = {
 		requestHandler ! msg 
 	}
 		
-	override def afterAll {
-		system.actorFor(sessionID:: Nil) ! PoisonPill
+	override def afterAll = {
+		system.actorSelection(s"/user/${sessionID.value}") ! PoisonPill
     system.shutdown()
   }
 	val httpResponseOutput = new HttpResponseOutputMock()
@@ -112,7 +113,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 		httpResponseOutput
 	}
 	
-	def httpRequest(givenMethod: Method, givenSession: String, givenPath: List[String], givenParams: Map[String, Array[String]] = Map()) = new HttpRequest{
+	def httpRequest(givenMethod: Method, givenSession: SessionId, givenPath: List[String], givenParams: Map[String, Array[String]] = Map()) = new HttpRequest{
 		override val method = givenMethod
 		override val sessionID = givenSession
 		override def path = givenPath
