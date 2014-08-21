@@ -220,10 +220,14 @@ trait ResponseContainer extends Actor with ActorLogging {
 
 		case HttpInteraction(asyncContext, req, res) =>
 			updateLastAccess()
-			val response: Future[HttpResponse] = (statefulContext.submitCallback orElse
+			val response: Future[HttpResponse] = try{
+				(statefulContext.submitCallback orElse
 				statefulContext.ajaxSubmitCallback orElse
 				statefulContext.ajaxHandlerCallback orElse
 				statefulContext.ajaxCallback orElse notFound).apply(req)
+			}catch{
+				case t: Throwable => Future.failed(t)
+			}
 			response.onComplete {
 				case Success(http) =>
 					log.debug("completing - success, http: " + http)
@@ -304,13 +308,13 @@ class PullActor(asyncHandler: AsyncRequestHandler, res: HttpResponseOutput) exte
 			send(pushMsgs)
 	}
 
-	def send(msgs: List[PushMessage]) {
+	def send(msgs: List[PushMessage]): Unit = {
 		val response = PullResponse(msgs)
-		implicit val context: Context = null
+		implicit val c: Context = new Context(Utils.uuid, (_, _) => "", _ => Success({}))
 		response.applyToHttpServletResponse(res).onComplete {
 			case Success(status) =>
 				asyncHandler.complete()
-				log.debug("pull completed - success, status: " + status)
+				log.debug("pull completed - success, status: {}", status)
 			case Failure(throwable) =>
 				log.warning("pull problem completing fail result", throwable)
 				asyncHandler.complete()

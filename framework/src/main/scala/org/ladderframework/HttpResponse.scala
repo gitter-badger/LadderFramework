@@ -30,7 +30,7 @@ case class HttpRedirectResponse(location: List[String], params: Option[String] =
 	val status = Found
 
 	override def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext): Future[Status] = {
-		Future {
+		Future.successful{
 			httpResponseOutput.setStatus(status)
 			httpResponseOutput.setHeader(Location, location.mkString("/", "/", "") + params.map("?" + _ + "=redirect").getOrElse(""))
 			status
