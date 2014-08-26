@@ -119,6 +119,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 		override def path = givenPath
 		override def parameters = givenParams
 		override def cookies = Nil
+		override def invalidateSession() = {}
 	}
 	
 	"The framework" when {

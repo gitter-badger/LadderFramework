@@ -26,11 +26,7 @@ trait DefaultBoot {
 		case (s, ot) => error(s, ot)
 	}
 	
-	def removeSession(session: SessionId): Unit = {
-		system.actorSelection(s"/user/${session.value}") ! PoisonPill
-	}
-	
-	def onShutdown(){}
+	def onShutdown()={}
 	
 	var timeToLivePage: Int = 10 * 60 * 1000
 	

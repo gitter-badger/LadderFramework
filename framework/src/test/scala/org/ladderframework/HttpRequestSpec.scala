@@ -78,6 +78,7 @@ class HttpRequestSpec extends FunSpec with GivenWhenThen {
   		override def path = givenPath
   		override def parameters = Map()
   		override def cookies = Nil
+  		override def invalidateSession() = {}
   	}
   	def apply(givenMethod: Method, givenSession: SessionId, givenPath: List[String]) = new HttpRequest{
   		override val method = givenMethod
@@ -85,6 +86,7 @@ class HttpRequestSpec extends FunSpec with GivenWhenThen {
   		override def path = givenPath
   		override def parameters = Map()
   		override def cookies = Nil
+  		override def invalidateSession() = {}
   	}
   	def apply(givenMethod: Method, givenHeaders: Map[String, Option[String]], givenSession: SessionId, givenPath: List[String]) = new HttpRequest{
   		override val method = givenMethod
@@ -93,6 +95,7 @@ class HttpRequestSpec extends FunSpec with GivenWhenThen {
 			override def headers = givenHeaders
 			override def parameters = Map()
 			override def cookies = Nil
+			override def invalidateSession() = {}
   	}
   }
   

@@ -17,6 +17,7 @@ trait HttpRequest{
 	def part(name: String): Option[Part] = parts.filter{_.getName() == name}.headOption
 	def partAsString(name: String): Option[String] = part(name).map(part => Context.stream2String(part.getInputStream))
 	def cookies: Seq[Cookie]
+	def invalidateSession(): Unit
 }
 
 class ServletHttpRequest(req: HttpServletRequest) extends HttpRequest with Loggable{
@@ -31,6 +32,9 @@ class ServletHttpRequest(req: HttpServletRequest) extends HttpRequest with Logga
 	override val parts = if(Option(req.getContentType).exists(_.startsWith("multipart/form-data"))) 
 					req.getParts.toList else Nil
 	debug("pars: " + parts)
+	def invalidateSession(): Unit = {
+	  req.getSession.invalidate()
+	}
 }
 
 object HttpRequest{
