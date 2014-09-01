@@ -263,10 +263,10 @@ object Header{
 	}
 }
 
-case class Cookie(name: String, value: String, domain: Option[String] = None, path:Option[String] = None, secure:Boolean = false, maxAge: Int = -1, version: Int = 1, comment:Option[String] = None, httpOnly:Boolean = false)
+case class Cookie(name: String, value: String, domain: Option[String] = None, path:Option[String] = None, secure:Boolean = false, maxAge: Int = -1, comment:Option[String] = None, httpOnly:Boolean = false)
 
 object Cookie{
 	def apply(c: javax.servlet.http.Cookie):Cookie = {
-		Cookie(c.getName(), c.getValue(), Option(c.getDomain), Option(c.getPath), c.getSecure, c.getMaxAge(), c.getVersion(), Option(c.getComment), c.isHttpOnly)
+		Cookie(c.getName(), c.getValue(), Option(c.getDomain), Option(c.getPath), c.getSecure, c.getMaxAge(), Option(c.getComment), c.isHttpOnly)
 	}
 }
