@@ -22,7 +22,7 @@ trait HttpRequest{
 
 class ServletHttpRequest(req: HttpServletRequest) extends HttpRequest with Loggable{
 	val method:Method = Method(req.getMethod())
-	override val cookies = req.getCookies().toSeq.map(c => Cookie(c))
+	override val cookies = Option(req.getCookies()).map(_.toSeq.map(c => Cookie(c))).getOrElse(Nil)
 	override val headers: String => Option[String] = s => Option(req.getHeader(s))
 	val sessionID:SessionId = SessionId(req.getSession().getId())
 	val path:List[String] = req.getServletPath.split("/").filterNot(_.isEmpty).toList
