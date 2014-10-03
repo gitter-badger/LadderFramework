@@ -11,24 +11,24 @@ trait AsyncRequestHandler {
 
 class AsyncServletContext(asyncContext: AsyncContext) extends AsyncRequestHandler{
 	
-	def addListeners(onCompleteCallback: () => Unit, onErrorCallback: () => Unit, onStartCallback: () => Unit, onTimeoutCallback: () => Unit){
+	def addListeners(onCompleteCallback: () => Unit, onErrorCallback: () => Unit, onStartCallback: () => Unit, onTimeoutCallback: () => Unit): Unit = {
 		asyncContext.addListener(new AsyncListener(){
-			def onComplete(event: AsyncEvent) {
+			def onComplete(event: AsyncEvent): Unit = {
 				onCompleteCallback()
 			}
-			def onError(event: AsyncEvent){
+			def onError(event: AsyncEvent): Unit = {
 				onErrorCallback()
 			}
-			def onStartAsync(event: AsyncEvent){
+			def onStartAsync(event: AsyncEvent): Unit = {
 				onStartCallback()
 			}
-			def onTimeout(event: AsyncEvent){
+			def onTimeout(event: AsyncEvent): Unit = {
 				onTimeoutCallback()
 			}
 		})
 		
 	}
-	def complete(){
+	def complete(): Unit = {
 		asyncContext.complete()
 	}
 	
