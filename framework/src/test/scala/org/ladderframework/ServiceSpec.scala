@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletResponse
 import java.util.concurrent.TimeUnit
 import org.ladderframework.js.JsCall
 import org.ladderframework.js.JsCmd
+import org.ladderframework.Method._
 import org.junit.runner.RunWith
 import org.scalatest.WordSpecLike
 import akka.routing.RoundRobinPool

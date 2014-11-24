@@ -12,6 +12,7 @@ import bootstrap.LadderBoot
 import scala.concurrent.Future
 import scala.collection.concurrent._
 import scala.util.Try
+import org.ladderframework.Method._
 
 object Context{
 	private val lineSeparator = System.getProperty("line.separator")

@@ -67,16 +67,16 @@ object Method{
 		case "PUT" => PUT
 		case _ => GET
 	}
-}
 	
-case object OPTIONS extends Method
-case object GET extends Method
-case object HEAD extends Method
-case object POST extends Method
-case object PUT extends Method
-case object DELETE extends Method
-case object TRACE extends Method
-case object CONNECT extends Method	
+	case object OPTIONS extends Method
+	case object GET extends Method
+	case object HEAD extends Method
+	case object POST extends Method
+	case object PUT extends Method
+	case object DELETE extends Method
+	case object TRACE extends Method
+	case object CONNECT extends Method	
+}
 
 object &{
 	def unapply(req: HttpRequest): Option[(HttpRequest, HttpRequest)] = {
