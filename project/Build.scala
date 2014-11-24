@@ -4,7 +4,7 @@ import sbtrelease.ReleasePlugin._
 
 object LadderFrameworkBuild extends Build {
 
-	val buildScalaVersion = "2.11.2"
+	val buildScalaVersion = "2.11.4"
 	
 	lazy val buildSettings = Defaults.defaultSettings ++ Seq(
 		organization := "org.ladderframework",
@@ -64,7 +64,7 @@ object Dependency {
 		val scalacheck = "1.11.4"
 		val slf4j = "1.7.5"
 		val akka = "2.3.6"
-		val scalaVersion = "2.11.2"
+		val scalaVersion = "2.11.4"
 	}
 
 	// Compile
