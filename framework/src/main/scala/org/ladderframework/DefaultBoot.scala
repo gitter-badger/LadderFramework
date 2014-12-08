@@ -28,7 +28,7 @@ trait DefaultBoot {
 	
 	def onShutdown()={}
 	
-	var timeToLivePage: Int = 10 * 60 * 1000
+	val timeToLivePage: Int = 10 * 60 * 1000
 	
 	//def resourcePath(resource:String):URL = getClass().getClassLoader().getResource(resource) 
 	
@@ -37,9 +37,9 @@ trait DefaultBoot {
 	def mimeType(s:String):String = mimeTypeImpl(s)
 	def contextPath:String = contextPathImpl
 	
-	private[ladderframework] var resourceImpl:String => URL = s => new File(s).toURI.toURL
-	private[ladderframework] var resourceAsStreamImpl:String => InputStream = s => new FileInputStream(new File(resource(s).toURI))
-	private[ladderframework] var mimeTypeImpl:String => String = s => s
-	private[ladderframework] var contextPathImpl:String = ""
+	private[ladderframework] val resourceImpl:String => URL = s => new File(s).toURI.toURL
+	private[ladderframework] val resourceAsStreamImpl:String => InputStream = s => new FileInputStream(new File(resource(s).toURI))
+	private[ladderframework] val mimeTypeImpl:String => String = s => s
+	private[ladderframework] val contextPathImpl:String = ""
 	
 }

@@ -9,29 +9,32 @@ import org.scalatest.BeforeAndAfterAll
 import akka.actor.Props
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
-import bootstrap.LadderBoot
 import org.scalatest.WordSpecLike
-import org.ladderframework.mock.HttpResponseOutputMock
-import org.ladderframework.mock.AsyncRequestHandlerMock
 import akka.testkit.TestProbe
+import scala.concurrent.Promise
 
 class ResponseContainerActorSpec (system: ActorSystem) extends TestKit(system) with WordSpecLike with GivenWhenThen with BeforeAndAfterAll{
 	
 	implicit val webSystem = system
 	
 	def this() = this(ActorSystem("WebSystem"))
+	
+	val boot = new DefaultBoot{
+		def site = {
+			case in => ??? 
+		}
+		override val timeToLivePage = 200
+	} 
 
 	"The request container actor" when {
 		"handle time to live" should {
 			"handle timing out" in {
-				val httpResponseOutput = new HttpResponseOutputMock()
-				val asyncRequestHandler = new AsyncRequestHandlerMock(httpResponseOutput)
+				val httpResponseOutput = Promise[HttpResponseOutput]()
 				val uuid = Utils.uuid
-				LadderBoot.timeToLivePage = 200
-				val initalResponseContainer = system.actorOf(Props(new InitalResponseContainer(null, null, uuid)))
+				val initalResponseContainer = system.actorOf(Props(new InitalResponseContainer(null, null, uuid, boot)))
 				val probe = TestProbe()
 				probe watch initalResponseContainer
-				asyncRequestHandler.sendError()
+//				asyncRequestHandler.sendError()
 				probe.expectTerminated(initalResponseContainer)
 			}
 		}

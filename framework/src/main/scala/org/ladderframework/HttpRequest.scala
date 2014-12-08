@@ -5,13 +5,14 @@ import scala.collection.JavaConverters.mapAsScalaMapConverter
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.Part
 import org.ladderframework.logging.Loggable
+import akka.http.model.HttpHeader
 
 trait HttpRequest{
 	def method:Method
 	def headers: String => Option[String] = s => None
 	def sessionID:SessionId
 	def path:List[String]
-	def parameters: Map[String,Array[String]]
+	def parameters: Map[String,List[String]]
 	//TODO S wrap Part in something appropriate
 	def parts: List[Part] = Nil
 	def part(name: String): Option[Part] = parts.filter{_.getName() == name}.headOption
@@ -20,28 +21,12 @@ trait HttpRequest{
 	def invalidateSession(): Unit
 }
 
-class ServletHttpRequest(req: HttpServletRequest) extends HttpRequest with Loggable{
-	val method:Method = Method(req.getMethod())
-	override val cookies = req.getCookies().toSeq.map(c => Cookie(c))
-	override val headers: String => Option[String] = s => Option(req.getHeader(s))
-	val sessionID:SessionId = SessionId(req.getSession().getId())
-	val path:List[String] = req.getServletPath.split("/").filterNot(_.isEmpty).toList
-	val parameters: Map[String,Array[String]]  = req.getParameterMap.asScala.toMap
-	debug("Parameters: " + parameters)
-	//TODO S wrap Part in something appropriate
-	override val parts = if(Option(req.getContentType).exists(_.startsWith("multipart/form-data"))) 
-					req.getParts.toList else Nil
-	debug("pars: " + parts)
-	def invalidateSession(): Unit = {
-	  req.getSession.invalidate()
-	}
-}
-
 object HttpRequest{
 	def unapply(req: HttpRequest): Option[(Method, List[String])] = {
 		import req._
 		Option(method, path)
 	}
+	
 }
 
 sealed trait Method{
@@ -85,6 +70,7 @@ object &{
 	}
 }
 
+
 object Path {
 	def unapply(req:HttpRequest):Option[List[String]] = Some(req.path) 
 }
@@ -100,14 +86,14 @@ object Session{
 		Option(req.sessionID)
 	}
 }
-/**
- * All examples are from 
- */
+
 trait Header{
 	val name: String
+	
 	def unapply(req: HttpRequest): Option[String] = {
 		req.headers(name)
 	}
+	
 }
 
 object Header{

@@ -19,42 +19,73 @@ import scala.util.Failure
 import java.util.concurrent.TimeoutException
 import scala.concurrent.ExecutionContext
 import javax.servlet.http.Part
+import akka.http.model.HttpHeader
+import akka.http.model.headers.{Cookie => AkkaCookie}
+import akka.http.model.headers.`Set-Cookie`
+import org.ladderframework.logging.Loggable
+import akka.http.model.headers.HttpCookie
+import scala.collection.immutable
+import akka.http.model.HttpEntity
+import akka.http.model.{ContentType => AkkaContentType}
+import akka.http.model.{MediaType => AkkaMediaType}
+import akka.http.model.HttpCharset
 
+class LadderServer(boot: DefaultBoot) extends Loggable{
 
-class LadderServer(boot: DefaultBoot) {
-
+	val sessionName = "LSession"
+	
 	implicit val askTimeout: Timeout = 5000.millis
 	private implicit val system = boot.system
 	private implicit val materializer = FlowMaterializer()
 	import system.dispatcher
 
 	def start(interface: String, port: Int): Unit = {
-		val bindingFuture = IO(Http) ? Http.Bind(interface = "localhost", port = 8080)
+		val bindingFuture = IO(Http) ? Http.Bind(interface, port)
 		bindingFuture foreach {
 			case Http.ServerBinding(localAddress, connectionStream) ⇒
 				Flow(connectionStream).foreach({
 					case Http.IncomingConnection(remoteAddress, requestProducer, responseConsumer) ⇒
-						println("Accepted new connection from " + remoteAddress)
+						info("Accepted new connection from " + remoteAddress)
 
 						def rh: AkkaHttpRequest => Future[AkkaHttpResponse] = req => {
-							val prom = Promise[AkkaHttpResponse]()
-							val asyncHandler = new AkkaAsyncRequestHandler(prom)
-							
-							new HttpInteraction(asyncHandler, new AkkaHttpRequestWrapper(req, sessionID = ???), ???)
-							prom.future
+							println("RH")
+							val session = req.headers.collect{case c:AkkaCookie => c}.flatMap(_.cookies).filter(_.name == sessionName).headOption.map(_.value) match {
+								case None => 
+									val sessionId = SessionId(Utils.uuid.replace('-', 'X'))
+									debug("Create session: " + sessionId)
+									system.actorOf(SessionActor(sessionId, boot), name = sessionId.value)
+									sessionId
+								case Some(v) => SessionId(v)
+							}
+							val httpResponseOutput = Promise[HttpResponseOutput]()
+							println("next: interaction")
+							val interaction = HttpInteraction(new AkkaHttpRequestWrapper(req, sessionID = session), httpResponseOutput)
+							println("next: handle interaction")
+							receive(interaction)
+							httpResponseOutput.future.map(_ match {
+								case hsro : HttpStringResponseOutput => 
+									AkkaHttpResponse(
+											status = hsro.status.code,
+											headers = immutable.Seq(`Set-Cookie`(HttpCookie(sessionName, session.value))) ++ hsro.headers,
+											entity = HttpEntity(
+													AkkaContentType(AkkaMediaType.custom(hsro.contentType.mediaType.value), hsro.contentType.charset.flatMap(c => HttpCharset.custom(c.name()))), 
+													hsro.content
+											)
+									)
+							})
 						}
 						
 						def receive: PartialFunction[Any, Unit] = {
 							case hi: HttpInteraction =>
-								//log.debug("receive - HttpInteraction: " + hi)
+								info("receive - HttpInteraction: " + hi)
 								val sessionID = hi.req.sessionID
 								// If request to existing find actor. Find and send
-								val session = system.actorSelection(system / "user" / sessionID.value)
+								val session = system.actorSelection(system / sessionID.value)
 								session ! hi
 							case ws: WsConnect =>
-								//log.debug("receive - WsInteraction: " + ws)
+								debug("receive - WsInteraction: " + ws)
 								val sessionID = ws.sessionID
-								val session = system.actorSelection(system / "user" / sessionID)
+								val session = system.actorSelection(system / sessionID)
 								session ! ws
 						}
 						
@@ -64,26 +95,9 @@ class LadderServer(boot: DefaultBoot) {
 	}
 
 	def stop(): Unit = {
-
+			system.shutdown()
 	}
 
-}
-
-class AkkaAsyncRequestHandler(pom: Promise[AkkaHttpResponse])(implicit ex: ExecutionContext) extends AsyncRequestHandler{
-	def addListeners(onCompleteCallback: () => Unit, onErrorCallback: () => Unit, onStartCallback: () => Unit, onTimeoutCallback: () => Unit): Unit = {
-		onStartCallback()
-		pom.future.onComplete{
-			case Success(s) => 
-				onCompleteCallback()
-			case Failure(t: TimeoutException) => 
-				onTimeoutCallback()
-			case Failure(_) => 
-				onErrorCallback()
-		}
-	}
-	def complete(): Unit = {
-		pom.complete(???)
-	}
 }
 
 class AkkaHttpRequestWrapper(req: AkkaHttpRequest, val sessionID: SessionId) extends HttpRequest{
@@ -101,8 +115,8 @@ class AkkaHttpRequestWrapper(req: AkkaHttpRequest, val sessionID: SessionId) ext
 		}
 	}
 	override def headers: String => Option[String] = s => req.headers.find(_.name == s).map(_.value)
-	def path:List[String] = ???
-	def parameters: Map[String,Array[String]] = ???
+	def path:List[String] = Nil //req.uri.path
+	def parameters: Map[String,List[String]] = req.uri.query.toMultiMap
 	//TODO S wrap Part in something appropriate
 	override def parts: List[Part] = ??? //req.entity.???
 	override def part(name: String): Option[Part] = parts.filter{_.getName() == name}.headOption

@@ -2,7 +2,6 @@ package org.ladderframework
 
 import scala.xml.NodeSeq
 import scala.xml.XML
-import bootstrap.LadderBoot
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -10,6 +9,7 @@ import org.ladderframework.exception.RetrievingXMLException
 
 trait StatelessHtmlPage extends HtmlResponse{
 	def source: String
+	def boot: DefaultBoot
 	
 	override final def content(implicit ec:ExecutionContext):Future[String] = {
 		for{
@@ -20,7 +20,7 @@ trait StatelessHtmlPage extends HtmlResponse{
 	
 	private def xml(implicit ec:ExecutionContext):Future[NodeSeq] = Future{
 		try{
-			XML.load{LadderBoot.resource(source)}
+			XML.load(boot.resource(source))
 		}catch{
 			case t:Throwable => throw new RetrievingXMLException("Error loading xml: " + source, t)
 		}

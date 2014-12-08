@@ -6,6 +6,8 @@ import org.scalatest.GivenWhenThen
 import javax.servlet.http.HttpServletResponse
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import Method._
+import org.ladderframework.Header.Accept
 
 class HttpRequestSpec extends FunSpec with GivenWhenThen {
 
@@ -38,7 +40,8 @@ class HttpRequestSpec extends FunSpec with GivenWhenThen {
   
   val dummyResponse = new HttpResponse{
   	def status:Status = OK 
-  	def applyToHttpServletResponse(httpResponseOutput: HttpResponseOutput)(implicit context: Context, ec: ExecutionContext): Future[Status] = Future.successful(status) 
+  	def httpResponse()(implicit context: Context, ec: ExecutionContext): Future[HttpStringResponseOutput] = 
+  		Future.successful(HttpStringResponseOutput(status = status, contentType = ContentType.`text/plain` , content = "")) 
   }
   
   describe("Matching HttpRequest") {
@@ -65,7 +68,7 @@ class HttpRequestSpec extends FunSpec with GivenWhenThen {
   	}
   	it("should match on path and json content"){
   		assert(HttpReq(GET, Map("Accept" -> Option("application/json")), SessionId("sessionID"), "path" :: Nil) match {
-  			case Path("path" :: Nil) & Session(session) & Header.Accept("application/json") => session == SessionId("sessionID")
+  			case Path("path" :: Nil) & Session(session) & Accept("application/json") => session == SessionId("sessionID")
   		})
   	}
   	

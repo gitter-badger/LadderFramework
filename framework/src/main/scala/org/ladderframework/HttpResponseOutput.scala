@@ -1,47 +1,46 @@
 package org.ladderframework
 
 import java.io.OutputStream
-import java.io.Writer
-import javax.servlet.http.HttpServletResponse
-import javax.servlet.http.{Cookie => SCookie} 
+import java.io.InputStream
+import akka.http.model.HttpHeader
+import java.nio.charset.Charset
 
-trait HttpResponseOutput {
-	def setStatus(status: Status):Unit
-	def setContentType(contentType: String):Unit
-	def setHeader(key: Header, value: String):Unit
-	def addCookie(cookie: Cookie):Unit
-	def outputStream: OutputStream
-	def writer: Writer
+case class MediaType(value: String)
+case class ContentType(mediaType: MediaType, charset: Option[Charset])
+
+object ContentType{
+	val `text/html` = ContentType(MediaType("text/html"), Some(Charset.forName("UTF-8")))
+	val `text/plain` = ContentType(MediaType("text/plain"), Some(Charset.forName("UTF-8")))
+	val `application/json` = ContentType(MediaType("application/json"), Some(Charset.forName("UTF-8")))
+	val `application/xml` = ContentType(MediaType("application/xml"), Some(Charset.forName("UTF-8")))
+	val `text/javascript` = ContentType(MediaType("text/javascript"), Some(Charset.forName("UTF-8")))
 }
 
-class HttpServletResponseOutput(hsr: HttpServletResponse) extends HttpResponseOutput{
-	
-	def setStatus(status: Status): Unit = {
-		hsr.setStatus(status.code)
-	}
-	
-	def setContentType(contentType: String): Unit = {
-		hsr.setContentType(contentType)
-	}
-	
-	def setHeader(key: Header, value: String): Unit = {
-		hsr.setHeader(key.name, value)
-	}
-	
-	def outputStream: OutputStream = hsr.getOutputStream()
-	
-	def writer: Writer = hsr.getWriter()
-	
-	def addCookie(cookie: Cookie): Unit = {
-		import cookie._
-		val sCookie = new SCookie(name, value)
-		comment.foreach(sCookie.setComment)
-		domain.foreach(sCookie.setDomain)
-		sCookie.setHttpOnly(httpOnly)
-		sCookie.setMaxAge(maxAge)
-		path.foreach(sCookie.setPath)
-		sCookie.setSecure(secure)
-//		sCookie.setVersion(version)
-		hsr.addCookie(sCookie)
-	}
+trait HttpResponseOutput {
+	type C
+	def status: Status
+	def contentType: ContentType
+	def headers: Seq[HttpHeader]
+	def cookies: Seq[Cookie]
+	def content: C
+}
+
+case class HttpStringResponseOutput(
+	status: Status,
+	contentType: ContentType,
+	headers: Seq[HttpHeader] = Nil,
+	cookies: Seq[Cookie] = Nil,
+	content: String
+) extends HttpResponseOutput{
+	type C = String
+}
+
+case class HttpStreamResponseOutput(
+	status: Status,
+	contentType: ContentType,
+	headers: Seq[HttpHeader] = Nil,
+	cookies: Seq[Cookie] = Nil,
+	content: InputStream
+) extends HttpResponseOutput{
+	type C = InputStream
 }

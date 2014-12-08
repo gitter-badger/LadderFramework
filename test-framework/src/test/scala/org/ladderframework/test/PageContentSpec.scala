@@ -9,21 +9,26 @@ import org.ladderframework.HttpResponse
 import org.ladderframework.js._
 import org.ladderframework.test.page._
 import org.ladderframework.test.response._
-import bootstrap.LadderBoot
 import org.scalatest.concurrent.Futures
 import scala.util.Success
 import scala.util.Try
+import org.ladderframework.DefaultBoot
 
 class PageContentSpec extends FunSpec with GivenWhenThen with Futures{
 
-	LadderBoot.resourceImpl = (resource:String) => { 
-		getClass().getClassLoader().getResource(resource) 
-	}  
+	val boot = new DefaultBoot{
+		override def resource(resource:String) = { 
+			getClass().getClassLoader().getResource(resource)
+		}
+		def site = {
+			case _ => ???
+		}
+	}    
 	
 	implicit val context: Context = Context(
 		contextID = Utils.uuid, 
 		addResponse = (path: List[String], res: HttpResponse) => "", 
-		update = (str: JsCmd) => Try{Unit} )
+		update = (str: JsCmd) => Try{Unit}, boot)
 		
 	val indexResponse = new IndexResponse
 	

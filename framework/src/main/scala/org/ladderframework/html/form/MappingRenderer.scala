@@ -3,7 +3,6 @@ package org.ladderframework.html
 import scala.xml.NodeSeq
 import org.ladderframework.Utils
 import scala.xml.Text
-import bootstrap.LadderBoot
 import java.util.ResourceBundle
 import java.text.MessageFormat
 
