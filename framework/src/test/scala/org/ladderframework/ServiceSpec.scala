@@ -9,7 +9,6 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
 import org.scalatest.GivenWhenThen
 import org.scalatest.BeforeAndAfterAll
-import org.ladderframework.mock._
 import akka.actor.ActorSystem
 import akka.actor.Props
 import akka.actor.ActorRef
@@ -17,11 +16,9 @@ import akka.actor.Actor
 import akka.actor.PoisonPill
 import akka.routing.RoundRobinRouter
 import akka.testkit.TestKit
-import javax.servlet.http.HttpServletResponse
 import java.util.concurrent.TimeUnit
 import org.ladderframework.js.JsCall
 import org.ladderframework.js.JsCmd
-import org.junit.runner.RunWith
 import org.scalatest.WordSpecLike
 import akka.routing.RoundRobinPool
 import Method._
@@ -125,7 +122,6 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 		override def path = givenPath
 		override def parameters = givenParams
 		override def cookies = Nil
-		override def invalidateSession() = {}
 	}
 	
 	"The framework" when {

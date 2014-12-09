@@ -2,10 +2,12 @@ package org.ladderframework
 
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.JavaConverters.mapAsScalaMapConverter
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.Part
 import org.ladderframework.logging.Loggable
 import akka.http.model.HttpHeader
+import java.io.InputStream
+import akka.http.model.headers.HttpCookie
+
+case class Part(name: String, content: InputStream, headers: String => Option[String], size: Long)
 
 trait HttpRequest{
 	def method:Method
@@ -15,10 +17,9 @@ trait HttpRequest{
 	def parameters: Map[String,List[String]]
 	//TODO S wrap Part in something appropriate
 	def parts: List[Part] = Nil
-	def part(name: String): Option[Part] = parts.filter{_.getName() == name}.headOption
-	def partAsString(name: String): Option[String] = part(name).map(part => Context.stream2String(part.getInputStream))
+	def part(name: String): Option[Part] = parts.filter{_.name == name}.headOption
+	def partAsString(name: String): Option[String] = part(name).map(part => Context.stream2String(part.content))
 	def cookies: Seq[Cookie]
-	def invalidateSession(): Unit
 }
 
 object HttpRequest{
@@ -250,10 +251,10 @@ object Header{
 	}
 }
 
-case class Cookie(name: String, value: String, domain: Option[String] = None, path:Option[String] = None, secure:Boolean = false, maxAge: Int = -1, comment:Option[String] = None, httpOnly:Boolean = false)
+case class Cookie(name: String, value: String, domain: Option[String] = None, path:Option[String] = None, secure:Boolean = false, maxAge: Option[Long] = None, httpOnly:Boolean = false)
 
 object Cookie{
-	def apply(c: javax.servlet.http.Cookie):Cookie = {
-		Cookie(c.getName(), c.getValue(), Option(c.getDomain), Option(c.getPath), c.getSecure, c.getMaxAge(), Option(c.getComment), c.isHttpOnly)
+	def apply(c: HttpCookie):Cookie = {
+		Cookie(c.name, c.content , c.domain, c.path, c.secure, c.maxAge, c.httpOnly)
 	}
 }

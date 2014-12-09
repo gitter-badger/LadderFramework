@@ -11,6 +11,8 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalatest.concurrent.ScalaFutures
 import java.net.HttpURLConnection
+import org.scalatest.time.Span
+import org.scalatest.time.Millis
 
 class LadderServerSpec (system: ActorSystem) extends TestKit(system) with FunSpecLike with BeforeAndAfterAll with ScalaFutures{
 	
@@ -18,6 +20,8 @@ class LadderServerSpec (system: ActorSystem) extends TestKit(system) with FunSpe
 	
 	def this() = this(ActorSystem("LadderServerSpecSystem"))
 
+	implicit val patience = PatienceConfig(timeout = scaled(Span(1000, Millis)))
+	
 	describe("Ladder") {
 		it("should read from server"){
 			val server = new LadderServer(new DefaultBoot{
@@ -28,7 +32,7 @@ class LadderServerSpec (system: ActorSystem) extends TestKit(system) with FunSpe
 			
 			server.start("127.0.0.1", 23023)
 			
-			Thread.sleep(1500)
+			Thread.sleep(2500)
 			val url = new URL("http://localhost:23023/Jalla")
 			
 			val content = Future{

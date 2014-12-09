@@ -47,10 +47,10 @@ object Dependencies {
 
 	val slf4j = Seq(slf4jApi, logback)
 
-	val testkit = Seq(Test.scalatest, Test.scalacheck, Test.junit, Test.akkaTest)
+	val testkit = Seq(Test.scalatest, Test.scalacheck, Test.akkaTest)
 
-	val framework = Seq(servletApi, websocketApi, akkaActor, akkaLogging, akkaHttp, scalaXml, scalaParserCompinators) ++ slf4j
-	val test_framework = Seq(servletApi) ++ slf4j
+	val framework = Seq(akkaActor, akkaLogging, akkaHttp, scalaXml, scalaParserCompinators) ++ slf4j
+	val test_framework = slf4j
 
 }
 
@@ -60,20 +60,14 @@ object Dependency {
 
 	object V {
 		val logback = "1.0.13"
-		val scalatest = "2.2.0"
+		val scalatest = "2.2.2"
 		val scalacheck = "1.11.4"
 		val slf4j = "1.7.5"
-		val akka = "2.3.6"
-		val scalaVersion = "2.11.1"
+		val akka = "2.3.7"
+		val scalaVersion = "2.11.2"
 	}
 
 	// Compile
-	lazy val jetty = "org.eclipse.jetty" % "jetty-webapp" % "9.1.1.v20140108" % "test,container"
-
-	lazy val servletApi = "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided"
-
-	lazy val websocketApi = "javax.websocket" % "javax.websocket-api" % "1.0" % "provided"
-
 	lazy val slf4jApi = "org.slf4j" % "slf4j-api" % V.slf4j
 	lazy val logback = "ch.qos.logback" % "logback-classic" % V.logback
 
@@ -82,10 +76,9 @@ object Dependency {
 
 	lazy val akkaActor = "com.typesafe.akka" %% "akka-actor" % V.akka
 	lazy val akkaLogging = "com.typesafe.akka" %% "akka-slf4j" % V.akka
-	lazy val akkaHttp = "com.typesafe.akka" %% "akka-http-core-experimental" % "0.7"
+	lazy val akkaHttp = "com.typesafe.akka" %% "akka-http-core-experimental" % "1.0-M1"
 
 	object Test {
-		val junit = "junit" % "junit" % "4.11" % "test" // Common Public License 1.0
 		val scalatest = "org.scalatest" %% "scalatest" % V.scalatest % "test" // ApacheV2
 		val akkaTest = "com.typesafe.akka" %% "akka-testkit" % V.akka % "test"
 		val scalacheck = "org.scalacheck" %% "scalacheck" % V.scalacheck % "test"

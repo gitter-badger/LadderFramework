@@ -13,12 +13,7 @@ import akka.actor._
 import akka.routing.RoundRobinRouter
 import org.ladderframework.js.JsCmd
 import scala.concurrent.Promise
-import javax.websocket.{ Session => WsSession }
-import javax.websocket.MessageHandler
 import java.io.IOException
-import javax.servlet.http.HttpSession
-import javax.websocket.{Session => WsSession}
-import javax.websocket.PongMessage
 import org.ladderframework.json._
 import scala.util.Failure
 
@@ -31,10 +26,10 @@ case class PushMessage(id: String = Utils.uuid, message: String) {
 	lazy val asJson = { """{"id":"""" + id + """", "message":"""" + message.replace("\"", "\\\"") + """"}""" }
 }
 
-case class WsConnect(sessionID: String, page: String, lastId: String, actor: ActorRef)
-case class InitWsConnection(session: WsSession, httpSessionID: String)
-case class InitWsPage(page: ActorRef)
-case class WsCallMessage(msg: JObject)
+//case class WsConnect(sessionID: String, page: String, lastId: String, actor: ActorRef)
+//case class InitWsConnection(session: WsSession, httpSessionID: String)
+//case class InitWsPage(page: ActorRef)
+//case class WsCallMessage(msg: JObject)
 case object Ping
 
 class RequestHandler extends Actor with ActorLogging {
@@ -46,11 +41,11 @@ class RequestHandler extends Actor with ActorLogging {
 			// If request to existing find actor. Find and send
 			val session = context.system.actorSelection("user/" + sessionID.value)
 			session ! hi
-		case ws: WsConnect =>
-			log.debug("receive - WsInteraction: " + ws)
-			val sessionID = ws.sessionID
-			val session = context.system.actorSelection("user/" + sessionID.value)
-			session ! ws
+//		case ws: WsConnect =>
+//			log.debug("receive - WsInteraction: " + ws)
+//			val sessionID = ws.sessionID
+//			val session = context.system.actorSelection("user/" + sessionID.value)
+//			session ! ws
 	}
 
 }
@@ -88,8 +83,8 @@ class SessionActor(sessionID: SessionId, boot: DefaultBoot) extends Actor with A
 					val resonseContainerRef = context.actorOf(InitalResponseContainer.props(context.self, hi.req, uuid, boot), name = uuid)
 					resonseContainerRef ! RenderInital(hi.res)
 			}
-		case ws: WsConnect =>
-			context.actorSelection(ws.page) ! ws
+//		case ws: WsConnect =>
+//			context.actorSelection(ws.page) ! ws
 		case AddResponse(path, uuid, response) =>
 			context.actorOf(RedirectResponseContainer.props(context.self, Promise().success(response), uuid, boot), name = uuid)
 	}
@@ -255,15 +250,15 @@ trait ResponseContainer extends Actor with ActorLogging {
 					}
 				}
 			}
-		case ws @ WsConnect(_, `uuid`, lastId, wsActor) =>
-			log.debug("ws connect: " + ws)
-			updateLastAccess()
-			wsActors += wsActor
-			context.watch(wsActor)
-			wsActor ! InitWsPage(self)
-			messages = messages.reverse.takeWhile(_.id != lastId).reverse
-			wsActor ! messages
-		case WsCallMessage(msg) =>
+//		case ws @ WsConnect(_, `uuid`, lastId, wsActor) =>
+//			log.debug("ws connect: " + ws)
+//			updateLastAccess()
+//			wsActors += wsActor
+//			context.watch(wsActor)
+//			wsActor ! InitWsPage(self)
+//			messages = messages.reverse.takeWhile(_.id != lastId).reverse
+//			wsActor ! messages
+//		case WsCallMessage(msg) =>
 			//TODO Handle callback
 //			(statefulContext.submitCallback orElse
 //				statefulContext.ajaxSubmitCallback orElse
@@ -318,87 +313,85 @@ class PullActor(res: Promise[HttpResponseOutput], boot: DefaultBoot) extends Act
 	}
 }
 
-object WsActor{
-	def props: Props = Props[WsActor]()
-	case object Ping
-}
-
-class WsActor() extends Actor with ActorLogging {
-	
-	def receive = {
-		case InitWsConnection(wsSession, httpSessionId) => 
-			context.become(connected(wsSession, httpSessionId))
-			val page = wsSession.getPathParameters().get("page")
-			val lastId = wsSession.getPathParameters().get("lastId")
-			val session = context.system.actorSelection("user/" + httpSessionId)
-			session ! WsConnect(httpSessionId, page, lastId, self)
-	}
-	
-	def connected(session: WsSession, httpSessionId: String): Actor.Receive = {
-		def send(msgs: List[PushMessage]) = {
-			if (session.isOpen()){
-				val text = msgs.map(_.asJson).mkString("""{"messages":[""", ",", "]}")
-				try {
-					session.getBasicRemote.sendText(text)
-				} catch {
-					case ioe: IOException =>
-						log.warning("problems sending message: " + text, ioe)
-				}
-			}else{
-				self ! PoisonPill
-			}
-		}
-		
-		def ping() = {
-			if (session.isOpen()){
-				try {
-					session.getBasicRemote.sendPing(java.nio.ByteBuffer.wrap("LadderPing".getBytes()))
-				} catch {
-					case ioe: IOException =>
-						log.warning("problems sending ping", ioe)
-				}
-			}else{
-				self ! PoisonPill
-			}
-		}
-		
-		{
-			case InitWsPage(page) => 
-				session.addMessageHandler(new MessageHandler.Whole[String](){
-					override def onMessage(msg: String) = {
-						msg.toJson match {
-							case Success(json:JObject) =>
-								log.debug("new message: " + json)
-								page ! WsCallMessage(json)
-							case Success(s) =>
-								log.warning("Not a JObject: " + s)
-							case Failure(f) => 
-								log.warning("Unable to parse message", f)
-								
-						}
-					}
-				})
-				session.addMessageHandler(new MessageHandler.Whole[PongMessage](){
-					override def onMessage(msg: PongMessage) = {
-						page ! Ping
-					}
-				})
-				
-				context.system.scheduler.schedule(10 millis, 30 seconds, self, WsActor.Ping) //PING PONG???
-				
-				context.become({
-					case Ping => 
-						ping()
-					case Nil =>
-					case msg: PushMessage =>
-						send(List(msg))
-					case msgs: List[_] =>
-						val pushMsgs: List[PushMessage] = msgs.collect({ case msg: PushMessage => msg })
-						send(pushMsgs)
-				})
-		}
-	}
-
-	
-}
+//object WsActor{
+//	def props: Props = Props[WsActor]()
+//	case object Ping
+//}
+//
+//class WsActor() extends Actor with ActorLogging {
+//	
+//	def receive = {
+//		case InitWsConnection(wsSession, httpSessionId) => 
+//			context.become(connected(wsSession, httpSessionId))
+//			val page = wsSession.getPathParameters().get("page")
+//			val lastId = wsSession.getPathParameters().get("lastId")
+//			val session = context.system.actorSelection("user/" + httpSessionId)
+//			session ! WsConnect(httpSessionId, page, lastId, self)
+//	}
+//	
+//	def connected(session: WsSession, httpSessionId: String): Actor.Receive = {
+//		def send(msgs: List[PushMessage]) = {
+//			if (session.isOpen()){
+//				val text = msgs.map(_.asJson).mkString("""{"messages":[""", ",", "]}")
+//				try {
+//					session.getBasicRemote.sendText(text)
+//				} catch {
+//					case ioe: IOException =>
+//						log.warning("problems sending message: " + text, ioe)
+//				}
+//			}else{
+//				self ! PoisonPill
+//			}
+//		}
+//		
+//		def ping() = {
+//			if (session.isOpen()){
+//				try {
+//					session.getBasicRemote.sendPing(java.nio.ByteBuffer.wrap("LadderPing".getBytes()))
+//				} catch {
+//					case ioe: IOException =>
+//						log.warning("problems sending ping", ioe)
+//				}
+//			}else{
+//				self ! PoisonPill
+//			}
+//		}
+//		
+//		{
+//			case InitWsPage(page) => 
+//				session.addMessageHandler(new MessageHandler.Whole[String](){
+//					override def onMessage(msg: String) = {
+//						msg.toJson match {
+//							case Success(json:JObject) =>
+//								log.debug("new message: " + json)
+//								page ! WsCallMessage(json)
+//							case Success(s) =>
+//								log.warning("Not a JObject: " + s)
+//							case Failure(f) => 
+//								log.warning("Unable to parse message", f)
+//								
+//						}
+//					}
+//				})
+//				session.addMessageHandler(new MessageHandler.Whole[PongMessage](){
+//					override def onMessage(msg: PongMessage) = {
+//						page ! Ping
+//					}
+//				})
+//				
+//				context.system.scheduler.schedule(10 millis, 30 seconds, self, WsActor.Ping) //PING PONG???
+//				
+//				context.become({
+//					case Ping => 
+//						ping()
+//					case Nil =>
+//					case msg: PushMessage =>
+//						send(List(msg))
+//					case msgs: List[_] =>
+//						val pushMsgs: List[PushMessage] = msgs.collect({ case msg: PushMessage => msg })
+//						send(pushMsgs)
+//				})
+//		}
+//	}
+//}
 

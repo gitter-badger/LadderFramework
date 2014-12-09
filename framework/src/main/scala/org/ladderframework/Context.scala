@@ -111,8 +111,8 @@ case class Context(
 				} yield callback(booleanValue)
 			})
 			request.parts.foreach(part => {
-				val name = part.getName
-				inputMap.get(name).foreach(_(stream2String(part.getInputStream)))
+				val name = part.name
+				inputMap.get(name).foreach(_(stream2String(part.content)))
 				fileInputMap.get(name).foreach(_({
 					FileInfo(part)
 				}))
@@ -123,7 +123,7 @@ case class Context(
 				clickMap.get(key).foreach(_.apply())
 			})
 			request.parts.foreach(part => {
-				val name = part.getName
+				val name = part.name
 				clickMap.get(name).foreach(_())
 			})
 			postMap(func).apply(request).map{case (nextPath, response) => {

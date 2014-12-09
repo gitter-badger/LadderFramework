@@ -7,7 +7,6 @@ import org.scalatest.WordSpec
 import org.scalatest.GivenWhenThen
 import org.scalatest.BeforeAndAfterAll
 import akka.actor.Props
-import javax.servlet.AsyncContext
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import org.scalatest.WordSpecLike
@@ -19,7 +18,7 @@ import org.scalatest.time.Millis
 
 class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpecLike with GivenWhenThen with BeforeAndAfterAll with ScalaFutures{
 	
-	implicit val patience = PatienceConfig(timeout = scaled(Span(500, Millis)))
+	implicit val patience = PatienceConfig(timeout = scaled(Span(1000, Millis)))
 	
 	implicit val webSystem = system
 	
