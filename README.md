@@ -15,13 +15,13 @@ I'm a fool for writing this code. There are thousands of bright people that have
 > Good artists copy, great artists steal. - Pablo Picasso
 
 So what have I done. I've looked a different frameworks that I really like. So I've picket the best parts and put them together. Lets have a look:
-* Routing draqws inspiration from Unfiltered. Super simple and powerfull part of Scala. Can't believe that other frameworks haven't picked it up. (Lift uses it for something though).
-* Forms are great in Play. They should have been more typesafe so I changed that part.
+* Routing draws inspiration from Unfiltered. Super simple and powerfull part of Scala. It uses pattern matching. It is great but it could have been done better.
+* Forms are great in Play. They should have been more typesafe so that has beed changed.
 * View and rendering is great in Lift. What I like is the CSS selector part and transformer part. I just did them a little different. However there are no snippets here. The html is 100% clean.
-* Request handling is built on Servlets 3.0 (using Async) and passed on to Akka. (BTW: Akka is great).
-* Futures are heavily used. I like SIP-14. 
+* Request handling is built on Akka HTTP experimental and Akka actors. (BTW: Akka is great).
+* Futures are heavily used. SIP-14 FTW. 
 
-The name LadderFramework is a natural evolution (?!?) from stairs (Scala) and lift (Liftweb.net). I wasn't to happy about rope...  
+The name LadderFramework is a natural evolution (?!?) from stairs (Scala) and lift (Liftweb.net). Maybe it should have been rope but hanging by the neck is no fun.  
 
 As you are still reading I would like to point out that this code is _abandonware_ and not software. 
 
