@@ -9,7 +9,8 @@ import Method._
 import org.ladderframework.Header.Accept
 
 class HttpRequestSpec extends FunSpec with GivenWhenThen {
-
+	import Method._
+	
   describe("Method") {
   	it("should map GET") {
   		assert(Method("GET") === GET)

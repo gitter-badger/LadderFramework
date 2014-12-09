@@ -23,3 +23,4 @@ project/plugins/project/
 .settings
 .cache
 .project
+.DS_Store

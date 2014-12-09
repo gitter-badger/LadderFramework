@@ -64,7 +64,7 @@ object Method{
 	case object CONNECT extends Method
 	case object PATCH extends Method
 }
-	
+
 object &{
 	def unapply(req: HttpRequest): Option[(HttpRequest, HttpRequest)] = {
 		Option(req, req)
