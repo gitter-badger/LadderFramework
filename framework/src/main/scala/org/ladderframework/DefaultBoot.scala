@@ -12,8 +12,12 @@ import akka.actor.PoisonPill
 
 trait DefaultBoot {
 	
+	val sessionName = "LSession"
+	
 	val akkaConfig = ConfigFactory.load()
 	val system = ActorSystem("WebSystem", akkaConfig)
+	
+	lazy val sessionMaster = system.actorOf(SessionMaster.props(this), "session")
 	implicit lazy val executionContext = ExecutionContext.Implicits.global 
 	
 	def site:PartialFunction[HttpRequest, Future[HttpResponse]]

@@ -1,21 +1,38 @@
 package org.ladderframework
 
+import java.util.UUID
+
+import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
 import scala.concurrent.Future
-import scala.concurrent.Await
-import scala.util.Try
+import scala.concurrent.Promise
+import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 import scala.util.Success
-import java.util.concurrent.TimeUnit._
-import java.util.UUID
-import akka.actor._
-import akka.routing.RoundRobinRouter
+import scala.util.Try
+
 import org.ladderframework.js.JsCmd
-import scala.concurrent.Promise
-import java.io.IOException
-import org.ladderframework.json._
-import scala.util.Failure
+
+import akka.actor.Actor
+import akka.actor.ActorIdentity
+import akka.actor.ActorLogging
+import akka.actor.ActorRef
+import akka.actor.ActorSelection.toScala
+import akka.actor.Identify
+import akka.actor.PoisonPill
+import akka.actor.Props
+import akka.actor.Terminated
+import akka.actor.actorRef2Scala
+import akka.http.model.{ContentType => AkkaContentType}
+import akka.http.model.HttpCharset
+import akka.http.model.HttpEntity
+import akka.http.model.{HttpRequest => AkkaHttpRequest}
+import akka.http.model.{HttpResponse => AkkaHttpResponse}
+import akka.http.model.{MediaType => AkkaMediaType}
+import akka.http.model.StatusCode.int2StatusCode
+import akka.http.model.headers.{Cookie => AkkaCookie}
+import akka.http.model.headers.HttpCookie
+import akka.http.model.headers.`Set-Cookie` 
 
 case class HttpInteraction(req: HttpRequest, res: Promise[HttpResponseOutput])
 case class RenderInital(res: Promise[HttpResponseOutput])
@@ -32,22 +49,68 @@ case class PushMessage(id: String = Utils.uuid, message: String) {
 //case class WsCallMessage(msg: JObject)
 case object Ping
 
-class RequestHandler extends Actor with ActorLogging {
+object SessionMaster {
+	def props(boot: DefaultBoot) = Props(new SessionMaster(boot))
+}
 
-	override def receive = {
-		case hi: HttpInteraction =>
-			log.debug("receive - HttpInteraction: " + hi)
-			val sessionID = hi.req.sessionID
-			// If request to existing find actor. Find and send
-			val session = context.system.actorSelection("user/" + sessionID.value)
-			session ! hi
-//		case ws: WsConnect =>
-//			log.debug("receive - WsInteraction: " + ws)
-//			val sessionID = ws.sessionID
-//			val session = context.system.actorSelection("user/" + sessionID.value)
-//			session ! ws
+class SessionMaster(boot: DefaultBoot) extends Actor with ActorLogging{
+	def receive = {
+		case hi: HttpInteraction => 
+			log.debug("New hi: {}", hi)
+			context.child(hi.req.sessionId.value) match{
+				case Some(ar) => ar ! hi
+				case None => context.actorOf(SessionActor.apply(hi.req.sessionId, boot)) ! hi
+			}
+	}
+}
+
+object RequestHandler{
+	def create(boot: DefaultBoot, req: AkkaHttpRequest, res: Promise[AkkaHttpResponse]): Props = Props(new RequestHandler(boot, req, res))
+}
+
+class RequestHandler(boot: DefaultBoot, req: AkkaHttpRequest, res: Promise[AkkaHttpResponse]) extends Actor with ActorLogging{
+	
+	val httpResponseOutput = Promise[HttpResponseOutput]()
+	
+	var sessionId: SessionId = SessionId(Utils.uuid.replace('-', 'X'))
+	def createSession(): Unit = {
+		log.debug("Create session: {}", sessionId)
+		boot.sessionMaster ! HttpInteraction(new AkkaHttpRequestWrapper(req, sessionId = sessionId), httpResponseOutput)
 	}
 
+	req.headers.collect{case c:AkkaCookie => c}.flatMap(_.cookies).filter(_.name == boot.sessionName).headOption.map(_.content) match {
+		case None => 
+			log.debug("No session in: {}", req)
+			createSession()
+		case Some(v) =>
+			log.debug("Using session in: {}", req)
+			sessionId = SessionId(v)
+			context.actorSelection(context.system / "session" / sessionId.value) ! Identify(None)
+	}
+	
+	httpResponseOutput.future.foreach(_ match {
+		case hsro : HttpStringResponseOutput => 
+			res.success(
+				AkkaHttpResponse(
+						status = hsro.status.code,
+						headers = immutable.Seq(`Set-Cookie`(HttpCookie(boot.sessionName, sessionId.value))) ++ hsro.headers,
+						entity = HttpEntity(
+								AkkaContentType(AkkaMediaType.custom(hsro.contentType.mediaType.value), hsro.contentType.charset.map(c => HttpCharset.custom(c.name()))), 
+								hsro.content
+						)
+				)
+			)
+	})
+	
+	def receive = {
+	  case ActorIdentity(_, Some(actorRef)) =>
+	  	log.debug("ActorIdentity: {}", actorRef)
+	  	actorRef ! HttpInteraction(new AkkaHttpRequestWrapper(req, sessionId = sessionId), httpResponseOutput)
+	  case ActorIdentity(_, None) => // not alive
+	  	log.debug("ActorIdentity: None")
+	  	createSession()
+	}
+	
 }
 
 object SessionActor {

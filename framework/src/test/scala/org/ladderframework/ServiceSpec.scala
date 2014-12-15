@@ -36,7 +36,6 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 	implicit val patience = PatienceConfig(timeout = scaled(Span(500, Millis)))
 	
 	val helloWorldResponse = Future.successful(HtmlResponse("<html><body>hello world</body></html>"))
-	val requestHandler = system.actorOf(Props[RequestHandler].withRouter(RoundRobinPool(10)), name = "requestHandler")
 	
 	val sessionID = SessionId("sessionID")
 	
@@ -102,8 +101,8 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 		system.actorOf(SessionActor(sessionID, boot), name = sessionID.value)
   }
 	
-	def send(msg:Any) = {
-		requestHandler ! msg 
+	def send(msg:HttpInteraction) = {
+		system.actorSelection(system / msg.req.sessionId.value) ! msg 
 	}
 		
 	override def afterAll = {
@@ -118,7 +117,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 	
 	def httpRequest(givenMethod: Method, givenSession: SessionId, givenPath: List[String], givenParams: Map[String, List[String]] = Map()) = new HttpRequest{
 		override val method = givenMethod
-		override val sessionID = givenSession
+		override val sessionId = givenSession
 		override def path = givenPath
 		override def parameters = givenParams
 		override def cookies = Nil
@@ -180,7 +179,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 				val httpResponseOutput = Promise[HttpResponseOutput]()
 				val request = httpRequest(GET, sessionID, "resources" :: "static.html" :: Nil)
 				for(i <- 0 to 10){
-					requestHandler ! HttpInteraction(request, httpResponseOutput)
+					send(HttpInteraction(request, httpResponseOutput))
 				}
 //				asyncRequestHandler.latch.await(1, TimeUnit.SECONDS)
 //				assert(asyncRequestHandler.latch.getCount === 0)

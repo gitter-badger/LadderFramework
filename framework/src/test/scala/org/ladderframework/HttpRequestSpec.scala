@@ -77,7 +77,7 @@ class HttpRequestSpec extends FunSpec with GivenWhenThen {
   object HttpReq{
   	def apply(givenMethod: Method, givenPath: List[String], givenSession: SessionId = SessionId(""), givenHeaders: Map[String, Option[String]] = Map()) = new HttpRequest{
   		override val method = givenMethod
-  		override def sessionID = givenSession
+  		override def sessionId = givenSession
 			override def path = givenPath
 			override def headers = givenHeaders
 			override def parameters = Map()

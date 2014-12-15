@@ -12,7 +12,7 @@ case class Part(name: String, content: InputStream, headers: String => Option[St
 trait HttpRequest{
 	def method:Method
 	def headers: String => Option[String] = s => None
-	def sessionID:SessionId
+	def sessionId:SessionId
 	def path:List[String]
 	def parameters: Map[String,List[String]]
 	//TODO S wrap Part in something appropriate
@@ -84,7 +84,7 @@ object Json{
 
 object Session{
 	def unapply(req: HttpRequest): Option[SessionId] = {
-		Option(req.sessionID)
+		Option(req.sessionId)
 	}
 }
 
