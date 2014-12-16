@@ -57,7 +57,7 @@ class SessionMaster(boot: DefaultBoot) extends Actor with ActorLogging{
 			log.debug("New hi: {}", hi)
 			context.child(hi.req.sessionId.value) match{
 				case Some(ar) => ar ! hi
-				case None => context.actorOf(SessionActor.apply(hi.req.sessionId, boot)) ! hi
+				case None => context.actorOf(SessionActor.apply(hi.req.sessionId, boot), hi.req.sessionId.value) ! hi
 			}
 	}
 }
@@ -70,7 +70,7 @@ class RequestHandler(boot: DefaultBoot, req: AkkaHttpRequest, res: Promise[AkkaH
 	
 	val httpResponseOutput = Promise[HttpResponseOutput]()
 	
-	var sessionId: SessionId = SessionId(Utils.uuidLong)
+	var sessionId: SessionId = SessionId(Utils.secureRandom)
 	def createSession(): Unit = {
 		log.debug("Create session: {}", sessionId)
 		boot.sessionMaster ! HttpInteraction(new AkkaHttpRequestWrapper(req, sessionId = sessionId), httpResponseOutput)

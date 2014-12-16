@@ -6,11 +6,9 @@ import java.util.Base64
 object Utils {
 	lazy val sr = SecureRandom.getInstance("SHA1PRNG")
 	
-	def uuid: String = {
-		Base64.getEncoder().encodeToString(sr.generateSeed(16))
-	}
+	def uuid: String = UUID.randomUUID().toString
 	
-	def uuidLong: String = {
-		Base64.getEncoder().encodeToString(sr.generateSeed(64))
+	def secureRandom: String = {
+		(Base64.getEncoder().encodeToString(sr.generateSeed(32)) + uuid).replaceAll("[\\/+=-]", "0")
 	}
 }
