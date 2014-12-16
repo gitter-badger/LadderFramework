@@ -1,7 +1,10 @@
 package org.ladderframework
 import java.io.InputStream
+import scala.concurrent.Future
+import akka.util.ByteString
+import akka.stream.scaladsl.Source
 
-case class FileInfo(name:String, size:Long, inputStream:InputStream)
+case class FileInfo(name:String, inputStream:Source[ByteString])
 
 object FileInfo{
 	
@@ -13,6 +16,6 @@ object FileInfo{
 			case FileName(fn) => fn
 			case _ => ""
 		}
-		FileInfo(fileName, part.size, part.content)
+		FileInfo(fileName, part.content)
 	}
 }

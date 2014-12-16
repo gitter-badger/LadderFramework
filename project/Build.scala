@@ -49,7 +49,7 @@ object Dependencies {
 
 	val testkit = Seq(Test.scalatest, Test.scalacheck, Test.akkaTest)
 
-	val framework = Seq(akkaActor, akkaLogging, akkaHttp, scalaXml, scalaParserCompinators) ++ slf4j
+	val framework = Seq(akkaActor, akkaLogging, akkaHttp, akkaHttpCore,  scalaXml, scalaParserCompinators) ++ slf4j
 	val test_framework = slf4j
 
 }
@@ -76,8 +76,10 @@ object Dependency {
 
 	lazy val akkaActor = "com.typesafe.akka" %% "akka-actor" % V.akka
 	lazy val akkaLogging = "com.typesafe.akka" %% "akka-slf4j" % V.akka
-	lazy val akkaHttp = "com.typesafe.akka" %% "akka-http-core-experimental" % "1.0-M1"
 
+	lazy val akkaHttpCore = "com.typesafe.akka" %% "akka-http-core-experimental" % "1.0-M1"
+	lazy val akkaHttp = "com.typesafe.akka" %% "akka-http-experimental" % "1.0-M1"
+	
 	object Test {
 		val scalatest = "org.scalatest" %% "scalatest" % V.scalatest % "test" // ApacheV2
 		val akkaTest = "com.typesafe.akka" %% "akka-testkit" % V.akka % "test"

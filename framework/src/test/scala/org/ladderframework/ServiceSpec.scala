@@ -121,6 +121,9 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 		override def path = givenPath
 		override def parameters = givenParams
 		override def cookies = Nil
+		override def parts: Future[List[Part]] = Future.successful(Nil) 
+		override def part(name: String): Future[Option[Part]] = Future.successful(None)
+		override def partAsString(name: String): Future[Option[String]] = Future.successful(None)
 	}
 	
 	"The framework" when {

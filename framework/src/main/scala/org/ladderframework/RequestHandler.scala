@@ -1,7 +1,6 @@
 package org.ladderframework
 
 import java.util.UUID
-
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -10,9 +9,7 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
-
 import org.ladderframework.js.JsCmd
-
 import akka.actor.Actor
 import akka.actor.ActorIdentity
 import akka.actor.ActorLogging
@@ -33,6 +30,7 @@ import akka.http.model.StatusCode.int2StatusCode
 import akka.http.model.headers.{Cookie => AkkaCookie}
 import akka.http.model.headers.HttpCookie
 import akka.http.model.headers.`Set-Cookie` 
+import akka.stream.FlowMaterializer
 
 case class HttpInteraction(req: HttpRequest, res: Promise[HttpResponseOutput])
 case class RenderInital(res: Promise[HttpResponseOutput])
@@ -65,14 +63,14 @@ class SessionMaster(boot: DefaultBoot) extends Actor with ActorLogging{
 }
 
 object RequestHandler{
-	def create(boot: DefaultBoot, req: AkkaHttpRequest, res: Promise[AkkaHttpResponse]): Props = Props(new RequestHandler(boot, req, res))
+	def create(boot: DefaultBoot, req: AkkaHttpRequest, res: Promise[AkkaHttpResponse])(implicit fm: FlowMaterializer): Props = Props(new RequestHandler(boot, req, res))
 }
 
-class RequestHandler(boot: DefaultBoot, req: AkkaHttpRequest, res: Promise[AkkaHttpResponse]) extends Actor with ActorLogging{
+class RequestHandler(boot: DefaultBoot, req: AkkaHttpRequest, res: Promise[AkkaHttpResponse])(implicit fm: FlowMaterializer) extends Actor with ActorLogging{
 	
 	val httpResponseOutput = Promise[HttpResponseOutput]()
 	
-	var sessionId: SessionId = SessionId(Utils.uuid.replace('-', 'X'))
+	var sessionId: SessionId = SessionId(Utils.uuidLong)
 	def createSession(): Unit = {
 		log.debug("Create session: {}", sessionId)
 		boot.sessionMaster ! HttpInteraction(new AkkaHttpRequestWrapper(req, sessionId = sessionId), httpResponseOutput)

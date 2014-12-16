@@ -82,6 +82,9 @@ class HttpRequestSpec extends FunSpec with GivenWhenThen {
 			override def headers = givenHeaders
 			override def parameters = Map()
 			override def cookies = Nil
+			override def parts: Future[List[Part]] = Future.successful(Nil) 
+			override def part(name: String): Future[Option[Part]] = Future.successful(None)
+			override def partAsString(name: String): Future[Option[String]] = Future.successful(None) 
   	}
   }
   

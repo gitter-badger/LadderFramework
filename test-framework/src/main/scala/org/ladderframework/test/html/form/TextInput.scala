@@ -2,10 +2,8 @@ package org.ladderframework.test.html.form
 
 import java.io.File
 import java.io.FileInputStream
-
 import scala.concurrent.Future
 import scala.xml.NodeSeq.seqToNodeSeq
-
 import org.ladderframework.Context
 import org.ladderframework.FileInfo
 import org.ladderframework.HttpResponse
@@ -13,6 +11,8 @@ import org.ladderframework.StatefulHtmlResponse
 import org.ladderframework.css.CssSelector
 import org.ladderframework.css.CssSelector._
 import org.ladderframework.test.page.PageObjectContext
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 
 trait Element{
 	implicit def pageObjectContext:PageObjectContext
@@ -46,14 +46,14 @@ class TextInput(implicit val pageObjectContext: PageObjectContext) extends Input
 	}
 }
 
-class FileInput(implicit val pageObjectContext: PageObjectContext) extends InputValueElement[File]{
+class FileInput(implicit val pageObjectContext: PageObjectContext) extends InputValueElement[Source[ByteString]]{
 	val selector:CssSelector = "input[type=file]"
+
+	override def applyCallback(context: Context, name: String, value: Source[ByteString]): Unit = {
 		
-	override def applyCallback(context: Context, name:String, value:File) {
 		val fileInfo = FileInfo(
-				name = value.getName, 
-				size = value.length, 
-				inputStream = new FileInputStream(value))
+				name = name, // real name, and add size ???  
+				inputStream = value)
 		context.getFileInputCallback(name).foreach(_.apply(fileInfo))
 	}
 }

@@ -6,8 +6,26 @@ import org.ladderframework.logging.Loggable
 import akka.http.model.HttpHeader
 import java.io.InputStream
 import akka.http.model.headers.HttpCookie
+import akka.http.model.Multipart
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
+import scala.concurrent.Future
+import akka.stream.FlowMaterializer
+import scala.concurrent.ExecutionContext
 
-case class Part(name: String, content: InputStream, headers: String => Option[String], size: Long)
+case class Part(name: String, filename: Option[String], content: Source[ByteString], headers: String => Option[String], size: Long)
+
+object Part{
+	def apply(fp: Multipart.FormData.BodyPart): Part = {
+		Part(
+			name = fp.name,
+			filename = fp.filename,
+			content = fp.entity.dataBytes,
+			headers = fp.headers.map(h => (h.name, h.value)).toMap.get,
+			size = 0
+		)
+	}
+}
 
 trait HttpRequest{
 	def method:Method
@@ -16,9 +34,9 @@ trait HttpRequest{
 	def path:List[String]
 	def parameters: Map[String,List[String]]
 	//TODO S wrap Part in something appropriate
-	def parts: List[Part] = Nil
-	def part(name: String): Option[Part] = parts.filter{_.name == name}.headOption
-	def partAsString(name: String): Option[String] = part(name).map(part => Context.stream2String(part.content))
+	def parts: Future[List[Part]] 
+	def part(name: String): Future[Option[Part]]
+	def partAsString(name: String): Future[Option[String]] 
 	def cookies: Seq[Cookie]
 }
 

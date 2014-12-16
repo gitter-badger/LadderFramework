@@ -19,16 +19,6 @@ object Context{
 	private val lineSeparator = System.getProperty("line.separator")
 	def createUUID:String = UUID.randomUUID.toString
 	
-	implicit def stream2String(is: InputStream): String = {
-		val scanner = new Scanner(is)
-		val sb = new StringBuilder
-		while (scanner.hasNext) {
-			sb.append(scanner.nextLine)
-			if (scanner.hasNext) sb.append(lineSeparator)
-		}
-		sb.toString
-	}
-	
 	def booleanValue(value: String):Option[Boolean] = {
 			value match {
 				case "1" | "true" | "yes" | "TRUE" | "YES" | "on" | "ON" => Some(true)
@@ -110,26 +100,35 @@ case class Context(
 					callback <- booleanInputMap.get(name)
 				} yield callback(booleanValue)
 			})
-			request.parts.foreach(part => {
-				val name = part.name
-				inputMap.get(name).foreach(_(stream2String(part.content)))
-				fileInputMap.get(name).foreach(_({
-					FileInfo(part)
+			for{
+				_ <- request.parts.map(_.foldLeft(Future.successful({}))((_, part) => {
+						val name = part.name
+						for{
+							contentOpt <- request.partAsString(name)
+						}yield{
+							contentOpt.foreach(content => {
+								inputMap.get(name).foreach(_(content))							
+							})
+							fileInputMap.get(name).foreach(_({
+								FileInfo(part)
+							}))
+						}
+					}))
+				_ = request.parameters.map(param => {
+					val (key, value) = param
+					clickMap.get(key).foreach(_.apply())
+				})
+				_ <- request.parts.map(_.foreach(part => {
+					val name = part.name
+					clickMap.get(name).foreach(_())
 				}))
-				clickMap.get(name).foreach(_())
-			})
-			request.parameters.foreach(param => {
-				val (key, value) = param
-				clickMap.get(key).foreach(_.apply())
-			})
-			request.parts.foreach(part => {
-				val name = part.name
-				clickMap.get(name).foreach(_())
-			})
-			postMap(func).apply(request).map{case (nextPath, response) => {
-				val uuid = addResponse(nextPath, response)
-				HttpRedirectResponse(nextPath, Option(uuid))
-			}}
+				r <- postMap(func).apply(request).map{case (nextPath, response) => {
+					val uuid = addResponse(nextPath, response)
+					HttpRedirectResponse(nextPath, Option(uuid))
+				}}
+			} yield {
+				r
+			}
 	}
 	
 	implicit def stream2String(is: InputStream): String = {
