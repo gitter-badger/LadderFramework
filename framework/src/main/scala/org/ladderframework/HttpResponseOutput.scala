@@ -17,11 +17,14 @@ object ContentType{
 }
 
 trait HttpResponseOutput {
+	self =>
 	type C
 	def status: Status
 	def contentType: ContentType
 	def headers: Seq[HttpHeader]
 	def cookies: Seq[Cookie]
+	def :+ (c: Cookie) = self 
+	def :+ (h: HttpHeader) = self 
 	def content: C
 }
 
@@ -33,6 +36,8 @@ case class HttpStringResponseOutput(
 	content: String
 ) extends HttpResponseOutput{
 	type C = String
+	override def :+ (c: Cookie) = copy(cookies = cookies :+ c)
+	override def :+ (h: HttpHeader) = copy(headers = headers :+ h)
 }
 
 case class HttpStreamResponseOutput(
@@ -43,4 +48,6 @@ case class HttpStreamResponseOutput(
 	content: InputStream
 ) extends HttpResponseOutput{
 	type C = InputStream
+	override def :+(c: Cookie) = copy(cookies = cookies :+ c)
+	override def :+ (h: HttpHeader) = copy(headers = headers :+ h)
 }
