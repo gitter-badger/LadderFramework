@@ -26,7 +26,7 @@ class LadderServer(boot: DefaultBoot) extends Loggable{
 			info("Accepted new connection from " + connection.remoteAddress)
 			def requestHandler: AkkaHttpRequest => Future[AkkaHttpResponse] = req => {
 				val response = Promise[AkkaHttpResponse]()
-				//debug(s"handlre request $req")
+				debug(s"handlre request ${req.method} ${req.uri} ${req.headers}")
 			  system.actorOf(RequestHandler.create(boot, req, response))
 			  response.future
 			}

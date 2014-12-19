@@ -5,7 +5,7 @@ import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Promise
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
@@ -32,6 +32,7 @@ import akka.http.model.headers.HttpCookie
 import akka.http.model.headers.`Set-Cookie` 
 import akka.stream.FlowMaterializer
 
+
 case class HttpInteraction(req: HttpRequest, res: Promise[HttpResponseOutput])
 case class RenderInital(res: Promise[HttpResponseOutput])
 case class CreateSession(sessionId: String)
@@ -40,6 +41,7 @@ case class AddResponse(path: List[String], uuid: String, response: HttpResponse)
 case class PushMessage(id: String = Utils.uuid, message: String) {
 	lazy val asJson = { """{"id":"""" + id + """", "message":"""" + message.replace("\"", "\\\"") + """"}""" }
 }
+case class Invalidate(session: SessionId)
 
 //case class WsConnect(sessionID: String, page: String, lastId: String, actor: ActorRef)
 //case class InitWsConnection(session: WsSession, httpSessionID: String)
@@ -59,6 +61,9 @@ class SessionMaster(boot: DefaultBoot) extends Actor with ActorLogging{
 				case Some(ar) => ar ! hi
 				case None => context.actorOf(SessionActor.apply(hi.req.sessionId, boot), hi.req.sessionId.value) ! hi
 			}
+		case i@Invalidate(session) =>
+			log.debug("Invalidate session: {}", session)
+			context.child(session.value) foreach( _ ! i)
 	}
 }
 
@@ -148,6 +153,11 @@ class SessionActor(sessionID: SessionId, boot: DefaultBoot) extends Actor with A
 //			context.actorSelection(ws.page) ! ws
 		case AddResponse(path, uuid, response) =>
 			context.actorOf(RedirectResponseContainer.props(context.self, Promise().success(response), uuid, boot), name = uuid)
+		case i@Invalidate(session) if sessionID == session =>
+			context.system.scheduler.scheduleOnce(100 millis, self, PoisonPill)
+			context.become({
+				case _ => self ! PoisonPill 
+			})
 	}
 }
 

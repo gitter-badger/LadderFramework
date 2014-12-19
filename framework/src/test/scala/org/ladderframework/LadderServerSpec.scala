@@ -13,6 +13,9 @@ import org.scalatest.concurrent.ScalaFutures
 import java.net.HttpURLConnection
 import org.scalatest.time.Span
 import org.scalatest.time.Millis
+import org.scalatest.Tag
+
+object LocalTest extends Tag("org.ladderframework.LocalTest")
 
 class LadderServerSpec (system: ActorSystem) extends TestKit(system) with FunSpecLike with BeforeAndAfterAll with ScalaFutures{
 	
@@ -22,8 +25,9 @@ class LadderServerSpec (system: ActorSystem) extends TestKit(system) with FunSpe
 
 	implicit val patience = PatienceConfig(timeout = scaled(Span(1000, Millis)))
 	
-	describe("Ladder") {
-		it("should read from server"){
+	describe("Ladder")  {
+		
+		ignore ("should from server", LocalTest) {
 			val server = new LadderServer(new DefaultBoot{
 				def site = {
 					case _ => Future.successful(XmlResponse(<div>Jeg er glad!!</div>))

@@ -30,6 +30,10 @@ trait DefaultBoot {
 		case (s, ot) => error(s, ot)
 	}
 	
+	def invalidateSession(session: SessionId): Unit = {
+		sessionMaster ! Invalidate(session)
+	}
+	
 	def onShutdown()={}
 	
 	val timeToLivePage: Int = 10 * 60 * 1000
