@@ -36,6 +36,7 @@ class LadderServer(boot: DefaultBoot) extends Loggable{
 
 	def stop(): Unit = {
 		if(!system.isTerminated){
+			boot.onShutdown()
 			system.shutdown()
 		}
 	}

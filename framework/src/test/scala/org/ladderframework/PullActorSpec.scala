@@ -89,7 +89,7 @@ class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpecL
 		}
 	}
 	
-	override def afterAll {
+	override def afterAll: Unit = {
     system.shutdown()
   }
 }

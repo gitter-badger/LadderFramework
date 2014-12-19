@@ -22,7 +22,7 @@ trait Element{
 }
 
 trait InputValueElement[T] extends Element{
-	def input(value:T){
+	def input(value:T): Unit = {
 		pageObjectContext.responseXml.future.map(xml => {
 			val node = xml.extract(selector).head
 			val name = (node \ "@name").text
@@ -34,14 +34,14 @@ trait InputValueElement[T] extends Element{
 		})
 	}
 	
-	def applyCallback(context: Context, name: String, value: T)
+	def applyCallback(context: Context, name: String, value: T): Unit
 	
 }
 
 class TextInput(implicit val pageObjectContext: PageObjectContext) extends InputValueElement[String]{
 	val selector:CssSelector = "input[type=text]"
 		
-	override def applyCallback(context: Context, name:String, value:String) {
+	override def applyCallback(context: Context, name:String, value:String): Unit = {
 		context.getInput(name).foreach(_.apply(value))
 	}
 }

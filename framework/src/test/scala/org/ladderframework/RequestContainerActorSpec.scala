@@ -40,7 +40,7 @@ class ResponseContainerActorSpec (system: ActorSystem) extends TestKit(system) w
 		}
 	}
 	
-	override def afterAll {
+	override def afterAll: Unit = {
     system.shutdown()
   }
 }
