@@ -29,8 +29,17 @@ import akka.http.model.{MediaType => AkkaMediaType}
 import akka.http.model.StatusCode.int2StatusCode
 import akka.http.model.headers.{Cookie => AkkaCookie}
 import akka.http.model.headers.HttpCookie
-import akka.http.model.headers.`Set-Cookie` 
+import akka.http.model.headers.`Set-Cookie`
 import akka.stream.FlowMaterializer
+import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl.Sink
+import java.io.BufferedReader
+import java.io.BufferedInputStream
+import scala.collection.BufferedIterator
+import akka.util.ByteIterator
+import java.io.InputStreamReader
+import akka.util.ByteString
 
 
 case class HttpInteraction(req: HttpRequest, res: Promise[HttpResponseOutput])
@@ -103,6 +112,20 @@ class RequestHandler(boot: DefaultBoot, req: AkkaHttpRequest, res: Promise[AkkaH
 						)
 				)
 			)
+		case hsro : HttpStreamResponseOutput =>
+			res.success(
+				AkkaHttpResponse(
+						status = hsro.status.code,
+						headers = immutable.Seq(`Set-Cookie`(HttpCookie(boot.sessionName, sessionId.value))) ++ hsro.headers,
+						entity = HttpEntity.Chunked(
+								AkkaContentType(AkkaMediaType.custom(hsro.contentType.mediaType.value), hsro.contentType.charset.map(c => HttpCharset.custom(c.name()))), 
+								Source(() => io.Source.fromInputStream(hsro.content).getLines()).map(i => ByteString(i))
+						)
+				)
+			)
+		case other => 
+			log.error("Unable to handle response output: {}", other)
+			
 	})
 	
 	def receive = {
