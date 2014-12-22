@@ -40,6 +40,14 @@ import scala.collection.BufferedIterator
 import akka.util.ByteIterator
 import java.io.InputStreamReader
 import akka.util.ByteString
+import java.nio.ByteBuffer
+import java.nio.channels.FileChannel
+import java.nio.file.StandardOpenOption
+import java.nio.MappedByteBuffer
+import scala.util.control.NonFatal
+import akka.http.model.StatusCodes
+import akka.http.model.HttpEntity.ChunkStreamPart
+import akka.http.model.MediaTypes
 
 
 case class HttpInteraction(req: HttpRequest, res: Promise[HttpResponseOutput])
@@ -81,7 +89,7 @@ object RequestHandler{
 }
 
 class RequestHandler(boot: DefaultBoot, req: AkkaHttpRequest, res: Promise[AkkaHttpResponse])(implicit fm: FlowMaterializer) extends Actor with ActorLogging{
-	
+	val chunkSize = 4096
 	val httpResponseOutput = Promise[HttpResponseOutput]()
 	
 	var sessionId: SessionId = SessionId(Utils.secureRandom)
@@ -112,20 +120,33 @@ class RequestHandler(boot: DefaultBoot, req: AkkaHttpRequest, res: Promise[AkkaH
 						)
 				)
 			)
+		case hpro : HttpPathResponseOutput => 
+			res.tryComplete(
+				Try{
+					val mappedByteBuffer = mmap(hpro.content)
+	        val iterator = new ByteBufferIterator(mappedByteBuffer, chunkSize)
+	        val chunks = Source(() => iterator).map(ChunkStreamPart.apply)
+					AkkaHttpResponse(entity = HttpEntity.Chunked(AkkaMediaType.custom(hpro.contentType.mediaType.value), chunks))
+	      } recover {
+	        case NonFatal(cause) ⇒
+	          log.error("Nonfatal error: cause = {}", cause.getMessage)
+	          AkkaHttpResponse(StatusCodes.InternalServerError, entity = cause.getMessage)
+	      }
+	    )
 		case hsro : HttpStreamResponseOutput =>
 			res.success(
 				AkkaHttpResponse(
 						status = hsro.status.code,
 						headers = immutable.Seq(`Set-Cookie`(HttpCookie(boot.sessionName, sessionId.value))) ++ hsro.headers,
 						entity = HttpEntity.Chunked(
-								AkkaContentType(AkkaMediaType.custom(hsro.contentType.mediaType.value), hsro.contentType.charset.map(c => HttpCharset.custom(c.name()))), 
-								Source(() => io.Source.fromInputStream(hsro.content).getLines()).map(i => ByteString(i))
+								AkkaContentType(AkkaMediaType.custom(hsro.contentType.mediaType.value), hsro.contentType.charset.map(c => HttpCharset.custom(c.name()))),
+								Source(() => io.Source.fromInputStream(hsro.content).iter).grouped(chunkSize).map(i => ByteString(i.map(_.toByte).toArray))
 						)
 				)
 			)
 		case other => 
 			log.error("Unable to handle response output: {}", other)
-			
+			res.success(AkkaHttpResponse(StatusCodes.NotImplemented, entity = s"Not implemented: $other"))
 	})
 	
 	def receive = {
@@ -135,6 +156,28 @@ class RequestHandler(boot: DefaultBoot, req: AkkaHttpRequest, res: Promise[AkkaH
 	  case ActorIdentity(_, None) => // not alive
 	  	log.debug("ActorIdentity: None")
 	  	createSession()
+	}
+	
+	def mmap(path: java.nio.file.Path): MappedByteBuffer = {
+    val channel = FileChannel.open(path, StandardOpenOption.READ)
+    val result = channel.map(FileChannel.MapMode.READ_ONLY, 0L, channel.size())
+    channel.close()
+    result
+  }
+	
+	class ByteBufferIterator(buffer:ByteBuffer, chunkSize:Int) extends Iterator[ByteString] {
+	  require(buffer.isReadOnly)
+	  require(chunkSize > 0)
+	 
+	  override def hasNext = buffer.hasRemaining
+	 
+	  override def next(): ByteString = {
+	    val size = chunkSize min buffer.remaining()
+	    val temp = buffer.slice()
+	    temp.limit(size)
+	    buffer.position(buffer.position() + size)
+	    ByteString(temp)
+	  }
 	}
 	
 }

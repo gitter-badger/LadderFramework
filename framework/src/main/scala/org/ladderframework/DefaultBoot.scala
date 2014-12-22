@@ -9,6 +9,7 @@ import akka.actor.ActorSystem
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import akka.actor.PoisonPill
+import akka.http.model.MediaTypes
 
 trait DefaultBoot {
 	
@@ -45,9 +46,9 @@ trait DefaultBoot {
 	def mimeType(s:String):String = mimeTypeImpl(s)
 	def contextPath:String = contextPathImpl
 	
-	private[ladderframework] val resourceImpl:String => URL = s => new File(s).toURI.toURL
-	private[ladderframework] val resourceAsStreamImpl:String => InputStream = s => new FileInputStream(new File(resource(s).toURI))
-	private[ladderframework] val mimeTypeImpl:String => String = s => s
+	private[ladderframework] val resourceImpl:String => URL = s => getClass.getResource(if(s.startsWith("/")) s else "/" + s)
+	private[ladderframework] val resourceAsStreamImpl:String => InputStream = s => getClass.getResourceAsStream(if(s.startsWith("/")) s else "/" + s)
+	private[ladderframework] val mimeTypeImpl:String => String = s => s.split("\\.").lastOption.flatMap(MediaTypes.forExtension).map(_.value).getOrElse("unknown/type")
 	private[ladderframework] val contextPathImpl:String = ""
 	
 }

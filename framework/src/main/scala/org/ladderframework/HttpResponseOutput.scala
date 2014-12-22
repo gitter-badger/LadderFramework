@@ -51,3 +51,15 @@ case class HttpStreamResponseOutput(
 	override def :+(c: Cookie) = copy(cookies = cookies :+ c)
 	override def :+ (h: HttpHeader) = copy(headers = headers :+ h)
 }
+
+case class HttpPathResponseOutput(
+	status: Status,
+	contentType: ContentType,
+	headers: Seq[HttpHeader] = Nil,
+	cookies: Seq[Cookie] = Nil,
+	content: java.nio.file.Path
+) extends HttpResponseOutput{
+	type C = java.nio.file.Path
+	override def :+(c: Cookie) = copy(cookies = cookies :+ c)
+	override def :+ (h: HttpHeader) = copy(headers = headers :+ h)
+}

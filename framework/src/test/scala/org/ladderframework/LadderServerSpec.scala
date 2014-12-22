@@ -25,9 +25,9 @@ class LadderServerSpec (system: ActorSystem) extends TestKit(system) with FunSpe
 
 	implicit val patience = PatienceConfig(timeout = scaled(Span(1000, Millis)))
 	
-	describe("Ladder")  {
+	ignore("LadderServer")  {
 		
-		ignore ("should from server", LocalTest) {
+		it ("should from server", LocalTest) {
 			val server = new LadderServer(new DefaultBoot{
 				def site = {
 					case _ => Future.successful(XmlResponse(<div>Jeg er glad!!</div>))
@@ -44,6 +44,25 @@ class LadderServerSpec (system: ActorSystem) extends TestKit(system) with FunSpe
 			}.futureValue
 			println("content: " + content)
 			assert(content.contains("Jeg er glad!!"))
+			server.stop()
+		}
+		it ("should handle file", LocalTest){
+			val server = new LadderServer(new DefaultBoot{
+				def site = {
+					case Method.GET(Path("static.html" :: Nil)) => Future.successful(HttpResourceResponse(path = List("static.html")))
+				}
+			})
+			
+			server.start("127.0.0.1", 23024)
+			
+			Thread.sleep(2500)
+			val url = new URL("http://localhost:23024/static.html")
+			
+			val content = Future{
+				io.Source.fromURL(url, "UTF-8").getLines.mkString
+			}.futureValue
+			println("content: " + content)
+			assert(content.contains("static"))
 			server.stop()
 		}
 	}

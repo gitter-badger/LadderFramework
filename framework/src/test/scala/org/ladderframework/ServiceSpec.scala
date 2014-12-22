@@ -28,6 +28,7 @@ import java.io.InputStream
 import akka.http.model.headers.Location
 import org.scalatest.time.Span
 import org.scalatest.time.Millis
+import java.nio.file.{Path => NioPath}
 
 class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike with GivenWhenThen with BeforeAndAfterAll with ScalaFutures{
 
@@ -164,7 +165,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 			"serve valid requests" in {
 				val httpServletResponse = call(httpRequest(GET, sessionID, "resources" :: "static.html" :: Nil))
 				whenReady(httpServletResponse)(httpServletResponse => {
-					assert(io.Source.fromInputStream(httpServletResponse.content.asInstanceOf[InputStream], "UTF-8").mkString === "static")
+					assert(io.Source.fromInputStream(httpServletResponse.content.asInstanceOf[NioPath].toUri().toURL().openStream(), "UTF-8").mkString === "static")
 					assert(httpServletResponse.status === OK)
 					assert(httpServletResponse.contentType === ContentType.`text/html`)
 				})

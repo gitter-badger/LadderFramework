@@ -15,9 +15,6 @@ import org.ladderframework.DefaultBoot
 class PostFormSpec extends FunSpec with GivenWhenThen {
 	
 	val boot = new DefaultBoot{
-		override def resource(resource:String) = { 
-			getClass().getClassLoader().getResource(resource)
-		}
 		def site = {
 			case _ => ???
 		}
