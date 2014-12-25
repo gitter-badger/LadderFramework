@@ -71,14 +71,14 @@ object Dependency {
 	lazy val slf4jApi = "org.slf4j" % "slf4j-api" % V.slf4j
 	lazy val logback = "ch.qos.logback" % "logback-classic" % V.logback
 
-	lazy val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.2"
-	lazy val scalaParserCompinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.1"
+	lazy val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.3"
+	lazy val scalaParserCompinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.3"
 
 	lazy val akkaActor = "com.typesafe.akka" %% "akka-actor" % V.akka
 	lazy val akkaLogging = "com.typesafe.akka" %% "akka-slf4j" % V.akka
 
-	lazy val akkaHttpCore = "com.typesafe.akka" %% "akka-http-core-experimental" % "1.0-M1"
-	lazy val akkaHttp = "com.typesafe.akka" %% "akka-http-experimental" % "1.0-M1"
+	lazy val akkaHttpCore = "com.typesafe.akka" %% "akka-http-core-experimental" % "1.0-M2"
+	lazy val akkaHttp = "com.typesafe.akka" %% "akka-http-experimental" % "1.0-M2"
 	
 	object Test {
 		val scalatest = "org.scalatest" %% "scalatest" % V.scalatest % "test" // ApacheV2
