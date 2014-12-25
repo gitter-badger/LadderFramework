@@ -70,12 +70,7 @@ class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpecL
 				val httpResponseOutput = Promise[HttpResponseOutput]()
 				val pullActor = system.actorOf(PullActor(httpResponseOutput, boot))
 				pullActor ! Nil
-				whenReady(httpResponseOutput.future)(httpResponseOutput => {
-					assert(httpResponseOutput.status === OK)
-					assert(httpResponseOutput.contentType === ContentType.`application/json`)
-//					val text = httpResponseOutput.content.toString
-//					assert(text.contains(""))
-				})
+				assert(!httpResponseOutput.future.isReadyWithin(5 seconds))
 			}
 			
 			"handle timeout" in {

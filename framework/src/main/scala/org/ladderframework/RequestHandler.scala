@@ -423,7 +423,6 @@ class PullActor(res: Promise[HttpResponseOutput], boot: DefaultBoot) extends Act
 		case TimeToClose =>
 			send(Nil)
 		case Nil =>
-			send(Nil)
 		case msg: PushMessage =>
 			log.debug("push msg: {}", msg)
 			send(List(msg))
