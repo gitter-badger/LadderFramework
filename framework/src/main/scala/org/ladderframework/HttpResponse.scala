@@ -73,12 +73,12 @@ case class HttpResourceResponse(status: Status = OK, path: List[String]) extends
 		debug("HttpResourceResponse - print: " + file)
 		if (file != null) {
 			Future.successful(
-				HttpPathResponseOutput(
+				HttpStreamResponseOutput(
 					status = status,
 					contentType = ContentType(MediaType(path.reverse.headOption.map(context.boot.mimeType).getOrElse("")), Some(Charset.forName("UTF-8"))),
 					headers = Nil,
 					cookies = Nil,
-					content = Paths.get(context.boot.resource(pathString).toURI())
+					content = context.boot.resourceAsStream(pathString)
 				)
 			)
 		} else {
