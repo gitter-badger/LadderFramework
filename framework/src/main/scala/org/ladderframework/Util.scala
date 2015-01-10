@@ -9,6 +9,8 @@ object Utils {
 	def uuid: String = UUID.randomUUID().toString
 	
 	def secureRandom: String = {
-		(Base64.rfc2045().encodeToString(sr.generateSeed(32), false) + uuid).replaceAll("[\\/+=-]", "0")
+		val bytes = new Array[Byte](32)
+ 		sr.nextBytes(bytes)
+		(Base64.rfc2045().encodeToString(bytes, false) + uuid).replaceAll("[\\/+=-]", "0")
 	}
 }
