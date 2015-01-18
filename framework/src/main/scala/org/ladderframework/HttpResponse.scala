@@ -30,7 +30,7 @@ case class HttpRedirectResponse(location: List[String], params: Option[String] =
 		Future.successful{
 			HttpStringResponseOutput(
 					status = status,
-					contentType = ContentType(MediaType(""), Some(Charset.forName("UTF-8"))),
+					contentType = ContentType.`text/plain`,
 					headers = List(Location(location.mkString("/", "/", "") + params.map("?" + _ + "=redirect").getOrElse(""))),
 					cookies = Nil,
 					content = ""
