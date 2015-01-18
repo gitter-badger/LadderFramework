@@ -7,6 +7,7 @@ import akka.http.Http
 import akka.http.model.HttpMethods
 import akka.http.model.{HttpRequest => AkkaHttpRequest}
 import akka.http.model.{HttpResponse => AkkaHttpResponse}
+import akka.http.model.headers.`Content-Type`
 import akka.stream.FlowMaterializer
 import akka.stream.scaladsl.Flow
 import akka.util.Timeout
@@ -17,6 +18,7 @@ import akka.event.LoggingAdapter
 import akka.event.NoLogging
 import scala.concurrent.Promise
 import akka.stream.scaladsl.Sink
+import akka.http.model.MediaTypes
 
 case class AkkaHttpRequestWrapper(req: AkkaHttpRequest, val sessionId: SessionId)(implicit ec: ExecutionContext, log: LoggingAdapter = NoLogging, flowMaterializer: FlowMaterializer) extends HttpRequest{
 	def method:Method = {
@@ -37,11 +39,15 @@ case class AkkaHttpRequestWrapper(req: AkkaHttpRequest, val sessionId: SessionId
 	def parameters: Map[String,List[String]] = req.uri.query.toMultiMap
 	override lazy val parts: Future[List[Part]] = {
 		implicit val m = akka.http.unmarshalling.MultipartUnmarshallers.multipartFormDataUnmarshaller
-		import akka.http.unmarshalling.Unmarshal
-		val promise = Promise[List[Part]]()
-		promise.completeWith{
-			req.entity.flatMap(_.parts.fold(List[Part]())((l, p) => l :+ Part(p))) 
-		}.future
+		//import akka.http.unmarshalling.Unmarshal
+		if(req.header[`Content-Type`].headOption.map(_.contentType.mediaType).exists(_ == MediaTypes.`multipart/form-data`)) {
+			val promise = Promise[List[Part]]()
+			promise.completeWith{
+				req.entity.flatMap(_.parts.fold(List[Part]())((l, p) => l :+ Part(p))) 
+			}.future
+		} else {
+			Future.successful(Nil)
+		}
 	}
 	
 	override def part(name: String): Future[Option[Part]] = parts.map(_.filter(_.name == name).headOption)

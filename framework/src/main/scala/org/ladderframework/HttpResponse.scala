@@ -165,7 +165,7 @@ trait StatefulHtmlResponse extends HtmlResponse with Stateful {
 		})
 }
 
-trait HtmlPage extends StatefulHtmlResponse with Loggable {
+trait StatefulHtmlPage extends StatefulHtmlResponse with Loggable {
 	val source: String
 
 	private val xml: Promise[NodeSeq] = Promise()

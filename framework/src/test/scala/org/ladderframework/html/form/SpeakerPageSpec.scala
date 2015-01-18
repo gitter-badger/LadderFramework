@@ -1,6 +1,6 @@
 package org.ladderframework.html.form
 
-import org.ladderframework.HtmlPage
+import org.ladderframework.StatefulHtmlPage
 import org.scalatest.FunSpec
 import org.ladderframework.Context
 import org.ladderframework.html.form.Formats._
@@ -99,7 +99,7 @@ case class Date(day: Int, month: Int, year: Int)
 case class Address(street: String, city: String, code: Int)
 
 
-class ProductHtmlPage(speaker: Option[Speaker]) extends HtmlPage {
+class ProductHtmlPage(speaker: Option[Speaker]) extends StatefulHtmlPage {
 	val source: String = "speaker.html"
 		
 	val form = Form(mapping(Speaker)(Speaker.unapply _)(

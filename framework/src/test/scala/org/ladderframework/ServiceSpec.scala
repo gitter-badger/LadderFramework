@@ -1,34 +1,27 @@
 package org.ladderframework
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
+import java.io.InputStream
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.Success
-import com.typesafe.config.ConfigFactory
-import org.scalatest.WordSpec
-import org.scalatest.GivenWhenThen
-import org.scalatest.BeforeAndAfterAll
-import akka.actor.ActorSystem
-import akka.actor.Props
-import akka.actor.ActorRef
-import akka.actor.Actor
-import akka.actor.PoisonPill
-import akka.routing.RoundRobinRouter
-import akka.testkit.TestKit
-import java.util.concurrent.TimeUnit
-import org.ladderframework.js.JsCall
-import org.ladderframework.js.JsCmd
-import org.scalatest.WordSpecLike
-import akka.routing.RoundRobinPool
-import Method._
 import scala.concurrent.Promise
+
+import org.ladderframework.js.JsCall
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.Finders
+import org.scalatest.GivenWhenThen
+import org.scalatest.WordSpecLike
 import org.scalatest.concurrent.ScalaFutures
-import java.io.InputStream
-import akka.http.model.headers.Location
-import org.scalatest.time.Span
 import org.scalatest.time.Millis
-import java.nio.file.{Path => NioPath}
+import org.scalatest.time.Span
+
+import Method.GET
+import Method.POST
+import akka.actor.ActorSelection.toScala
+import akka.actor.ActorSystem
+import akka.actor.PoisonPill
+import akka.http.model.headers.Location
+import akka.testkit.TestKit
 
 class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike with GivenWhenThen with BeforeAndAfterAll with ScalaFutures{
 
