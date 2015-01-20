@@ -48,6 +48,7 @@ import scala.util.control.NonFatal
 import akka.http.model.StatusCodes
 import akka.http.model.HttpEntity.ChunkStreamPart
 import akka.http.model.MediaTypes
+import scala.collection.Iterator
 
 
 case class HttpInteraction(req: HttpRequest, res: Promise[HttpResponseOutput])
@@ -134,13 +135,37 @@ class RequestHandler(boot: DefaultBoot, req: AkkaHttpRequest, res: Promise[AkkaH
 	      }
 	    )
 		case hsro : HttpStreamResponseOutput =>
+			val interator = new Iterator[Byte]{
+				val is = new BufferedInputStream(hsro.content)
+				var last = -1
+				def hasNext = try{
+					if(last != -1)
+						true
+					else{
+						last = is.read()
+						true
+					}
+				} catch {
+					case _ : Throwable => false
+				}
+				def next(): Byte = {
+					if(last != -1) {
+						val r = last
+						last = -1
+						r.toByte
+					} else {
+						is.read().toByte
+					}
+				}
+			}
+				
 			res.success(
 				AkkaHttpResponse(
 						status = hsro.status.code,
 						headers = immutable.Seq(`Set-Cookie`(HttpCookie(boot.sessionName, sessionId.value))) ++ hsro.headers,
 						entity = HttpEntity.Chunked(
 								AkkaContentType(AkkaMediaType.custom(hsro.contentType.mediaType.value), hsro.contentType.charset.map(c => HttpCharset.custom(c.name()))),
-								Source(() => io.Source.fromInputStream(hsro.content).iter).grouped(chunkSize).map(i => ByteString(i.map(_.toByte).toArray))
+								Source(() => interator).grouped(chunkSize).map(i => ByteString(i.map(_.toByte).toArray))
 						)
 				)
 			)
