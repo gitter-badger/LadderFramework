@@ -8,11 +8,12 @@ import scala.Option.option2Iterable
 import scala.annotation.implicitNotFound
 import org.ladderframework.js.JsCmd
 import org.ladderframework.logging.Loggable
-import bootstrap.LadderBoot
 import scala.concurrent.Future
 import scala.collection.concurrent._
 import scala.util.Try
 import org.ladderframework.Method._
+import scala.concurrent.ExecutionContext
+import java.net.URL
 
 object Context{
 	private val lineSeparator = System.getProperty("line.separator")
@@ -40,7 +41,8 @@ object Context{
 case class Context(
 		val contextID: String, 
 		addResponse: (List[String], HttpResponse) => String, 
-		update: JsCmd => Try[Unit]) extends Loggable {
+		update: JsCmd => Try[Unit],
+		boot: DefaultBoot)(implicit ec: ExecutionContext) extends Loggable {
 	
 	type Params = HttpRequest
 	
@@ -94,7 +96,7 @@ case class Context(
 		"post" :: contextID :: funcUuid :: Nil
 	}
 	
-	def submitCallback:PartialFunction[HttpRequest, Future[HttpResponse]] = {
+	def submitCallback: PartialFunction[HttpRequest, Future[HttpResponse]] = {
 		case request @ HttpRequest(POST, "post" :: `contextID` :: func :: Nil) if postMap.contains(func) =>
 			debug("handleContextPost")
 			debug("func: " + func + " --- " + postMap.get(func))
@@ -124,7 +126,6 @@ case class Context(
 				val name = part.getName
 				clickMap.get(name).foreach(_())
 			})
-			import LadderBoot.executionContext
 			postMap(func).apply(request).map{case (nextPath, response) => {
 				val uuid = addResponse(nextPath, response)
 				HttpRedirectResponse(nextPath, Option(uuid))
@@ -189,8 +190,7 @@ case class Context(
 					ajaxClickMap.get(key).map(_.apply())
 				}
 			})
-			import LadderBoot.executionContext
-			jsCmd.map(_.map(msg => JsCmdResponse(msg))).getOrElse(Future(LadderBoot.notFound)) 
+			jsCmd.map(_.map(msg => JsCmdResponse(msg))).getOrElse(Future.successful(boot.notFound)) 
 	}
 	
 	def ajaxSubmitCallback:PartialFunction[HttpRequest, Future[HttpResponse]] = {
@@ -220,8 +220,6 @@ case class Context(
 				clickMap.get(key).foreach(_.apply())
 			})
 			
-			import LadderBoot.executionContext
-
 			val jsCmd: Future[JsCmd] = try{
 				ajaxPostMap(func)(request)
 			} catch {
@@ -231,20 +229,13 @@ case class Context(
 			}
 			debug("result: " + jsCmd)
 			jsCmd.map(JsCmdResponse).recover{
-				case ni: NotImplementedError => ErrorResponse(NotImplemented, Option(ni))
-				case t: Throwable => ErrorResponse(InternalServerError, Option(t))
+				case ni: NotImplementedError => ErrorResponse(Status.NotImplemented, Option(ni))
+				case t: Throwable => ErrorResponse(Status.InternalServerError, Option(t))
 			}
 		case request @ HttpRequest(_, "ajax" :: `contextID` :: func :: Nil) if ajaxClickMap.contains(func) =>
 			debug("ajax click func: " + func + " --- " + ajaxClickMap(func)) 
 			
-			import LadderBoot.executionContext
 			ajaxClickMap(func).apply().map(JsCmdResponse)
-	}
-	
-	private def notFound: PartialFunction[HttpRequest, Future[HttpResponse]] = {
-		case _ =>
-			import LadderBoot.executionContext
-			Future(LadderBoot.notFound)
 	}
 	
 	def ajaxHandlerCallback:PartialFunction[HttpRequest, Future[HttpResponse]] = {

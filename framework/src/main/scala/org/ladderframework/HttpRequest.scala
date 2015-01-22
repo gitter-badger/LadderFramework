@@ -8,23 +8,24 @@ import org.ladderframework.logging.Loggable
 
 trait HttpRequest{
 	def method:Method
-	def headers: String => Option[String] = s => None
-	def sessionID:SessionId
+	def headers: Map[String,String]
+	def sessionId:SessionId
 	def path:List[String]
 	def parameters: Map[String,Array[String]]
 	//TODO S wrap Part in something appropriate
 	def parts: List[Part] = Nil
-	def part(name: String): Option[Part] = parts.filter{_.getName() == name}.headOption
+	def part(name: String): Option[Part] = parts.find{_.getName() == name}
 	def partAsString(name: String): Option[String] = part(name).map(part => Context.stream2String(part.getInputStream))
 	def cookies: Seq[Cookie]
 	def invalidateSession(): Unit
 }
 
 class ServletHttpRequest(req: HttpServletRequest) extends HttpRequest with Loggable{
+	import scala.collection.JavaConversions._
 	val method:Method = Method(req.getMethod())
 	override val cookies = req.getCookies().toSeq.map(c => Cookie(c))
-	override val headers: String => Option[String] = s => Option(req.getHeader(s))
-	val sessionID:SessionId = SessionId(req.getSession().getId())
+	override val headers: Map[String,String] = req.getHeaderNames.map(name => name -> req.getHeader(name)).toMap
+	val sessionId:SessionId = SessionId(req.getSession().getId())
 	val path:List[String] = req.getServletPath.split("/").filterNot(_.isEmpty).toList
 	val parameters: Map[String,Array[String]]  = req.getParameterMap.asScala.toMap
 	debug("Parameters: " + parameters)
@@ -78,12 +79,13 @@ object Method{
 	case object CONNECT extends Method
 	case object PATCH extends Method
 }
-	
+
 object &{
 	def unapply(req: HttpRequest): Option[(HttpRequest, HttpRequest)] = {
 		Option(req, req)
 	}
 }
+
 
 object Path {
 	def unapply(req:HttpRequest):Option[List[String]] = Some(req.path) 
@@ -97,17 +99,16 @@ object Json{
 
 object Session{
 	def unapply(req: HttpRequest): Option[SessionId] = {
-		Option(req.sessionID)
+		Option(req.sessionId)
 	}
 }
-/**
- * All examples are from 
- */
+
 trait Header{
 	val name: String
 	def unapply(req: HttpRequest): Option[String] = {
-		req.headers(name)
+		req.headers.get(name)
 	}
+	def apply(value: String): HeaderValue = HeaderValue(this, value)
 }
 
 object Header{
@@ -264,10 +265,12 @@ object Header{
 	}
 }
 
-case class Cookie(name: String, value: String, domain: Option[String] = None, path:Option[String] = None, secure:Boolean = false, maxAge: Int = -1, comment:Option[String] = None, httpOnly:Boolean = false)
+case class HeaderValue(header: Header, value: String)
+
+case class Cookie(name: String, value: String, domain: Option[String] = None, path:Option[String] = None, secure:Boolean = false, maxAge: Option[Long] = None, httpOnly:Boolean = false)
 
 object Cookie{
 	def apply(c: javax.servlet.http.Cookie):Cookie = {
-		Cookie(c.getName(), c.getValue(), Option(c.getDomain), Option(c.getPath), c.getSecure, c.getMaxAge(), Option(c.getComment), c.isHttpOnly)
+		Cookie(c.getName(), c.getValue(), Option(c.getDomain), Option(c.getPath), c.getSecure, Option(c.getMaxAge.toLong), c.isHttpOnly)
 	}
 }

@@ -1,13 +1,11 @@
 package org.ladderframework.js
 
-import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.GivenWhenThen
 import org.scalatest.FeatureSpec
 import org.ladderframework.js._
 
-@RunWith(classOf[JUnitRunner])
 class JsCmdSpec extends FunSpec with GivenWhenThen {
 
 	it("should escape input") {

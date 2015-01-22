@@ -22,7 +22,7 @@ trait Element{
 }
 
 trait InputValueElement[T] extends Element{
-	def input(value:T){
+	def input(value:T): Unit = {
 		pageObjectContext.responseXml.future.map(xml => {
 			val node = xml.extract(selector).head
 			val name = (node \ "@name").text
@@ -34,27 +34,27 @@ trait InputValueElement[T] extends Element{
 		})
 	}
 	
-	def applyCallback(context: Context, name: String, value: T)
+	def applyCallback(context: Context, name: String, value: T): Unit
 	
 }
 
 class TextInput(implicit val pageObjectContext: PageObjectContext) extends InputValueElement[String]{
 	val selector:CssSelector = "input[type=text]"
 		
-	override def applyCallback(context: Context, name:String, value:String) {
+	override def applyCallback(context: Context, name:String, value:String): Unit = {
 		context.getInput(name).foreach(_.apply(value))
 	}
 }
 
 class FileInput(implicit val pageObjectContext: PageObjectContext) extends InputValueElement[File]{
 	val selector:CssSelector = "input[type=file]"
-		
-	override def applyCallback(context: Context, name:String, value:File) {
+
+	override def applyCallback(context: Context, name:String, value:File): Unit = {
 		val fileInfo = FileInfo(
-				name = value.getName, 
-				size = value.length, 
-				inputStream = new FileInputStream(value))
-		context.getFileInputCallback(name).foreach(_.apply(fileInfo))
+			name = value.getName, 
+			size = value.length, 
+			inputStream = new FileInputStream(value))
+	context.getFileInputCallback(name).foreach(_.apply(fileInfo))
 	}
 }
 

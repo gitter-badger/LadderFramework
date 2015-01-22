@@ -1,36 +1,57 @@
 package org.ladderframework
 
+import java.util.UUID
+import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
 import scala.concurrent.Future
-import scala.concurrent.Await
-import scala.util.Try
+import scala.concurrent.Promise
+import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
-import java.util.concurrent.TimeUnit._
-import java.util.UUID
-import akka.actor._
-import akka.routing.RoundRobinRouter
-import bootstrap.LadderBoot
+import scala.util.Try
 import org.ladderframework.js.JsCmd
-import scala.concurrent.Promise
-import javax.websocket.{ Session => WsSession }
-import javax.websocket.MessageHandler
+import akka.actor.Actor
+import akka.actor.ActorIdentity
+import akka.actor.ActorLogging
+import akka.actor.ActorRef
+import akka.actor.ActorSelection.toScala
+import akka.actor.Identify
+import akka.actor.PoisonPill
+import akka.actor.Props
+import akka.actor.Terminated
+import akka.actor.actorRef2Scala
+import java.io.BufferedReader
+import java.io.BufferedInputStream
+import scala.collection.BufferedIterator
+import akka.util.ByteIterator
+import java.io.InputStreamReader
+import akka.util.ByteString
+import java.nio.ByteBuffer
+import java.nio.channels.FileChannel
+import java.nio.file.StandardOpenOption
+import java.nio.MappedByteBuffer
+import scala.util.control.NonFatal
+import scala.collection.Iterator
+import org.ladderframework.json.JObject
 import java.io.IOException
-import javax.servlet.http.HttpSession
+import javax.servlet.http.HttpServletResponse
+import javax.servlet.http.HttpServletRequest
+import scala.io.Source
 import javax.websocket.{Session => WsSession}
+import java.nio.file.Files
+import javax.websocket.MessageHandler
 import javax.websocket.PongMessage
-import org.ladderframework.json._
-import scala.util.Failure
+import javax.websocket.PongMessage
 
-case class HttpInteraction(asyncHandler: AsyncRequestHandler, req: HttpRequest, res: HttpResponseOutput)
-case class RenderInital(res: HttpResponseOutput, asyncHandler: AsyncRequestHandler)
+case class HttpInteraction(req: HttpRequest, res: Promise[HttpResponseOutput])
+case class RenderInital(res: Promise[HttpResponseOutput])
 case class CreateSession(sessionId: String)
 case class RemoveSession(sessionId: String)
 case class AddResponse(path: List[String], uuid: String, response: HttpResponse) {}
 case class PushMessage(id: String = Utils.uuid, message: String) {
 	lazy val asJson = { """{"id":"""" + id + """", "message":"""" + message.replace("\"", "\\\"") + """"}""" }
 }
+case class Invalidate(session: SessionId)
 
 case class WsConnect(sessionID: String, page: String, lastId: String, actor: ActorRef)
 case class InitWsConnection(session: WsSession, httpSessionID: String)
@@ -38,29 +59,93 @@ case class InitWsPage(page: ActorRef)
 case class WsCallMessage(msg: JObject)
 case object Ping
 
-class RequestHandler extends Actor with ActorLogging {
+object SessionMaster {
+	def props(boot: DefaultBoot) = Props(new SessionMaster(boot))
+}
 
-	override def receive = {
-		case hi: HttpInteraction =>
-			log.debug("receive - HttpInteraction: " + hi)
-			val sessionID = hi.req.sessionID
-			// If request to existing find actor. Find and send
-			val session = context.system.actorSelection("user/" + sessionID.value)
-			session ! hi
-		case ws: WsConnect =>
-			log.debug("receive - WsInteraction: " + ws)
-			val sessionID = ws.sessionID
-			val session = context.system.actorSelection("user/" + sessionID.value)
-			session ! ws
+class SessionMaster(boot: DefaultBoot) extends Actor with ActorLogging{
+	def receive = {
+		case hi: HttpInteraction => 
+			log.debug("New hi: {}", hi)
+			context.child(hi.req.sessionId.value) match{
+				case Some(ar) => ar ! hi
+				case None => context.actorOf(SessionActor.apply(hi.req.sessionId, boot), hi.req.sessionId.value) ! hi
+			}
+		case i@Invalidate(session) =>
+			log.debug("Invalidate session: {}", session)
+			context.child(session.value) foreach( _ ! i)
+	}
+}
+
+object RequestHandler{
+	def create(boot: DefaultBoot, req: HttpServletRequest, res: HttpServletResponse): Props = Props(new RequestHandler(boot, req, res))
+}
+
+class RequestHandler(boot: DefaultBoot, req: HttpServletRequest, res: HttpServletResponse) extends Actor with ActorLogging{
+	val httpResponseOutput = Promise[HttpResponseOutput]()
+	var sessionId: SessionId = SessionId(req.getSession.getId)
+	val request = new ServletHttpRequest(req)
+	def createSession(): Unit = {
+		log.debug("Create session: {}", sessionId)
+		boot.sessionMaster ! HttpInteraction(request, httpResponseOutput)
 	}
 
+	
+	context.actorSelection(context.system / "session" / sessionId.value) ! Identify(None)
+	
+	httpResponseOutput.future.foreach(_ match {
+		case hsro : HttpStringResponseOutput => 
+			res.setStatus(hsro.status.code)
+			hsro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
+			res.setContentType(hsro.contentType.mediaType.value)
+			hsro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
+			res.getOutputStream.println(hsro.content)
+			res.setContentLength(hsro.content.length)
+			res.getOutputStream.close()
+		case hpro : HttpPathResponseOutput => 
+			res.setStatus(hpro.status.code)
+			hpro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
+			res.setContentType(hpro.contentType.mediaType.value)
+			hpro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
+			val os = res.getOutputStream
+			val size = Files.copy(hpro.content, os)
+			res.setContentLengthLong(size)
+			os.close()
+		case hsro : HttpStreamResponseOutput =>
+			res.setStatus(hsro.status.code)
+			hsro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
+			res.setContentType(hsro.contentType.mediaType.value)
+			hsro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
+			val buffer = new Array[Byte](1024)
+			val os = res.getOutputStream()
+			while (hsro.content.read(buffer) > -1) {
+				os.write(buffer)				  
+			}
+			res.getOutputStream.close()
+		case other => 
+			log.error("Unable to handle response output: {}", other)
+			res.setStatus(Status.NotImplemented.code)
+			val os = res.getOutputStream()
+			os.println(s"Unable to handle response output: $other")
+			os.close()
+	})
+	
+	def receive = {
+	  case ActorIdentity(_, Some(actorRef)) =>
+	  	log.debug("ActorIdentity: {}", actorRef)
+	  	actorRef ! HttpInteraction(request, httpResponseOutput)
+	  case ActorIdentity(_, None) => // not alive
+	  	log.debug("ActorIdentity: None")
+	  	createSession()
+	}
+	
 }
 
 object SessionActor {
-	def apply(sessionID: SessionId): Props = Props(new SessionActor(sessionID))
+	def apply(sessionID: SessionId, boot: DefaultBoot): Props = Props(new SessionActor(sessionID, boot))
 }
 
-class SessionActor(sessionID: SessionId) extends Actor with ActorLogging {
+class SessionActor(sessionID: SessionId, boot: DefaultBoot) extends Actor with ActorLogging {
 	def receive = {
 		case hi: HttpInteraction =>
 			// If request to existing find actor. Find and send
@@ -76,45 +161,52 @@ class SessionActor(sessionID: SessionId) extends Actor with ActorLogging {
 							log.debug("child: " + context.child(id))
 							context.child(id).getOrElse {
 								val uuid: String = UUID.randomUUID.toString
-								context.actorOf(InitalResponseContainer.props(self, hi.req, uuid), name = uuid)
-							} ! RenderInital(hi.res, hi.asyncHandler)
+								context.actorOf(InitalResponseContainer.props(self, hi.req, uuid, boot), name = uuid)
+							} ! RenderInital(hi.res)
 						case _ =>
 							val uuid: String = UUID.randomUUID.toString
-							val resonseContainerRef = context.actorOf(InitalResponseContainer.props(context.self, hi.req, uuid), name = uuid)
-							resonseContainerRef ! RenderInital(hi.res, hi.asyncHandler)
+							val resonseContainerRef = context.actorOf(InitalResponseContainer.props(context.self, hi.req, uuid, boot), name = uuid)
+							resonseContainerRef ! RenderInital(hi.res)
 					}
 
 				case _ =>
 					val uuid: String = UUID.randomUUID.toString
-					val resonseContainerRef = context.actorOf(InitalResponseContainer.props(context.self, hi.req, uuid), name = uuid)
-					resonseContainerRef ! RenderInital(hi.res, hi.asyncHandler)
+					val resonseContainerRef = context.actorOf(InitalResponseContainer.props(context.self, hi.req, uuid, boot), name = uuid)
+					resonseContainerRef ! RenderInital(hi.res)
 			}
-		case ws: WsConnect =>
-			context.actorSelection(ws.page) ! ws
+//		case ws: WsConnect =>
+//			context.actorSelection(ws.page) ! ws
 		case AddResponse(path, uuid, response) =>
-			context.actorOf(RedirectResponseContainer.props(context.self, Promise().success(response), uuid), name = uuid)
+			context.actorOf(RedirectResponseContainer.props(context.self, Promise().success(response), uuid, boot), name = uuid)
+		case i@Invalidate(session) if sessionID == session =>
+			context.system.scheduler.scheduleOnce(100 millis, self, PoisonPill)
+			context.become({
+				case _ => self ! PoisonPill 
+			})
 	}
 }
 
 object RedirectResponseContainer {
-	def props(session: ActorRef, httpResponse: Promise[HttpResponse], uuid: String): Props = Props(new RedirectResponseContainer(session, httpResponse, uuid))
+	def props(session: ActorRef, httpResponse: Promise[HttpResponse], uuid: String, boot: DefaultBoot): Props = Props(new RedirectResponseContainer(session, httpResponse, uuid, boot))
 }
 
 class RedirectResponseContainer(
 	val session: ActorRef,
 	val httpResponse: Promise[HttpResponse],
-	val uuid: String) extends ResponseContainer
+	val uuid: String,
+	val boot: DefaultBoot) extends ResponseContainer
 
 object InitalResponseContainer {
-	def props(session: ActorRef, initalRequest: HttpRequest, uuid: String): Props = Props(new InitalResponseContainer(session, initalRequest, uuid))
+	def props(session: ActorRef, initalRequest: HttpRequest, uuid: String, boot: DefaultBoot): Props = Props(new InitalResponseContainer(session, initalRequest, uuid, boot))
 }
 
 class InitalResponseContainer(
 		val session: ActorRef,
 		val initalRequest: HttpRequest,
-		val uuid: String) extends ResponseContainer {
+		val uuid: String,
+		val boot: DefaultBoot) extends ResponseContainer {
 
-	val httpResponse: Promise[HttpResponse] = Promise().completeWith((Future(LadderBoot.site).map(_ orElse notFound)).flatMap(_.apply(initalRequest)))
+	val httpResponse: Promise[HttpResponse] = Promise().completeWith((Future(boot.site).map(_ orElse notFound)).flatMap(_.apply(initalRequest)))
 
 }
 
@@ -122,6 +214,7 @@ case object Tick
 
 trait ResponseContainer extends Actor with ActorLogging {
 
+	def boot: DefaultBoot
 	def httpResponse: Promise[HttpResponse]
 	val uuid: String
 	def session: ActorRef
@@ -133,7 +226,7 @@ trait ResponseContainer extends Actor with ActorLogging {
 
 	private def updateLastAccess() = {
 		log.debug("updateLastAccess from " + lastAccess )
-		context.system.scheduler.scheduleOnce(LadderBoot.timeToLivePage millis, self, Tick)
+		context.system.scheduler.scheduleOnce(boot.timeToLivePage millis, self, Tick)
 		lastAccess = System.currentTimeMillis
 	}
 
@@ -157,7 +250,7 @@ trait ResponseContainer extends Actor with ActorLogging {
 		case r =>
 			log.debug("Not found - request: " + r)
 			log.debug("context: " + statefulContext)
-			Future(LadderBoot.notFound)
+			Future.successful(boot.notFound)
 	}
 
 	def errorHandle: PartialFunction[(Status, Option[Throwable]), HttpResponse] = {
@@ -172,35 +265,37 @@ trait ResponseContainer extends Actor with ActorLogging {
 		}
 	}
 
-	implicit val statefulContext = new Context(uuid, addResponse, update)
+	implicit val statefulContext = new Context(uuid, addResponse, update, boot)
 
 	def receive = {
 		case Tick =>
-			log.debug("Tick: lastAccess: " + lastAccess + " left: " + (lastAccess - LadderBoot.timeToLivePage + System.currentTimeMillis))
-			if (System.currentTimeMillis > lastAccess + LadderBoot.timeToLivePage) {
+			log.debug("Tick: lastAccess: " + lastAccess + " left: " + (lastAccess - boot.timeToLivePage + System.currentTimeMillis))
+			if (System.currentTimeMillis > lastAccess + boot.timeToLivePage) {
 				self ! PoisonPill
 			}
-		case RenderInital(res, asyncContext) =>
+		case RenderInital(res) =>
 			log.debug("RenderInital")
 			updateLastAccess()
 
 			def complete() = {
 				log.debug("Completed")
-				asyncContext.complete()
 				httpResponse.future.map(_ match {
 					case _: Stateful =>
 					case _ => self ! PoisonPill
 				})
 			}
-			val future = httpResponse.future.flatMap(_.applyToHttpServletResponse(res))
+			val future = httpResponse.future.flatMap(_.httpResponse())
 			future.onComplete {
 				case Failure(t) =>
-					log.error(t, "Problems handling request: " + httpResponse)
-					(LadderBoot.errorHandle orElse errorHandle)((InternalServerError, Option(t))).applyToHttpServletResponse(res).onComplete {
-						case _ => complete()
+					log.error(t, "Problems handling request ")
+					(boot.errorHandle orElse errorHandle)((Status.InternalServerError, Option(t))).httpResponse().onComplete {
+						case resp => 
+							res.complete(resp) 
+							complete()
 					}
-				case Success(status: Status) =>
-					log.debug("Status: " + status + "; httpResponse: " + Await.ready(httpResponse.future, 10 seconds));
+				case shro @ Success(hro) =>
+					log.debug("Status: " + hro.status + "; httpResponse: " + hro);
+					res.complete(shro) 
 					complete()
 			}
 
@@ -210,15 +305,15 @@ trait ResponseContainer extends Actor with ActorLogging {
 			messages = messages :+ newMessage
 			log.debug("messages:" + messages)
 			context.children.foreach(_ ! newMessage)
-		case HttpInteraction(asyncContext, request @ HttpRequest(_, "pull" :: `uuid` :: _), res) =>
+		case HttpInteraction(request @ HttpRequest(_, "pull" :: `uuid` :: _), res) =>
 			log.debug("pull")
 			updateLastAccess()
 			request.parameters.get("lastId").flatMap(_.headOption).foreach(id => {
 				messages = messages.reverse.takeWhile(_.id != id).reverse
 			})
-			context.actorOf(PullActor(asyncContext, res)) ! messages
+			context.actorOf(PullActor(res, boot)) ! messages
 
-		case HttpInteraction(asyncContext, req, res) =>
+		case HttpInteraction(req, res) =>
 			updateLastAccess()
 			val response: Future[HttpResponse] = try{
 				(statefulContext.submitCallback orElse
@@ -231,37 +326,36 @@ trait ResponseContainer extends Actor with ActorLogging {
 			response.onComplete {
 				case Success(http) =>
 					log.debug("completing - success, http: " + http)
-					http.applyToHttpServletResponse(res).onComplete {
-						case Success(status) =>
-							asyncContext.complete()
-							log.debug("completed - success, status: " + status)
+					val resp = http.httpResponse()
+					resp.onComplete {
+						case Success(hro) =>
+							res.complete(Success(hro))
+							log.debug("completed - success, status: " + hro.status)
 						case Failure(throwable) =>
 							log.error(throwable, "problem completing")
-							asyncContext.complete()
 					}
 
 				case Failure(fail) => {
 					log.error("complete - fail: " + fail)
-					ErrorResponse(InternalServerError, Some(fail)).applyToHttpServletResponse(res).onComplete {
-						case Success(status) =>
-							asyncContext.complete()
-							log.debug("completed - fail, status: " + status)
+					ErrorResponse(Status.InternalServerError, Some(fail)).httpResponse().onComplete {
+						case Success(httpRes) =>
+							res.success(httpRes)
+							log.debug("completed - fail, status: " + httpRes.status)
 						case Failure(throwable) =>
 							log.error("problem completing fail result", throwable)
-							asyncContext.complete()
 					}
 				}
 			}
-		case ws @ WsConnect(_, `uuid`, lastId, wsActor) =>
-			log.debug("ws connect: " + ws)
-			updateLastAccess()
-			wsActors += wsActor
-			context.watch(wsActor)
-			wsActor ! InitWsPage(self)
-			messages = messages.reverse.takeWhile(_.id != lastId).reverse
-			wsActor ! messages
-		case WsCallMessage(msg) =>
-			//TODO Handle callback
+//		case ws @ WsConnect(_, `uuid`, lastId, wsActor) =>
+//			log.debug("ws connect: " + ws)
+//			updateLastAccess()
+//			wsActors += wsActor
+//			context.watch(wsActor)
+//			wsActor ! InitWsPage(self)
+//			messages = messages.reverse.takeWhile(_.id != lastId).reverse
+//			wsActor ! messages
+//		case WsCallMessage(msg) =>
+//			//TODO Handle callback
 //			(statefulContext.submitCallback orElse
 //				statefulContext.ajaxSubmitCallback orElse
 //				statefulContext.ajaxHandlerCallback orElse
@@ -275,25 +369,12 @@ trait ResponseContainer extends Actor with ActorLogging {
 }
 
 object PullActor {
-	def apply(asyncHandler: AsyncRequestHandler, res: HttpResponseOutput) = Props(new PullActor(asyncHandler, res))
+	def apply(res: Promise[HttpResponseOutput], boot: DefaultBoot) = Props(new PullActor(res, boot))
 }
 
-class PullActor(asyncHandler: AsyncRequestHandler, res: HttpResponseOutput) extends Actor with ActorLogging {
+class PullActor(res: Promise[HttpResponseOutput], boot: DefaultBoot) extends Actor with ActorLogging {
 
 	object TimeToClose
-
-	val onComplete = () => {
-		context.self ! PoisonPill
-	}
-	val onError = () => {
-		context.self ! PoisonPill
-	}
-	val onStart = () => {}
-	val onTimeout = () => {
-		context.self ! PoisonPill
-	}
-
-	asyncHandler.addListeners(onComplete, onError, onStart, onTimeout)
 
 	context.system.scheduler.scheduleOnce(24000 millis, self, TimeToClose)
 
@@ -302,22 +383,27 @@ class PullActor(asyncHandler: AsyncRequestHandler, res: HttpResponseOutput) exte
 			send(Nil)
 		case Nil =>
 		case msg: PushMessage =>
+			log.debug("push msg: {}", msg)
 			send(List(msg))
 		case msgs: List[_] =>
+			log.debug("push msgs: {}", msgs)
 			val pushMsgs: List[PushMessage] = msgs.collect({ case msg: PushMessage => msg })
 			send(pushMsgs)
 	}
 
 	def send(msgs: List[PushMessage]): Unit = {
 		val response = PullResponse(msgs)
-		implicit val c: Context = new Context(Utils.uuid, (_, _) => "", _ => Success({}))
-		response.applyToHttpServletResponse(res).onComplete {
-			case Success(status) =>
-				asyncHandler.complete()
-				log.debug("pull completed - success, status: {}", status)
+		implicit val c: Context = new Context(Utils.uuid, (_, _) => "", _ => Success({}), boot)
+		val selfActor = context.self
+		response.httpResponse().onComplete {
+			case Success(hsro) =>
+				res.complete(Success(hsro))
+				log.debug("pull completed - success, output: {}", hsro)
+				selfActor ! PoisonPill
 			case Failure(throwable) =>
+				res.complete(Failure(throwable))
 				log.warning("pull problem completing fail result", throwable)
-				asyncHandler.complete()
+				selfActor ! PoisonPill
 		}
 	}
 }
@@ -368,6 +454,7 @@ class WsActor() extends Actor with ActorLogging {
 		
 		{
 			case InitWsPage(page) => 
+				import org.ladderframework.json._
 				session.addMessageHandler(new MessageHandler.Whole[String](){
 					override def onMessage(msg: String) = {
 						msg.toJson match {
@@ -402,7 +489,5 @@ class WsActor() extends Actor with ActorLogging {
 				})
 		}
 	}
-
-	
 }
 

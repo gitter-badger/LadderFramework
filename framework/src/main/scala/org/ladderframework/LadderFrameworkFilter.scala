@@ -3,8 +3,6 @@ package org.ladderframework
 import org.ladderframework.logging.Loggable
 import akka.actor.Props
 import akka.actor.actorRef2Scala
-import bootstrap.LadderBoot
-import bootstrap.LadderBoot.system
 import javax.servlet.AsyncEvent
 import javax.servlet.AsyncListener
 import javax.servlet.Filter
@@ -19,19 +17,38 @@ import javax.servlet.http.HttpServletResponse
 import javax.servlet.http.HttpSessionEvent
 import javax.servlet.http.HttpSessionListener
 import akka.actor.PoisonPill
-import akka.routing.RoundRobinRouter
 import akka.routing.RoundRobinPool
+import org.eclipse.jetty.server.handler.AbstractHandler
+import javax.servlet.ServletContext
+import scala.concurrent.Promise
+import org.eclipse.jetty.server.Request
 
-@WebFilter(urlPatterns = Array("/*"), asyncSupported = true)
-@MultipartConfig(location = "/tmp", fileSizeThreshold = 1048576, maxFileSize = 52428800, maxRequestSize = 52428800)
-class LadderFrameworkFilter extends Filter with Loggable {
+class LadderHandler(boot: DefaultBoot, cxt: ServletContext) extends AbstractHandler with Loggable {
 
-	import bootstrap.LadderBoot.system
+	import boot.system
 	
   // create the result listener, which will print the result and shutdown the system
   val requestHandler = system.actorOf(Props[RequestHandler].withRouter(new RoundRobinPool(10)), name = "requestHandler")
-	var config: FilterConfig = _
-	
+
+  debug("init")
+	cxt.addListener(new HttpSessionListener{
+		def sessionCreated(sessionEvent: HttpSessionEvent) = {
+			val sessionId = sessionEvent.getSession.getId
+			debug("Create session: " + sessionId)
+			system.actorOf(SessionActor(SessionId(sessionId), boot), name = sessionId)
+		} 
+		def sessionDestroyed(sessionEvent: HttpSessionEvent) = {
+			val sessionId = sessionEvent.getSession.getId
+			debug("Remove session: " + sessionId)
+			system.actorSelection("user/" + sessionId) ! PoisonPill
+		} 
+		
+	})
+	boot.mimeTypeImpl = cxt.getMimeType
+	boot.resourceAsStreamImpl = cxt.getResourceAsStream
+	boot.resourceImpl = (s:String) => if(s.startsWith("/")) cxt.getResource(s) else cxt.getResource("/" + s)
+	boot.contextPathImpl = cxt.getContextPath
+  
 	lazy val asyncListener = new AsyncListener{
 		def onStartAsync(evt: AsyncEvent) = { debug("startAsync: " + evt.getSuppliedRequest().asInstanceOf[HttpServletRequest].getRequestURI())}
 		def onError(evt: AsyncEvent) = {
@@ -49,54 +66,27 @@ class LadderFrameworkFilter extends Filter with Loggable {
 		def onComplete(evt: AsyncEvent) = {debug("complete: " + evt.getSuppliedRequest().asInstanceOf[HttpServletRequest].getRequestURI())}
 	}
 
-	def init(config: FilterConfig) = {
-		debug("init")
-		this.config = config
-		val cxt = config.getServletContext()
-		cxt.addListener(new HttpSessionListener{
-			def sessionCreated(sessionEvent: HttpSessionEvent) = {
-				val sessionId = sessionEvent.getSession.getId
-				debug("Create session: " + sessionId)
-				system.actorOf(SessionActor(SessionId(sessionId)), name = sessionId)
-			} 
-			def sessionDestroyed(sessionEvent: HttpSessionEvent) = {
-				val sessionId = sessionEvent.getSession.getId
-				debug("Remove session: " + sessionId)
-				system.actorSelection("user/" + sessionId) ! PoisonPill
-			} 
-			
-		})
-		LadderBoot.mimeTypeImpl = cxt.getMimeType
-		LadderBoot.resourceAsStreamImpl = cxt.getResourceAsStream
-		LadderBoot.resourceImpl = (s:String) => if(s.startsWith("/")) cxt.getResource(s) else cxt.getResource("/" + s)
-		LadderBoot.contextPathImpl = cxt.getContextPath
+	override def handle(target: String,
+							baseRequest: Request,
+              httpServletRequest: HttpServletRequest ,
+              httpServletResponse: HttpServletResponse ): Unit = {
+		debug("New request to: " + httpServletRequest.getServletPath())
 		
-	}
-	
-	def doFilter(servletRequest: ServletRequest, servletResponse: ServletResponse, chain: FilterChain) = {
-		
-		(servletRequest, servletResponse) match {
-			case (httpServletRequest: HttpServletRequest, httpServletResponse: HttpServletResponse) =>
-				debug("New request to: " + httpServletRequest.getServletPath())
-				
-				val request = new ServletHttpRequest(httpServletRequest)
-				val asyncContext = httpServletRequest.startAsync
-				asyncContext.addListener(asyncListener)
-				val response = asyncContext.getResponse match {
-						case http:HttpServletResponse => http
-						case _ => 
-							warn("wrong httpServletResponse")
-							httpServletResponse
-				}
-				requestHandler ! HttpInteraction(new AsyncServletContext(asyncContext), request, new HttpServletResponseOutput(response))
-			case _ =>
-				chain.doFilter(servletRequest, servletResponse);
+		val request = new ServletHttpRequest(httpServletRequest)
+		val asyncContext = httpServletRequest.startAsync
+		asyncContext.addListener(asyncListener)
+		val asyncResponse = asyncContext.getResponse match {
+				case http:HttpServletResponse => http
+				case _ => 
+					warn("wrong httpServletResponse")
+					httpServletResponse
 		}
+		val response = Promise[HttpResponseOutput]()
+		requestHandler ! HttpInteraction(request, response)
 	}
 
-	def destroy() = {
-		config = null
-		LadderBoot.onShutdown()
+	override def destroy() = {
+		boot.onShutdown()
 		system.shutdown()
 	}
 	

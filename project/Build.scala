@@ -4,7 +4,7 @@ import sbtrelease.ReleasePlugin._
 
 object LadderFrameworkBuild extends Build {
 
-	val buildScalaVersion = "2.11.2"
+	val buildScalaVersion = "2.11.5"
 	
 	lazy val buildSettings = Defaults.defaultSettings ++ Seq(
 		organization := "org.ladderframework",
@@ -49,7 +49,7 @@ object Dependencies {
 
 	val testkit = Seq(Test.scalatest, Test.scalacheck, Test.junit, Test.akkaTest)
 
-	val framework = Seq(servletApi, websocketApi, akkaActor, akkaLogging, akkaHttp, scalaXml, scalaParserCompinators) ++ slf4j
+	val framework = Seq(servletApi, websocketApi, jettyServer, akkaActor, akkaLogging, scalaXml, scalaParserCompinators) ++ slf4j
 	val test_framework = Seq(servletApi) ++ slf4j
 
 }
@@ -63,12 +63,12 @@ object Dependency {
 		val scalatest = "2.2.0"
 		val scalacheck = "1.11.4"
 		val slf4j = "1.7.5"
-		val akka = "2.3.6"
+		val akka = "2.3.7"
 		val scalaVersion = "2.11.1"
 	}
 
 	// Compile
-	lazy val jetty = "org.eclipse.jetty" % "jetty-webapp" % "9.1.1.v20140108" % "test,container"
+	lazy val jetty = "org.eclipse.jetty" % "jetty-webapp" % "9.2.7.v20150116" % "test"
 
 	lazy val servletApi = "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided"
 
@@ -82,7 +82,8 @@ object Dependency {
 
 	lazy val akkaActor = "com.typesafe.akka" %% "akka-actor" % V.akka
 	lazy val akkaLogging = "com.typesafe.akka" %% "akka-slf4j" % V.akka
-	lazy val akkaHttp = "com.typesafe.akka" %% "akka-http-core-experimental" % "0.7"
+
+	lazy val jettyServer = "org.eclipse.jetty" % "jetty-server" % "9.2.7.v20150116"
 
 	object Test {
 		val junit = "junit" % "junit" % "4.11" % "test" // Common Public License 1.0

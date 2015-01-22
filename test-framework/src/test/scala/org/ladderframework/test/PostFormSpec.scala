@@ -3,7 +3,6 @@ package org.ladderframework.test
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalatest.FunSpec
 import org.scalatest.GivenWhenThen
-import bootstrap.LadderBoot
 import org.ladderframework.Context
 import org.ladderframework.test.response._
 import org.ladderframework.test.page._
@@ -11,17 +10,20 @@ import org.ladderframework.js._
 import org.ladderframework.HttpResponse
 import org.ladderframework.Utils
 import scala.util.Try
+import org.ladderframework.DefaultBoot
 
 class PostFormSpec extends FunSpec with GivenWhenThen {
 	
-	LadderBoot.resourceImpl = (resource:String) => { 
-		getClass().getClassLoader().getResource(resource) 
-	}  
+	val boot = new DefaultBoot{
+		def site = {
+			case _ => ???
+		}
+	}    
 	
 	implicit val context: Context = Context(
 		contextID = Utils.uuid, 
 		addResponse = (path: List[String], res: HttpResponse) => "", 
-		update = (str: JsCmd) => Try{} )
+		update = (str: JsCmd) => Try{}, boot)
 		
 	val indexResponse = new IndexResponse
 	
