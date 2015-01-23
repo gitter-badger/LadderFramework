@@ -15,8 +15,6 @@ class LadderServer(boot: DefaultBoot) extends Loggable {
 	val server = new Server();
 
 	def start(interface: String, port: Int): Unit = {
-		server.start();
-		server.join();
 		val http = new ServerConnector(server);
 		http.setHost(interface);
 		http.setPort(port);
@@ -30,6 +28,9 @@ class LadderServer(boot: DefaultBoot) extends Loggable {
 		context.setHandler( new LadderHandler(boot, ContextHandler.getCurrentContext()) )
 		// Set a handler
 		server.setHandler(context)
+		
+		server.start();
+		server.join();
 	}
 
 	def stop(): Unit = {
