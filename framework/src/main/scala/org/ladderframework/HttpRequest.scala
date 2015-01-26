@@ -1,10 +1,14 @@
 package org.ladderframework
 
+import scala.annotation.migration
 import scala.collection.JavaConversions.collectionAsScalaIterable
+import scala.collection.JavaConversions.enumerationAsScalaIterator
 import scala.collection.JavaConverters.mapAsScalaMapConverter
+
+import org.ladderframework.logging.Loggable
+
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.Part
-import org.ladderframework.logging.Loggable
 
 trait HttpRequest{
 	def method:Method
@@ -20,13 +24,11 @@ trait HttpRequest{
 	def invalidateSession(): Unit
 }
 
-class ServletHttpRequest(req: HttpServletRequest) extends HttpRequest with Loggable{
+case class ServletHttpRequest(req: HttpServletRequest, val cookies: Seq[Cookie], val sessionId: SessionId) extends HttpRequest with Loggable{
 	import scala.collection.JavaConversions._
 	val method:Method = Method(req.getMethod())
-	override val cookies = req.getCookies().toSeq.map(c => Cookie(c))
 	override val headers: Map[String,String] = req.getHeaderNames.map(name => name -> req.getHeader(name)).toMap
-	val sessionId:SessionId = SessionId(req.getSession().getId())
-	val path:List[String] = req.getServletPath.split("/").filterNot(_.isEmpty).toList
+	val path:List[String] = req.getPathInfo.split("/").filterNot(_.isEmpty).toList
 	val parameters: Map[String,Array[String]]  = req.getParameterMap.asScala.toMap
 	debug("Parameters: " + parameters)
 	//TODO S wrap Part in something appropriate

@@ -20,13 +20,13 @@ class WsSessionMock(page: String, lastId: String, countDown: Int = 1) extends Se
 	
   override def getContainer():WebSocketContainer = ???
   
-  override def addMessageHandler(mh: MessageHandler) {
+  override def addMessageHandler(mh: MessageHandler): Unit = {
 		messageHandlers +:= mh
 	}
   
   override def getMessageHandlers(): java.util.Set[MessageHandler] = ???
   
-  override def removeMessageHandler(mh: MessageHandler){???}
+  override def removeMessageHandler(mh: MessageHandler): Unit = {???}
   
   override def getProtocolVersion(): String = ???
   
@@ -42,7 +42,7 @@ class WsSessionMock(page: String, lastId: String, countDown: Int = 1) extends Se
   
   override def setMaxIdleTimeout(newTime: Long) = ???
   
-  override def setMaxBinaryMessageBufferSize(arg: Int){ ??? }
+  override def setMaxBinaryMessageBufferSize(arg: Int): Unit = { ??? }
   
   override def getMaxBinaryMessageBufferSize() = ???
   
@@ -53,7 +53,7 @@ class WsSessionMock(page: String, lastId: String, countDown: Int = 1) extends Se
   override def getAsyncRemote = ???
   
   override def getBasicRemote() = new RemoteEndpoint.Basic{
-	  override def sendText(msg: String){
+	  override def sendText(msg: String): Unit = {
 	  	messages +:= msg
 	  }
 	  

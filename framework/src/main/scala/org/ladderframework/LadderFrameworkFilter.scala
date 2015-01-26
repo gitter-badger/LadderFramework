@@ -22,33 +22,15 @@ import org.eclipse.jetty.server.handler.AbstractHandler
 import javax.servlet.ServletContext
 import scala.concurrent.Promise
 import org.eclipse.jetty.server.Request
+import org.eclipse.jetty.server.handler.ContextHandler
 
-class LadderHandler(boot: DefaultBoot, cxt: ServletContext) extends AbstractHandler with Loggable {
+class LadderHandler(contextHandler: ContextHandler, boot: DefaultBoot) extends AbstractHandler with Loggable {
 
 	import boot.system
 	
   // create the result listener, which will print the result and shutdown the system
-  val requestHandler = system.actorOf(Props[RequestHandler].withRouter(new RoundRobinPool(10)), name = "requestHandler")
 
-  debug("init")
-	cxt.addListener(new HttpSessionListener{
-		def sessionCreated(sessionEvent: HttpSessionEvent) = {
-			val sessionId = sessionEvent.getSession.getId
-			debug("Create session: " + sessionId)
-			system.actorOf(SessionActor(SessionId(sessionId), boot), name = sessionId)
-		} 
-		def sessionDestroyed(sessionEvent: HttpSessionEvent) = {
-			val sessionId = sessionEvent.getSession.getId
-			debug("Remove session: " + sessionId)
-			system.actorSelection("user/" + sessionId) ! PoisonPill
-		} 
-		
-	})
-	boot.mimeTypeImpl = cxt.getMimeType
-	boot.resourceAsStreamImpl = cxt.getResourceAsStream
-	boot.resourceImpl = (s:String) => if(s.startsWith("/")) cxt.getResource(s) else cxt.getResource("/" + s)
-	boot.contextPathImpl = cxt.getContextPath
-  
+  var initialized = false
 	lazy val asyncListener = new AsyncListener{
 		def onStartAsync(evt: AsyncEvent) = { debug("startAsync: " + evt.getSuppliedRequest().asInstanceOf[HttpServletRequest].getRequestURI())}
 		def onError(evt: AsyncEvent) = {
@@ -72,7 +54,16 @@ class LadderHandler(boot: DefaultBoot, cxt: ServletContext) extends AbstractHand
               httpServletResponse: HttpServletResponse ): Unit = {
 		debug("New request to: " + httpServletRequest.getServletPath())
 		
-		val request = new ServletHttpRequest(httpServletRequest)
+		if(!initialized){
+			boot.mimeTypeImpl = contextHandler.getMimeTypes.getMimeMap.get
+//			def getResource(s: String) = if(s.startsWith("/")) contextHandler.getResource(s) else contextHandler.getResource("/" + s)
+//			boot.resourceAsStreamImpl = s => getResource(s).getInputStream
+//			boot.resourceImpl = (s:String) => getResource(s).getURL
+			boot.contextPathImpl = contextHandler.getContextPath()
+			debug(s"boot.contextPathImpl: ${boot.contextPathImpl}")
+			initialized = true;
+		}
+		
 		val asyncContext = httpServletRequest.startAsync
 		asyncContext.addListener(asyncListener)
 		val asyncResponse = asyncContext.getResponse match {
@@ -81,8 +72,7 @@ class LadderHandler(boot: DefaultBoot, cxt: ServletContext) extends AbstractHand
 					warn("wrong httpServletResponse")
 					httpServletResponse
 		}
-		val response = Promise[HttpResponseOutput]()
-		requestHandler ! HttpInteraction(request, response)
+		system.actorOf(RequestHandler.create(boot, () => baseRequest.setHandled(true), httpServletRequest, asyncResponse))
 	}
 
 	override def destroy() = {

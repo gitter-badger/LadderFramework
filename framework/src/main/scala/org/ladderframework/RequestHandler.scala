@@ -78,35 +78,56 @@ class SessionMaster(boot: DefaultBoot) extends Actor with ActorLogging{
 }
 
 object RequestHandler{
-	def create(boot: DefaultBoot, req: HttpServletRequest, res: HttpServletResponse): Props = Props(new RequestHandler(boot, req, res))
+	def create(boot: DefaultBoot, completed: () => Unit, req: HttpServletRequest, res: HttpServletResponse): Props = Props(new RequestHandler(boot, completed, req, res))
 }
 
-class RequestHandler(boot: DefaultBoot, req: HttpServletRequest, res: HttpServletResponse) extends Actor with ActorLogging{
+class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletRequest, res: HttpServletResponse) extends Actor with ActorLogging{
 	val httpResponseOutput = Promise[HttpResponseOutput]()
-	var sessionId: SessionId = SessionId(req.getSession.getId)
-	val request = new ServletHttpRequest(req)
-	def createSession(): Unit = {
+	
+	//var sessionId: SessionId = 
+	val cookies = Option(req.getCookies()).map(_.toList).getOrElse(Nil).map(c => Cookie(c))
+	def createSession(): ServletHttpRequest = {
+		val sessionId = SessionId(Utils.secureRandom)
 		log.debug("Create session: {}", sessionId)
+		val request = new ServletHttpRequest(req, cookies, sessionId)
 		boot.sessionMaster ! HttpInteraction(request, httpResponseOutput)
+		request
 	}
-
 	
-	context.actorSelection(context.system / "session" / sessionId.value) ! Identify(None)
+	val request = cookies.find(_.name == boot.sessionName).map(_.value) match {
+		case None => 
+			log.debug("No session in: {}", req)
+			createSession()
+		case Some(v) =>
+			log.debug("Using session in: {}", req)
+			val sessionId = SessionId(v)
+			val request = new ServletHttpRequest(req, cookies, sessionId)
+			context.actorSelection(context.system / "session" / sessionId.value) ! Identify(None)
+			request
+	}
 	
-	httpResponseOutput.future.foreach(_ match {
+	
+	httpResponseOutput.future.map(i => {
+			log.info("RES COMLETE: {}", i); 
+			i
+		}).map(_ match {
 		case hsro : HttpStringResponseOutput => 
+			log.info("hsro: {}", hsro )
 			res.setStatus(hsro.status.code)
 			hsro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
 			res.setContentType(hsro.contentType.mediaType.value)
 			hsro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
-			res.getOutputStream.println(hsro.content)
 			res.setContentLength(hsro.content.length)
+			completed()
+			res.getOutputStream.println(hsro.content)
 			res.getOutputStream.close()
 		case hpro : HttpPathResponseOutput => 
 			res.setStatus(hpro.status.code)
 			hpro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
 			res.setContentType(hpro.contentType.mediaType.value)
 			hpro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
+//			res.setContentLength(hsro.content.length)
+			completed()
 			val os = res.getOutputStream
 			val size = Files.copy(hpro.content, os)
 			res.setContentLengthLong(size)
@@ -116,6 +137,7 @@ class RequestHandler(boot: DefaultBoot, req: HttpServletRequest, res: HttpServle
 			hsro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
 			res.setContentType(hsro.contentType.mediaType.value)
 			hsro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
+			completed()
 			val buffer = new Array[Byte](1024)
 			val os = res.getOutputStream()
 			while (hsro.content.read(buffer) > -1) {
@@ -125,9 +147,13 @@ class RequestHandler(boot: DefaultBoot, req: HttpServletRequest, res: HttpServle
 		case other => 
 			log.error("Unable to handle response output: {}", other)
 			res.setStatus(Status.NotImplemented.code)
+			completed()
 			val os = res.getOutputStream()
 			os.println(s"Unable to handle response output: $other")
 			os.close()
+	}).foreach(_ => { 
+		log.debug("Handled request")
+		self ! PoisonPill
 	})
 	
 	def receive = {
@@ -289,12 +315,13 @@ trait ResponseContainer extends Actor with ActorLogging {
 				case Failure(t) =>
 					log.error(t, "Problems handling request ")
 					(boot.errorHandle orElse errorHandle)((Status.InternalServerError, Option(t))).httpResponse().onComplete {
-						case resp => 
+						case resp =>
+							log.debug("UPS: " + uuid)
 							res.complete(resp) 
 							complete()
 					}
 				case shro @ Success(hro) =>
-					log.debug("Status: " + hro.status + "; httpResponse: " + hro);
+					log.debug("Status: " + hro.status + "; httpResponse: " + hro + " --: " + uuid);
 					res.complete(shro) 
 					complete()
 			}

@@ -24,13 +24,13 @@ class LadderServer(boot: DefaultBoot) extends Loggable {
 		context.setContextPath( "/" );
 		// Set the connector
 		server.addConnector(http);
-		
-		context.setHandler( new LadderHandler(boot, ContextHandler.getCurrentContext()) )
-		// Set a handler
 		server.setHandler(context)
 		
+		context.setHandler( new LadderHandler(context, boot) )
+		// Set a handler
+		
 		server.start();
-		server.join();
+		//server.join();
 	}
 
 	def stop(): Unit = {

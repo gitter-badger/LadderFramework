@@ -32,10 +32,9 @@ class LadderServerSpec (system: ActorSystem) extends TestKit(system) with FunSpe
 	
 	def this() = this(ActorSystem("LadderServerSpecSystem"))
 
-	implicit val patience = PatienceConfig(timeout = scaled(Span(1000, Millis)))
+	implicit val patience = PatienceConfig(timeout = scaled(Span(4000, Millis)))
 	
 	describe("LadderServer")  {
-		pending
 	 	it ("should from server", LocalTest) {
 			val server = new LadderServer(new DefaultBoot{
 				def site = {
@@ -44,35 +43,40 @@ class LadderServerSpec (system: ActorSystem) extends TestKit(system) with FunSpe
 			})
 			
 			server.start("127.0.0.1", 23023)
-			
-			Thread.sleep(2500)
-			val url = new URL("http://localhost:23023/Jalla")
-			
-			val content = Future{
-				io.Source.fromURL(url, "UTF-8").getLines.mkString
-			}.futureValue
-			println("content: " + content)
-			assert(content.contains("Jeg er glad!!"))
-			server.stop()
+			try{
+				Thread.sleep(1500)
+				val url = new URL("http://localhost:23023/Jalla")
+				
+				val content = Future{
+					io.Source.fromURL(url, "UTF-8").getLines.mkString
+				}.futureValue
+				println("content: " + content)
+				assert(content.contains("Jeg er glad!!"))
+			} finally {
+				server.stop()
+			}
 		}
 		it ("should handle static file", LocalTest){
 			val server = new LadderServer(new DefaultBoot{
 				def site = {
-					case Method.GET(Path("static.html" :: Nil)) => Future.successful(HttpResourceResponse(path = List("static.html")))
+					case Method.GET(Path("static.html" :: Nil)) =>
+						Future.successful(HttpResourceResponse(path = List("static.html")))
 				}
 			})
 			
 			server.start("127.0.0.1", 23024)
-			
-			Thread.sleep(2500)
-			val url = new URL("http://localhost:23024/static.html")
-			
-			val content = Future{
-				io.Source.fromURL(url, "UTF-8").getLines.mkString
-			}.futureValue
-			println("content: " + content)
-			assert(content.contains("static"))
-			server.stop()
+			try{
+				Thread.sleep(2500)
+				val url = new URL("http://localhost:23024/static.html")
+				
+				val content = Future{
+					io.Source.fromURL(url, "UTF-8").getLines.mkString
+				}.futureValue
+				println("content: " + content)
+				assert(content.contains("static"))
+			} finally {
+				server.stop()
+			}
 		}
 		
 		it ("should handle form"){
@@ -83,16 +87,18 @@ class LadderServerSpec (system: ActorSystem) extends TestKit(system) with FunSpe
 			})
 			
 			server.start("127.0.0.1", 23025)
-			
-			Thread.sleep(2500)
-			val url = new URL("http://localhost:23025/form")
-			Thread.sleep(25000)
-			val content = Future{
-				io.Source.fromURL(url, "UTF-8").getLines.mkString
-			}.futureValue
-			println("content: " + content)
-			assert(content.contains("static"))
-			server.stop()
+			try{
+				Thread.sleep(1900)
+				val url = new URL("http://localhost:23025/form")
+				Thread.sleep(2500)
+				val content = Future{
+					io.Source.fromURL(url, "UTF-8").getLines.mkString
+				}.futureValue
+				println("content: " + content)
+				assert(content.contains("<title>ajax input</title>"))
+			} finally {
+				server.stop()
+			}
 		}
 	}
 
