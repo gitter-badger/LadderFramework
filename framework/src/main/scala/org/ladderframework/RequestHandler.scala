@@ -143,7 +143,8 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 			while (hsro.content.read(buffer) > -1) {
 				os.write(buffer)				  
 			}
-			res.getOutputStream.close()
+			hsro.content.close()
+			os.close()
 		case other => 
 			log.error("Unable to handle response output: {}", other)
 			res.setStatus(Status.NotImplemented.code)

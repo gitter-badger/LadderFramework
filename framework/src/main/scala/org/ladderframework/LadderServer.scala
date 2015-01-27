@@ -9,26 +9,28 @@ import akka.util.Timeout.durationToTimeout
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.ServerConnector
 import org.eclipse.jetty.server.handler.ContextHandler
+import org.eclipse.jetty.server.handler.ResourceHandler
+import org.eclipse.jetty.server.handler.HandlerList
 
 class LadderServer(boot: DefaultBoot) extends Loggable {
 
 	val server = new Server();
 
 	def start(interface: String, port: Int): Unit = {
+		// Set the connector
 		val http = new ServerConnector(server);
 		http.setHost(interface);
 		http.setPort(port);
 		http.setIdleTimeout(30000);
+		server.addConnector(http);
 
+		// Set a handler
 		val context = new ContextHandler();
 		context.setContextPath( "/" );
-		// Set the connector
-		server.addConnector(http);
+		context.setResourceBase(".")
+		context.setHandler( new LadderHandler(context, boot))
+
 		server.setHandler(context)
-		
-		context.setHandler( new LadderHandler(context, boot) )
-		// Set a handler
-		
 		server.start();
 		//server.join();
 	}
