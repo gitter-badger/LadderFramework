@@ -118,26 +118,25 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 			res.setContentType(hsro.contentType.mediaType.value)
 			hsro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
 			res.setContentLength(hsro.content.length)
-			completed()
 			res.getOutputStream.println(hsro.content)
 			res.getOutputStream.close()
+			completed()
 		case hpro : HttpPathResponseOutput => 
 			res.setStatus(hpro.status.code)
 			hpro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
 			res.setContentType(hpro.contentType.mediaType.value)
 			hpro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
 //			res.setContentLength(hsro.content.length)
-			completed()
 			val os = res.getOutputStream
 			val size = Files.copy(hpro.content, os)
 			res.setContentLengthLong(size)
 			os.close()
+			completed()
 		case hsro : HttpStreamResponseOutput =>
 			res.setStatus(hsro.status.code)
 			hsro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
 			res.setContentType(hsro.contentType.mediaType.value)
 			hsro.contentType.charset.map(_.name).foreach(res.setCharacterEncoding)
-			completed()
 			val bufferSize = if(res.getBufferSize > 0) res.getBufferSize else 1024
 			log.debug("Stream.bufferSize: {}", bufferSize)
 			var buffer = new Array[Byte](bufferSize)
@@ -145,13 +144,14 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 			Iterator.continually(hsro.content.read(buffer)).takeWhile (_ > 0).foreach (read => os.write(buffer,0,read))
 			hsro.content.close()
 			os.close()
+			completed()
 		case other => 
 			log.error("Unable to handle response output: {}", other)
 			res.setStatus(Status.NotImplemented.code)
-			completed()
 			val os = res.getOutputStream()
 			os.println(s"Unable to handle response output: $other")
 			os.close()
+			completed()
 	}).foreach(_ => { 
 		log.debug("Handled request")
 		self ! PoisonPill

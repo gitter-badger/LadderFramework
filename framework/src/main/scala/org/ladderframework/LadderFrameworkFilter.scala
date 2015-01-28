@@ -72,7 +72,12 @@ class LadderHandler(contextHandler: ContextHandler, boot: DefaultBoot) extends A
 					warn("wrong httpServletResponse")
 					httpServletResponse
 		}
-		system.actorOf(RequestHandler.create(boot, () => baseRequest.setHandled(true), httpServletRequest, asyncResponse))
+		system.actorOf(RequestHandler.create(boot, () => {
+				baseRequest.setHandled(true)
+				asyncContext.complete()
+			}, 
+			httpServletRequest, 
+			asyncResponse))
 	}
 
 	override def destroy() = {
