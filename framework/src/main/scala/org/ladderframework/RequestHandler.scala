@@ -140,11 +140,9 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 			completed()
 			val bufferSize = if(res.getBufferSize > 0) res.getBufferSize else 1024
 			log.debug("Stream.bufferSize: {}", bufferSize)
-			val buffer = new Array[Byte](bufferSize)
+			var buffer = new Array[Byte](bufferSize)
 			val os = res.getOutputStream()
-			while (hsro.content.read(buffer) > -1) {
-				os.write(buffer)				  
-			}
+			Iterator.continually(hsro.content.read(buffer)).takeWhile (_ > 0).foreach (read => os.write(buffer,0,read))
 			hsro.content.close()
 			os.close()
 		case other => 
