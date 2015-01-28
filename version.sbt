@@ -1,2 +1,2 @@
 
-version in ThisBuild := "0.1.31-jetty"
+version in ThisBuild := "0.1.32-jetty-snapshot"
