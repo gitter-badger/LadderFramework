@@ -1,0 +1,18 @@
+<svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
+ <!-- Created with SVG-edit - http://svg-edit.googlecode.com/ -->
+ <g>
+  <title>Layer 1</title>
+  <path id="background" d="M 0 0 H 300 V 300 H 0 Z" fill="#41bb19" />
+  <path id="34circle" d="
+  	M 25 150 
+  	H 90
+  	L 115 40
+  	L 150 260
+  	L 180 105
+  	L 200 200
+  	L 215 150
+  	H 265
+  " stroke-width="16" stroke="#ffffff" fill="none"/>
+	<circle cx="268" cy="150" r="16" fill="#FFFFFF" />  
+ </g>
+</svg>

@@ -136,9 +136,11 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 			res.setStatus(hsro.status.code)
 			hsro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
 			res.setContentType(hsro.contentType.mediaType.value)
-			hsro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
+			hsro.contentType.charset.map(_.name).foreach(res.setCharacterEncoding)
 			completed()
-			val buffer = new Array[Byte](1024)
+			val bufferSize = if(res.getBufferSize > 0) res.getBufferSize else 1024
+			log.debug("Stream.bufferSize: {}", bufferSize)
+			val buffer = new Array[Byte](bufferSize)
 			val os = res.getOutputStream()
 			while (hsro.content.read(buffer) > -1) {
 				os.write(buffer)				  
