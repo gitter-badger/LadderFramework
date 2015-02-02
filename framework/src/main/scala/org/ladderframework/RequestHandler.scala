@@ -89,12 +89,12 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 	def createServletHttpRequestWithNewSession(): ServletHttpRequest = {
 		val sessionId = SessionId(Utils.secureRandom)
 		log.debug("Create session: {}", sessionId)
-		val request = new ServletHttpRequest(req, cookies, sessionId)
+		request = new ServletHttpRequest(req, cookies, sessionId)
 		boot.sessionMaster ! HttpInteraction(request, httpResponseOutput)
 		request
 	}
 	
-	val request = cookies.find(_.name == boot.sessionName).map(_.value) match {
+	var request = cookies.find(_.name == boot.sessionName).map(_.value) match {
 		case None => 
 			log.debug("No session in: {}", req)
 			createServletHttpRequestWithNewSession()
