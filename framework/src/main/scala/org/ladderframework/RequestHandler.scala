@@ -86,7 +86,7 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 	
 	//var sessionId: SessionId = 
 	val cookies = Option(req.getCookies()).map(_.toList).getOrElse(Nil).map(c => Cookie(c))
-	def createSession(): ServletHttpRequest = {
+	def createServletHttpRequestWithNewSession(): ServletHttpRequest = {
 		val sessionId = SessionId(Utils.secureRandom)
 		log.debug("Create session: {}", sessionId)
 		val request = new ServletHttpRequest(req, cookies, sessionId)
@@ -97,12 +97,12 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 	val request = cookies.find(_.name == boot.sessionName).map(_.value) match {
 		case None => 
 			log.debug("No session in: {}", req)
-			createSession()
+			createServletHttpRequestWithNewSession()
 		case Some(v) =>
-			log.debug("Using session in: {}", req)
 			val sessionId = SessionId(v)
+			log.debug("Using session in: {} - with id: {}", req, sessionId)
 			val request = new ServletHttpRequest(req, cookies, sessionId)
-			context.actorSelection(context.system / "session" / sessionId.value) ! Identify(None)
+			context.actorSelection(context.system / "user" / "session" / sessionId.value) ! Identify(None)
 			request
 	}
 	
@@ -163,7 +163,7 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 	  	actorRef ! HttpInteraction(request, httpResponseOutput)
 	  case ActorIdentity(_, None) => // not alive
 	  	log.debug("ActorIdentity: None")
-	  	createSession()
+	  	createServletHttpRequestWithNewSession()
 	}
 	
 }
@@ -176,10 +176,14 @@ class SessionActor(sessionID: SessionId, boot: DefaultBoot) extends Actor with A
 	import boot.executionContext
 	def receive = {
 		case hi: HttpInteraction =>
+			log.debug("Incomping: {}", hi)
 			// If request to existing find actor. Find and send
 			hi.req.path match {
 				case ("ajax" | "post" | "pull") :: id :: _ => //Match mer
-					context.actorSelection(id) ! hi
+					context.child(id) match {
+						case None => log.info("posthandler not found: {}", hi)
+						case Some(c) => c ! hi  
+					} 
 				case _ if hi.req.parameters.headOption.flatMap(_._2.headOption).exists(_ == "redirect") =>
 					log.debug("redirect")
 					context.children.map(_.path).foreach(p => log.debug(p.toString))
@@ -188,17 +192,17 @@ class SessionActor(sessionID: SessionId, boot: DefaultBoot) extends Actor with A
 							log.debug("redirect:id = " + id)
 							log.debug("child: " + context.child(id))
 							context.child(id).getOrElse {
-								val uuid: String = UUID.randomUUID.toString
+								val uuid: String = Utils.uuid
 								context.actorOf(InitalResponseContainer.props(self, hi.req, uuid, boot), name = uuid)
 							} ! RenderInital(hi.res)
 						case _ =>
-							val uuid: String = UUID.randomUUID.toString
+							val uuid: String = Utils.uuid
 							val resonseContainerRef = context.actorOf(InitalResponseContainer.props(context.self, hi.req, uuid, boot), name = uuid)
 							resonseContainerRef ! RenderInital(hi.res)
 					}
 
 				case _ =>
-					val uuid: String = UUID.randomUUID.toString
+					val uuid: String = Utils.uuid
 					val resonseContainerRef = context.actorOf(InitalResponseContainer.props(context.self, hi.req, uuid, boot), name = uuid)
 					resonseContainerRef ! RenderInital(hi.res)
 			}
