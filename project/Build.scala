@@ -70,7 +70,7 @@ object Dependency {
 	// Compile
 	lazy val jetty = "org.eclipse.jetty" % "jetty-webapp" % "9.2.7.v20150116" % "test"
 
-	lazy val jettyContinuation = "org.eclipse.jetty" % "jetty-continuation" % "9.2.7.v20150116" % "test"
+	lazy val jettyContinuation = "org.eclipse.jetty" % "jetty-continuation" % "9.2.7.v20150116"
 
 	lazy val servletApi = "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided"
 
