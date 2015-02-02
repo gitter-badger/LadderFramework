@@ -19,8 +19,8 @@ import scala.util.parsing.input.StreamReader
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import scala.collection.mutable.ArrayBuffer
-import scala.actors.threadpool.AtomicInteger
 import org.eclipse.jetty.server.handler.AsyncDelayHandler
+import java.util.concurrent.atomic.AtomicInteger
 
 class JettyServerSpec extends FunSpec with BeforeAndAfterAll with ScalaFutures{
 	
