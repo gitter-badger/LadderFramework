@@ -20,6 +20,8 @@ import akka.actor.PoisonPill
 import akka.testkit.TestKit
 import Status._
 import javax.servlet.http.Part
+import java.nio.file.Path
+import java.nio.file.Files
 
 class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike with GivenWhenThen with BeforeAndAfterAll with ScalaFutures{
 
@@ -155,7 +157,7 @@ class ServiceSpec(system: ActorSystem) extends TestKit(system) with WordSpecLike
 			"serve valid requests" in {
 				val httpServletResponse = call(httpRequest(GET, sessionID, "resources" :: "static.html" :: Nil))
 				whenReady(httpServletResponse)(httpServletResponse => {
-					assert(io.Source.fromInputStream(httpServletResponse.content.asInstanceOf[InputStream], "UTF-8").mkString === "static")
+					assert(io.Source.fromInputStream(Files.newInputStream(httpServletResponse.content.asInstanceOf[Path]), "UTF-8").mkString === "static")
 					assert(httpServletResponse.status === OK)
 					assert(httpServletResponse.contentType === ContentType.`text/html`)
 				})
