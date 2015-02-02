@@ -23,66 +23,51 @@ import javax.servlet.ServletContext
 import scala.concurrent.Promise
 import org.eclipse.jetty.server.Request
 import org.eclipse.jetty.server.handler.ContextHandler
+import org.eclipse.jetty.continuation.ContinuationSupport
 
 class LadderHandler(contextHandler: ContextHandler, boot: DefaultBoot) extends AbstractHandler with Loggable {
 
 	import boot.system
-	
-  // create the result listener, which will print the result and shutdown the system
 
-  var initialized = false
-	lazy val asyncListener = new AsyncListener{
-		def onStartAsync(evt: AsyncEvent) = { debug("startAsync: " + evt.getSuppliedRequest().asInstanceOf[HttpServletRequest].getRequestURI())}
-		def onError(evt: AsyncEvent) = {
-			warn("Error" + evt.getSuppliedRequest().asInstanceOf[HttpServletRequest].getRequestURI())
-			evt.getAsyncContext().complete()
-			evt.getAsyncContext.getResponse.getWriter.close()
-			evt.getSuppliedResponse.getWriter.close()
-		}
-		def onTimeout(evt: AsyncEvent) = {
-			debug("timeout: " + evt.getSuppliedRequest.asInstanceOf[HttpServletRequest].getRequestURI())
-			evt.getAsyncContext().complete()
-			evt.getAsyncContext.getResponse.getWriter.close()
-			evt.getSuppliedResponse.getWriter.close()
-		}
-		def onComplete(evt: AsyncEvent) = {debug("complete: " + evt.getSuppliedRequest().asInstanceOf[HttpServletRequest].getRequestURI())}
+	// create the result listener, which will print the result and shutdown the system
+
+	var initialized = false
+	def sendMyTimeoutResponse(response: HttpServletResponse): Unit = {
+		response.setStatus(Status.RequestTimeOut.code)
+		val os = response.getOutputStream
+		os.println("The request timed out")
+		os.close()
 	}
 
 	override def handle(target: String,
-							baseRequest: Request,
-              httpServletRequest: HttpServletRequest ,
-              httpServletResponse: HttpServletResponse ): Unit = {
+			baseRequest: Request,
+			httpServletRequest: HttpServletRequest,
+			httpServletResponse: HttpServletResponse): Unit = {
 		debug("New request to: " + httpServletRequest.getPathInfo())
-		
-		if(!initialized){
+
+		if (!initialized) {
 			boot.mimeTypeImpl = contextHandler.getMimeTypes.getMimeMap.get
-//			def getResource(s: String) = if(s.startsWith("/")) contextHandler.getResource(s) else contextHandler.getResource("/" + s)
-//			boot.resourceAsStreamImpl = s => getResource(s).getInputStream
-//			boot.resourceImpl = (s:String) => getResource(s).getURL
+			//			def getResource(s: String) = if(s.startsWith("/")) contextHandler.getResource(s) else contextHandler.getResource("/" + s)
+			//			boot.resourceAsStreamImpl = s => getResource(s).getInputStream
+			//			boot.resourceImpl = (s:String) => getResource(s).getURL
 			boot.contextPathImpl = contextHandler.getContextPath()
 			debug(s"boot.contextPathImpl: ${boot.contextPathImpl}")
 			initialized = true;
 		}
-		
-		val asyncContext = httpServletRequest.startAsync
-		asyncContext.addListener(asyncListener)
-		val asyncResponse = asyncContext.getResponse match {
-				case http:HttpServletResponse => http
-				case _ => 
-					warn("wrong httpServletResponse")
-					httpServletResponse
+
+		val continuation = ContinuationSupport.getContinuation(httpServletRequest)
+		if (continuation.isExpired()) {
+			sendMyTimeoutResponse(httpServletResponse)
+		} else {
+			continuation.suspend(httpServletResponse); // response may be wrapped.
+			system.actorOf(RequestHandler.create(boot, () => continuation.complete(), httpServletRequest, httpServletResponse))
 		}
-		system.actorOf(RequestHandler.create(boot, () => {
-				baseRequest.setHandled(true)
-				asyncContext.complete()
-			}, 
-			httpServletRequest, 
-			httpServletResponse))
+
 	}
 
 	override def destroy() = {
 		boot.onShutdown()
 		system.shutdown()
 	}
-	
+
 }

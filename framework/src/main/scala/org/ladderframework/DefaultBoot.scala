@@ -9,6 +9,7 @@ import akka.actor.ActorSystem
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import akka.actor.PoisonPill
+import java.util.concurrent.Executors
 
 trait DefaultBoot {
 	
@@ -18,7 +19,8 @@ trait DefaultBoot {
 	val system = ActorSystem("WebSystem", akkaConfig)
 	
 	private[ladderframework] lazy val sessionMaster = system.actorOf(SessionMaster.props(this), "session")
-	implicit lazy val executionContext = ExecutionContext.Implicits.global 
+	lazy val executorService = Executors.newFixedThreadPool(10)
+	implicit lazy val executionContext = ExecutionContext.fromExecutorService(executorService)
 	
 	def site:PartialFunction[HttpRequest, Future[HttpResponse]]
 	

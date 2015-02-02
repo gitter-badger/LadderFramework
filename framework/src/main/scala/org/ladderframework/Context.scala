@@ -42,8 +42,8 @@ case class Context(
 		val contextID: String, 
 		addResponse: (List[String], HttpResponse) => String, 
 		update: JsCmd => Try[Unit],
-		boot: DefaultBoot)(implicit ec: ExecutionContext) extends Loggable {
-	
+		boot: DefaultBoot) extends Loggable {
+	import boot.executionContext
 	type Params = HttpRequest
 	
 	import Context._

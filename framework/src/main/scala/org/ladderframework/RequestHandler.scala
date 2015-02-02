@@ -2,7 +2,6 @@ package org.ladderframework
 
 import java.util.UUID
 import scala.collection.immutable
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.duration._
@@ -82,6 +81,7 @@ object RequestHandler{
 }
 
 class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletRequest, res: HttpServletResponse) extends Actor with ActorLogging{
+	import boot.executionContext
 	val httpResponseOutput = Promise[HttpResponseOutput]()
 	
 	//var sessionId: SessionId = 
@@ -173,6 +173,7 @@ object SessionActor {
 }
 
 class SessionActor(sessionID: SessionId, boot: DefaultBoot) extends Actor with ActorLogging {
+	import boot.executionContext
 	def receive = {
 		case hi: HttpInteraction =>
 			// If request to existing find actor. Find and send
@@ -232,7 +233,7 @@ class InitalResponseContainer(
 		val initalRequest: HttpRequest,
 		val uuid: String,
 		val boot: DefaultBoot) extends ResponseContainer {
-
+	import boot.executionContext
 	val httpResponse: Promise[HttpResponse] = Promise().completeWith((Future(boot.site).map(_ orElse notFound)).flatMap(_.apply(initalRequest)))
 
 }
@@ -252,6 +253,7 @@ trait ResponseContainer extends Actor with ActorLogging {
 	var isTerminated = false
 
 	private def updateLastAccess() = {
+		implicit val ex = boot.executionContext
 		log.debug("updateLastAccess from " + lastAccess )
 		context.system.scheduler.scheduleOnce(boot.timeToLivePage millis, self, Tick)
 		lastAccess = System.currentTimeMillis
@@ -301,6 +303,7 @@ trait ResponseContainer extends Actor with ActorLogging {
 				self ! PoisonPill
 			}
 		case RenderInital(res) =>
+			implicit val ec = boot.executionContext
 			log.debug("RenderInital")
 			updateLastAccess()
 
@@ -342,6 +345,7 @@ trait ResponseContainer extends Actor with ActorLogging {
 			context.actorOf(PullActor(res, boot)) ! messages
 
 		case HttpInteraction(req, res) =>
+			implicit val ex = boot.executionContext
 			updateLastAccess()
 			val response: Future[HttpResponse] = try{
 				(statefulContext.submitCallback orElse
@@ -401,7 +405,7 @@ object PullActor {
 }
 
 class PullActor(res: Promise[HttpResponseOutput], boot: DefaultBoot) extends Actor with ActorLogging {
-
+	import boot.executionContext
 	object TimeToClose
 
 	context.system.scheduler.scheduleOnce(24000 millis, self, TimeToClose)
@@ -437,12 +441,12 @@ class PullActor(res: Promise[HttpResponseOutput], boot: DefaultBoot) extends Act
 }
 
 object WsActor{
-	def props: Props = Props[WsActor]()
+	def props(boot: DefaultBoot): Props = Props(new WsActor(boot))
 	case object Ping
 }
 
-class WsActor() extends Actor with ActorLogging {
-	
+class WsActor(boot: DefaultBoot) extends Actor with ActorLogging {
+	implicit val ex = boot.executionContext
 	def receive = {
 		case InitWsConnection(wsSession, httpSessionId) => 
 			context.become(connected(wsSession, httpSessionId))
