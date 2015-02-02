@@ -47,7 +47,8 @@ case class HttpStreamResponseOutput(
 	contentType: ContentType,
 	headers: Seq[HeaderValue] = Nil,
 	cookies: Seq[Cookie] = Nil,
-	content: InputStream
+	content: InputStream,
+	size: Int
 ) extends HttpResponseOutput{
 	type C = InputStream
 	override def :+(c: Cookie) = copy(cookies = cookies :+ c)

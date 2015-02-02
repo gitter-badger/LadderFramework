@@ -118,7 +118,7 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 			res.setContentType(hsro.contentType.mediaType.value)
 			hsro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
 			res.setContentLength(hsro.content.length)
-			res.getOutputStream.println(hsro.content)
+			res.getOutputStream.print(hsro.content)
 			res.getOutputStream.close()
 			completed()
 		case hpro : HttpPathResponseOutput => 
@@ -126,10 +126,9 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 			hpro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
 			res.setContentType(hpro.contentType.mediaType.value)
 			hpro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
-//			res.setContentLength(hsro.content.length)
+			res.setContentLengthLong(Files.size(hpro.content))
 			val os = res.getOutputStream
 			val size = Files.copy(hpro.content, os)
-			res.setContentLengthLong(size)
 			os.close()
 			completed()
 		case hsro : HttpStreamResponseOutput =>
@@ -137,11 +136,12 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 			hsro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
 			res.setContentType(hsro.contentType.mediaType.value)
 			hsro.contentType.charset.map(_.name).foreach(res.setCharacterEncoding)
+			res.setContentLength(hsro.size)
 			val bufferSize = if(res.getBufferSize > 0) res.getBufferSize else 1024
 			log.debug("Stream.bufferSize: {}", bufferSize)
 			var buffer = new Array[Byte](bufferSize)
 			val os = res.getOutputStream()
-			Iterator.continually(hsro.content.read(buffer)).takeWhile (_ > 0).foreach (read => os.write(buffer,0,read))
+			val len = Iterator.continually(hsro.content.read(buffer)).takeWhile (_ > 0).map(read => {os.write(buffer,0,read); read}).sum			
 			hsro.content.close()
 			os.close()
 			completed()

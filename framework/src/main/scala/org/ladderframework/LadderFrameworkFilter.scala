@@ -52,7 +52,7 @@ class LadderHandler(contextHandler: ContextHandler, boot: DefaultBoot) extends A
 							baseRequest: Request,
               httpServletRequest: HttpServletRequest ,
               httpServletResponse: HttpServletResponse ): Unit = {
-		debug("New request to: " + httpServletRequest.getServletPath())
+		debug("New request to: " + httpServletRequest.getPathInfo())
 		
 		if(!initialized){
 			boot.mimeTypeImpl = contextHandler.getMimeTypes.getMimeMap.get
@@ -77,7 +77,7 @@ class LadderHandler(contextHandler: ContextHandler, boot: DefaultBoot) extends A
 				asyncContext.complete()
 			}, 
 			httpServletRequest, 
-			asyncResponse))
+			httpServletResponse))
 	}
 
 	override def destroy() = {

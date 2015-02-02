@@ -22,6 +22,7 @@ class LadderServer(boot: DefaultBoot) extends Loggable {
 		http.setHost(interface);
 		http.setPort(port);
 		http.setIdleTimeout(30000);
+		http.setSoLingerTime(-1)
 		server.addConnector(http);
 
 		// Set a handler

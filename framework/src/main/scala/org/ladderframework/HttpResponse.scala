@@ -16,6 +16,7 @@ import org.ladderframework.logging.Loggable
 import Header.ContentLength
 import Header.Location
 import java.nio.charset.Charset
+import java.nio.file.Paths
 
 trait HttpResponse {
 	def status: Status
@@ -73,12 +74,12 @@ case class HttpResourceResponse(status: Status = Status.OK, path: List[String]) 
 		debug("HttpResourceResponse - print: " + file)
 		if (file != null) {
 			Future.successful(
-				HttpStreamResponseOutput(
+				HttpPathResponseOutput(
 					status = status,
 					contentType = ContentType(MediaType(path.reverse.headOption.map(context.boot.mimeType).getOrElse("")), Some(Charset.forName("UTF-8"))),
 					headers = Nil,
 					cookies = Nil,
-					content = context.boot.resourceAsStream(pathString)
+					content = Paths.get(context.boot.resource(pathString).toURI())
 				)
 			)
 		} else {
