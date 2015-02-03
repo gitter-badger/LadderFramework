@@ -8,7 +8,7 @@
 //import javax.servlet.ServletRequest
 //import javax.servlet.ServletResponse
 //import org.ladderframework.AsyncRequestHandler
-//import org.ladderframework.Status
+//import org.ladderframework.NotImplemented
 //
 //class AsyncRequestHandlerMock(httpResponseOutput: HttpResponseOutputMock, countDown:Int = 1) extends AsyncRequestHandler {
 //
@@ -18,20 +18,20 @@
 //	var errorListeners:List[() => Unit] = Nil
 //	var timeoutListeners:List[() => Unit] = Nil
 //	
-//	def sendTimeout() = {
+//	def sendTimeout(){
 //		timeoutListeners.foreach(_.apply())
 //	}
 //	
-//	def sendError() = {
+//	def sendError(){
 //		errorListeners.foreach(_.apply())
 //	}
 //	
-//	def addListeners(onComplete: () => Unit, onError: () => Unit, onStart: () => Unit, onTimeout: () => Unit) = {
+//	def addListeners(onComplete: () => Unit, onError: () => Unit, onStart: () => Unit, onTimeout: () => Unit){
 //		errorListeners = onError :: errorListeners
 //		timeoutListeners = onTimeout :: timeoutListeners
 //	}
-//	def complete() = {
-//		if(httpResponseOutput.status == Status.NotImplemented) throw new IllegalStateException("status not set")
+//	def complete() {
+//		if(httpResponseOutput.status == NotImplemented) throw new IllegalStateException("status not set")
 //		latch.countDown()
 //	}
 //	

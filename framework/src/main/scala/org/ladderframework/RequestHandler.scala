@@ -81,20 +81,23 @@ object RequestHandler{
 }
 
 class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletRequest, res: HttpServletResponse) extends Actor with ActorLogging{
+	log.debug("new Request: {} => {}", req, res)
 	import boot.executionContext
 	val httpResponseOutput = Promise[HttpResponseOutput]()
 	
 	//var sessionId: SessionId = 
-	val cookies = Option(req.getCookies()).map(_.toList).getOrElse(Nil).map(c => Cookie(c))
-	def createServletHttpRequestWithNewSession(): ServletHttpRequest = {
+	val cookies = Option(req.getCookies()).map(_.toList).getOrElse(Nil).map(c => {
+		log.debug("cookie: {} -> {}", c.getName, c.getValue)
+		Cookie(c)
+	})
+	def createServletHttpRequestWithNewSession(): Unit = {
 		val sessionId = SessionId(Utils.secureRandom)
 		log.debug("Create session: {}", sessionId)
-		request = new ServletHttpRequest(req, cookies, sessionId)
+		handleResponse(sessionId)
+		val request = new ServletHttpRequest(req, cookies, sessionId)
 		boot.sessionMaster ! HttpInteraction(request, httpResponseOutput)
-		request
 	}
-	
-	var request = cookies.find(_.name == boot.sessionName).map(_.value) match {
+	cookies.find(_.name == boot.sessionName).map(_.value) match {
 		case None => 
 			log.debug("No session in: {}", req)
 			createServletHttpRequestWithNewSession()
@@ -102,8 +105,8 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 			val sessionId = SessionId(v)
 			log.debug("Using session in: {} - with id: {}", req, sessionId)
 			val request = new ServletHttpRequest(req, cookies, sessionId)
-			context.actorSelection(context.system / "user" / "session" / sessionId.value) ! Identify(None)
-			request
+			val sel = context.actorSelection(context.system / "session" / sessionId.value) 
+			sel ! Identify(request)
 	}
 	
 	implicit def cookie2jCookie(cookie: Cookie): javax.servlet.http.Cookie = {
@@ -116,65 +119,69 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 		c
 	}
 	
-	httpResponseOutput.future.map(i => {
-			log.info("RES COMLETE: {}", i); 
-			i
-		}).map(_ match {
-		case hsro : HttpStringResponseOutput => 
-			log.info("hsro: {}", hsro )
-			res.setStatus(hsro.status.code)
-			hsro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
-			res.setContentType(hsro.contentType.mediaType.value)
-			hsro.cookies.foreach(res.addCookie(_))
-			res.addCookie(Cookie(boot.sessionName, request.sessionId.value, maxAge = Option(-1)))
-			hsro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
-			res.setContentLength(hsro.content.length)
-			res.getOutputStream.print(hsro.content)
-			res.getOutputStream.close()
-			completed()
-		case hpro : HttpPathResponseOutput => 
-			res.setStatus(hpro.status.code)
-			hpro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
-			res.setContentType(hpro.contentType.mediaType.value)
-			hpro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
-			hpro.cookies.foreach(res.addCookie(_))
-			res.addCookie(Cookie(boot.sessionName, request.sessionId.value, maxAge = Option(-1)))
-			res.setContentLengthLong(Files.size(hpro.content))
-			val os = res.getOutputStream
-			val size = Files.copy(hpro.content, os)
-			os.close()
-			completed()
-		case hsro : HttpStreamResponseOutput =>
-			res.setStatus(hsro.status.code)
-			hsro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
-			res.setContentType(hsro.contentType.mediaType.value)
-			hsro.contentType.charset.map(_.name).foreach(res.setCharacterEncoding)
-			hsro.cookies.foreach(res.addCookie(_))
-			res.addCookie(Cookie(boot.sessionName, request.sessionId.value, maxAge = Option(-1)))
-			res.setContentLength(hsro.size)
-			val bufferSize = if(res.getBufferSize > 0) res.getBufferSize else 1024
-			log.debug("Stream.bufferSize: {}", bufferSize)
-			var buffer = new Array[Byte](bufferSize)
-			val os = res.getOutputStream()
-			val len = Iterator.continually(hsro.content.read(buffer)).takeWhile (_ > 0).map(read => {os.write(buffer,0,read); read}).sum			
-			hsro.content.close()
-			os.close()
-			completed()
-		case other => 
-			log.error("Unable to handle response output: {}", other)
-			res.setStatus(Status.NotImplemented.code)
-			val os = res.getOutputStream()
-			os.println(s"Unable to handle response output: $other")
-			os.close()
-			completed()
-	}).foreach(_ => { 
-		log.debug("Handled request")
-		self ! PoisonPill
-	})
+	def handleResponse(sessionId: SessionId): Unit = {
+	
+		httpResponseOutput.future.map(i => {
+				log.info("RES COMLETE: {}", i); 
+				i
+			}).map(_ match {
+			case hsro : HttpStringResponseOutput => 
+				log.info("hsro: {}", hsro )
+				res.setStatus(hsro.status.code)
+				hsro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
+				res.setContentType(hsro.contentType.mediaType.value)
+				hsro.cookies.foreach(res.addCookie(_))
+				res.addCookie(Cookie(boot.sessionName, sessionId.value, maxAge = Option(-1)))
+				hsro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
+				res.setContentLength(hsro.content.length)
+				res.getOutputStream.print(hsro.content)
+				res.getOutputStream.close()
+				completed()
+			case hpro : HttpPathResponseOutput => 
+				res.setStatus(hpro.status.code)
+				hpro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
+				res.setContentType(hpro.contentType.mediaType.value)
+				hpro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
+				hpro.cookies.foreach(res.addCookie(_))
+				res.addCookie(Cookie(boot.sessionName, sessionId.value, maxAge = Option(-1)))
+				res.setContentLengthLong(Files.size(hpro.content))
+				val os = res.getOutputStream
+				val size = Files.copy(hpro.content, os)
+				os.close()
+				completed()
+			case hsro : HttpStreamResponseOutput =>
+				res.setStatus(hsro.status.code)
+				hsro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
+				res.setContentType(hsro.contentType.mediaType.value)
+				hsro.contentType.charset.map(_.name).foreach(res.setCharacterEncoding)
+				hsro.cookies.foreach(res.addCookie(_))
+				res.addCookie(Cookie(boot.sessionName, sessionId.value, maxAge = Option(-1)))
+				res.setContentLength(hsro.size)
+				val bufferSize = if(res.getBufferSize > 0) res.getBufferSize else 1024
+				log.debug("Stream.bufferSize: {}", bufferSize)
+				var buffer = new Array[Byte](bufferSize)
+				val os = res.getOutputStream()
+				val len = Iterator.continually(hsro.content.read(buffer)).takeWhile (_ > 0).map(read => {os.write(buffer,0,read); read}).sum			
+				hsro.content.close()
+				os.close()
+				completed()
+			case other => 
+				log.error("Unable to handle response output: {}", other)
+				res.setStatus(Status.NotImplemented.code)
+				val os = res.getOutputStream()
+				os.println(s"Unable to handle response output: $other")
+				os.close()
+				completed()
+		}).foreach(_ => { 
+			log.debug("Handled request")
+			self ! PoisonPill
+		})
+	}
 	
 	def receive = {
-	  case ActorIdentity(_, Some(actorRef)) =>
+	  case ActorIdentity(request: ServletHttpRequest, Some(actorRef)) =>
 	  	log.debug("ActorIdentity: {}", actorRef)
+	  	handleResponse(request.sessionId)
 	  	actorRef ! HttpInteraction(request, httpResponseOutput)
 	  case ActorIdentity(_, None) => // not alive
 	  	log.debug("ActorIdentity: None")
@@ -376,12 +383,12 @@ trait ResponseContainer extends Actor with ActorLogging {
 			}
 			response.onComplete {
 				case Success(http) =>
-					log.debug("completing - success, http: " + http)
+					log.debug("completing - success, http: {}", http)
 					val resp = http.httpResponse()
 					resp.onComplete {
 						case Success(hro) =>
 							res.complete(Success(hro))
-							log.debug("completed - success, status: " + hro.status)
+							log.debug("completed - success, status: {}", hro.status)
 						case Failure(throwable) =>
 							log.error(throwable, "problem completing")
 					}
