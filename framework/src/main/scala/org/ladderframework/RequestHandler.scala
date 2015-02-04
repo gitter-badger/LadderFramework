@@ -120,7 +120,9 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 	}
 	
 	def handleResponse(sessionId: SessionId): Unit = {
-	
+		def addSession(): Unit = {
+			res.addCookie(Cookie(boot.sessionName, sessionId.value, maxAge = Option(30 * 60 * 1000), path = Option("/"), httpOnly = true))
+		}
 		httpResponseOutput.future.map(i => {
 				log.info("RES COMLETE: {}", i); 
 				i
@@ -131,7 +133,7 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 				hsro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
 				res.setContentType(hsro.contentType.mediaType.value)
 				hsro.cookies.filterNot(_.name == boot.sessionName).foreach(res.addCookie(_))
-				res.addCookie(Cookie(boot.sessionName, sessionId.value, maxAge = Option(-1)))
+				addSession()
 				hsro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
 				res.setContentLength(hsro.content.length)
 				res.getOutputStream.print(hsro.content)
@@ -143,7 +145,7 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 				res.setContentType(hpro.contentType.mediaType.value)
 				hpro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
 				hpro.cookies.filterNot(_.name == boot.sessionName).foreach(res.addCookie(_))
-				res.addCookie(Cookie(boot.sessionName, sessionId.value, maxAge = Option(-1)))
+				addSession()
 				res.setContentLengthLong(Files.size(hpro.content))
 				val os = res.getOutputStream
 				val size = Files.copy(hpro.content, os)
@@ -155,7 +157,7 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 				res.setContentType(hsro.contentType.mediaType.value)
 				hsro.contentType.charset.map(_.name).foreach(res.setCharacterEncoding)
 				hsro.cookies.filterNot(_.name == boot.sessionName).foreach(res.addCookie(_))
-				res.addCookie(Cookie(boot.sessionName, sessionId.value, maxAge = Option(-1)))
+				addSession()
 				res.setContentLength(hsro.size)
 				val bufferSize = if(res.getBufferSize > 0) res.getBufferSize else 1024
 				log.debug("Stream.bufferSize: {}", bufferSize)
