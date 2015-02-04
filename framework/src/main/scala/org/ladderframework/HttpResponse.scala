@@ -17,6 +17,8 @@ import Header.ContentLength
 import Header.Location
 import java.nio.charset.Charset
 import java.nio.file.Paths
+import java.nio.file.FileSystems
+import java.net.URI
 
 trait HttpResponse {
 	def status: Status
@@ -79,7 +81,18 @@ case class HttpResourceResponse(status: Status = Status.OK, path: List[String]) 
 					contentType = ContentType(MediaType(path.reverse.headOption.map(context.boot.mimeType).getOrElse("")), Some(Charset.forName("UTF-8"))),
 					headers = Nil,
 					cookies = Nil,
-					content = Paths.get(context.boot.resource(pathString).toURI())
+					content = {
+						val uri = context.boot.resource(pathString).toURI()
+						if(uri.toString().contains("!")){
+							val array = uri.toString().split("!")
+							val env = new java.util.HashMap[String, String]() 
+							env.put("create", "true")
+							val fs = FileSystems.newFileSystem(URI.create(array(0)), env)
+							fs.getPath(array(1))
+						}else {
+							Paths.get(uri)
+						}
+					}
 				)
 			)
 		} else {
