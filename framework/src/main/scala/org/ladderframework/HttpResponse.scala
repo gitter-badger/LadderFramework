@@ -19,6 +19,7 @@ import java.nio.charset.Charset
 import java.nio.file.Paths
 import java.nio.file.FileSystems
 import java.net.URI
+import java.nio.file.FileSystemNotFoundException
 
 trait HttpResponse {
 	def status: Status
@@ -85,9 +86,15 @@ case class HttpResourceResponse(status: Status = Status.OK, path: List[String]) 
 						val uri = context.boot.resource(pathString).toURI()
 						if(uri.toString().contains("!")){
 							val array = uri.toString().split("!")
-							val env = new java.util.HashMap[String, String]() 
-							env.put("create", "true")
-							val fs = FileSystems.newFileSystem(URI.create(array(0)), env)
+							val fsURI = URI.create(array(0))
+							val fs = try{
+								FileSystems.getFileSystem(fsURI)
+							}catch{
+								case e:FileSystemNotFoundException =>
+									val env = new java.util.HashMap[String, String]() 
+									env.put("create", "true")
+									FileSystems.newFileSystem(URI.create(array(0)), env)
+							}
 							fs.getPath(array(1))
 						}else {
 							Paths.get(uri)
