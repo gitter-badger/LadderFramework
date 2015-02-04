@@ -130,7 +130,7 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 				res.setStatus(hsro.status.code)
 				hsro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
 				res.setContentType(hsro.contentType.mediaType.value)
-				hsro.cookies.foreach(res.addCookie(_))
+				hsro.cookies.filterNot(_.name == boot.sessionName).foreach(res.addCookie(_))
 				res.addCookie(Cookie(boot.sessionName, sessionId.value, maxAge = Option(-1)))
 				hsro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
 				res.setContentLength(hsro.content.length)
@@ -142,7 +142,7 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 				hpro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
 				res.setContentType(hpro.contentType.mediaType.value)
 				hpro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
-				hpro.cookies.foreach(res.addCookie(_))
+				hpro.cookies.filterNot(_.name == boot.sessionName).foreach(res.addCookie(_))
 				res.addCookie(Cookie(boot.sessionName, sessionId.value, maxAge = Option(-1)))
 				res.setContentLengthLong(Files.size(hpro.content))
 				val os = res.getOutputStream
@@ -154,7 +154,7 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 				hsro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
 				res.setContentType(hsro.contentType.mediaType.value)
 				hsro.contentType.charset.map(_.name).foreach(res.setCharacterEncoding)
-				hsro.cookies.foreach(res.addCookie(_))
+				hsro.cookies.filterNot(_.name == boot.sessionName).foreach(res.addCookie(_))
 				res.addCookie(Cookie(boot.sessionName, sessionId.value, maxAge = Option(-1)))
 				res.setContentLength(hsro.size)
 				val bufferSize = if(res.getBufferSize > 0) res.getBufferSize else 1024
