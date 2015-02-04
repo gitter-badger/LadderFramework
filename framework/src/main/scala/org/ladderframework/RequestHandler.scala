@@ -1,14 +1,21 @@
 package org.ladderframework
 
+import java.io.IOException
+import java.nio.file.Files
 import java.util.UUID
-import scala.collection.immutable
+
+import scala.collection.Iterator
 import scala.concurrent.Future
 import scala.concurrent.Promise
-import scala.concurrent.duration._
+import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+
 import org.ladderframework.js.JsCmd
+import org.ladderframework.json.JObject
+import org.ladderframework.json.JsonString
+
 import akka.actor.Actor
 import akka.actor.ActorIdentity
 import akka.actor.ActorLogging
@@ -19,28 +26,11 @@ import akka.actor.PoisonPill
 import akka.actor.Props
 import akka.actor.Terminated
 import akka.actor.actorRef2Scala
-import java.io.BufferedReader
-import java.io.BufferedInputStream
-import scala.collection.BufferedIterator
-import akka.util.ByteIterator
-import java.io.InputStreamReader
-import akka.util.ByteString
-import java.nio.ByteBuffer
-import java.nio.channels.FileChannel
-import java.nio.file.StandardOpenOption
-import java.nio.MappedByteBuffer
-import scala.util.control.NonFatal
-import scala.collection.Iterator
-import org.ladderframework.json.JObject
-import java.io.IOException
-import javax.servlet.http.HttpServletResponse
 import javax.servlet.http.HttpServletRequest
-import scala.io.Source
-import javax.websocket.{Session => WsSession}
-import java.nio.file.Files
+import javax.servlet.http.HttpServletResponse
 import javax.websocket.MessageHandler
 import javax.websocket.PongMessage
-import javax.websocket.PongMessage
+import javax.websocket.{Session => WsSession}
 
 case class HttpInteraction(req: HttpRequest, res: Promise[HttpResponseOutput])
 case class RenderInital(res: Promise[HttpResponseOutput])
@@ -124,11 +114,11 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 			res.addCookie(Cookie(boot.sessionName, sessionId.value, maxAge = Option(30 * 60 * 1000), path = Option("/"), httpOnly = true))
 		}
 		httpResponseOutput.future.map(i => {
-				log.info("RES COMLETE: {}", i); 
+				log.debug("RES COMLETE: {}", i); 
 				i
 			}).map(_ match {
 			case hsro : HttpStringResponseOutput => 
-				log.info("hsro: {}", hsro )
+				log.debug("hsro: {}", hsro )
 				res.setStatus(hsro.status.code)
 				hsro.headers.foreach{case HeaderValue(header, value) => res.addHeader(header.name, value)}
 				res.setContentType(hsro.contentType.mediaType.value)
@@ -205,7 +195,7 @@ class SessionActor(sessionID: SessionId, boot: DefaultBoot) extends Actor with A
 			hi.req.path match {
 				case ("ajax" | "post" | "pull") :: id :: _ => //Match mer
 					context.child(id) match {
-						case None => log.info("posthandler not found: {}", hi)
+						case None => log.warning("posthandler not found: {}", hi)
 						case Some(c) => c ! hi  
 					} 
 				case _ if hi.req.parameters.headOption.flatMap(_._2.headOption).exists(_ == "redirect") =>
