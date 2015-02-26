@@ -125,9 +125,10 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 				hsro.cookies.filterNot(_.name == boot.sessionName).foreach(res.addCookie(_))
 				addSession()
 				hsro.contentType.charset.map(_.name).foreach(res.setCharacterEncoding)
-				res.setContentLength(hsro.content.length)
 				val out = res.getOutputStream
-				out.write(hsro.contentType.charset.map(hsro.content.getBytes(_)).getOrElse(hsro.content.getBytes))
+				val bytes = hsro.contentType.charset.map(hsro.content.getBytes(_)).getOrElse(hsro.content.getBytes)
+				res.setContentLength(bytes.length)
+				out.write(bytes)
 //				out.close()
 				completed()
 			case hpro : HttpPathResponseOutput => 
