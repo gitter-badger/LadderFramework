@@ -124,10 +124,11 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 				res.setContentType(hsro.contentType.mediaType.value)
 				hsro.cookies.filterNot(_.name == boot.sessionName).foreach(res.addCookie(_))
 				addSession()
-				hsro.contentType.charset.map(_.name)foreach(res.setCharacterEncoding)
+				hsro.contentType.charset.map(_.name).foreach(res.setCharacterEncoding)
 				res.setContentLength(hsro.content.length)
-				res.getOutputStream.print(hsro.content)
-				res.getOutputStream.close()
+				val out = res.getOutputStream
+				out.write(hsro.contentType.charset.map(hsro.content.getBytes(_)).getOrElse(hsro.content.getBytes))
+//				out.close()
 				completed()
 			case hpro : HttpPathResponseOutput => 
 				res.setStatus(hpro.status.code)

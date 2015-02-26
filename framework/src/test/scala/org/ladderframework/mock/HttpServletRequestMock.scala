@@ -26,7 +26,14 @@ class HttpServletRequestMock(
   def getMethod(): String = {
 		givenMethod match {
 			case GET => "GET"
+			case HEAD => "HEAD"
 			case POST => "POST"
+			case DELETE => "DELETE"
+			case TRACE => "TRACE"
+			case CONNECT => "CONNECT"
+			case OPTIONS => "OPTIONS"
+			case PUT => "PUT"
+			case PATCH => "PATCH"
 		}
 	}
   def getPart(x$1: String): javax.servlet.http.Part = ???

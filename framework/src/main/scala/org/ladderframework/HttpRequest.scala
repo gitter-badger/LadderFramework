@@ -68,7 +68,7 @@ object Method{
 		case "CONNECT" => CONNECT
 		case "OPTIONS" => OPTIONS
 		case "PUT" => PUT
-		case "PATCH" => PUT
+		case "PATCH" => PATCH
 		case _ => GET
 	}
 	case object OPTIONS extends Method
