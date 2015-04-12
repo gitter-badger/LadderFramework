@@ -48,7 +48,12 @@ abstract class StatefulForm[M <: Mapping[M]](
 		}
 	})
 	
-	def transform(ns: NodeSeq): NodeSeq = <form id={id} method={method} action={actionPath.mkString("/", "/", "")}>{rendering(form.context)(form.mapping)(ns)}</form>
+	def transform(ns: NodeSeq): NodeSeq = <form id={id} 
+		accept-charset="UTF-8" 
+		method={method} 
+		action={actionPath.mkString("/", "/", "")}>{
+			rendering(form.context)(form.mapping)(ns)
+		}</form>
 }
 
 case class StatefulPost[M <: Mapping[M]](form: Form[M])
