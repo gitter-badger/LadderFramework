@@ -4,7 +4,7 @@ import sbtrelease.ReleasePlugin._
 
 object LadderFrameworkBuild extends Build {
 
-	val buildScalaVersion = "2.11.5"
+	val buildScalaVersion = "2.11.6"
 	
 	lazy val buildSettings = Defaults.defaultSettings ++ Seq(
 		organization := "org.ladderframework",
@@ -19,7 +19,21 @@ object LadderFrameworkBuild extends Build {
 	lazy val framework = Project(id = "ladder-web",
 		base = file("framework"),
 		settings = ladderSettings ++ Seq(
-			libraryDependencies ++= Dependencies.framework ++ Dependencies.testkit
+			libraryDependencies ++= Dependencies.framework ++ Dependencies.testkit ++ Seq(Dependency.Test.akkaTest)
+		)
+	) dependsOn (json, css)
+
+	lazy val json = Project(id = "ladder-json",
+		base = file("json"),
+		settings = ladderSettings ++ Seq(
+			libraryDependencies ++= Dependencies.json ++ Dependencies.testkit 
+		)
+	)
+
+	lazy val css = Project(id = "ladder-css",
+		base = file("css"),
+		settings = ladderSettings ++ Seq(
+			libraryDependencies ++= Dependencies.css ++ Dependencies.testkit
 		)
 	)
 
@@ -47,10 +61,12 @@ object Dependencies {
 
 	val slf4j = Seq(slf4jApi, logback)
 
-	val testkit = Seq(Test.scalatest, Test.scalacheck, Test.junit, Test.akkaTest)
+	val testkit = Seq(Test.scalatest, Test.scalacheck, Test.junit)
 
 	val framework = Seq(servletApi, websocketApi, jettyServer, jettyContinuation, akkaActor, akkaLogging, scalaXml, scalaParserCompinators) ++ slf4j
 	val test_framework = Seq(servletApi) ++ slf4j
+	val json = Seq(scalaParserCompinators)
+	val css = Seq(scalaXml)
 
 }
 

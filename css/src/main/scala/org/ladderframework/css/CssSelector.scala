@@ -11,14 +11,13 @@ import scala.xml.Null
 import scala.xml.Text
 import scala.xml._
 import scala.xml.transform.BasicTransformer
-import org.ladderframework.html.form.FormRendering
+//import org.ladderframework.html.form.FormRendering
 import scala.collection.mutable.ArrayBuffer
 
 trait CssSelector {
 	type NSTransform = NodeSeq => NodeSeq
 	def #>(ns: NodeSeq): NSTransform
 	def #>(nsf: NSTransform): NSTransform
-	def #>(e: FormRendering): NSTransform
 	def #>(iter: Iterable[NSTransform]): NSTransform
 	def #>>(ns: NodeSeq): NSTransform
 	def #+>(ns: NodeSeq): NSTransform
@@ -89,7 +88,6 @@ object CssSelector {
 private[ladderframework] class PassThruSelector(val any: String) extends CssSelector {
 	def #>(ns: NodeSeq): NSTransform = ns => ns
 	def #>(nsf: NSTransform): NSTransform = ns => ns
-	def #>(e: FormRendering): NSTransform = ns => ns
 	def #>(iter: Iterable[NSTransform]): NSTransform = ns => ns
 	def #>>(ns: NodeSeq): NSTransform = ns => ns
 	def #+>(ns: NodeSeq): NSTransform = ns => ns
@@ -125,13 +123,6 @@ private[ladderframework] trait AttribSelector extends CssSelector {
 			case e @ Elem(p, l, attribs, s, children @ _*) if attributeMatches(attribs) =>
 				val transformedChildren = nsTransform(children)
 				Elem(p, l, attribs, s, false, transformedChildren: _*)
-		}
-		ns => transform(ns, rr)
-	}
-	def #>(e: FormRendering): NSTransform = {
-		val rr: PartialFunction[Node, Seq[Node]] = {
-			case el @ Elem(_, _, attribs, _, _*) if attributeMatches(attribs) =>
-				e.transform(el)
 		}
 		ns => transform(ns, rr)
 	}
@@ -210,13 +201,6 @@ private[ladderframework] class ElementSelector(val element: String) extends CssS
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case Elem(_, `element`, _, _, children @ _*) =>
 				nsTransform(children)
-		}
-		ns => transform(ns, rr)
-	}
-	def #>(e: FormRendering): NSTransform = {
-		val rr: PartialFunction[Node, Seq[Node]] = {
-			case el @ Elem(_, `element`, _, _, children @ _*) =>
-				e.transform(el)
 		}
 		ns => transform(ns, rr)
 	}
@@ -308,13 +292,6 @@ private[ladderframework] class ElementAttributeSelector(tagName: String, attrib:
 		ns => transform(ns, rr)
 	}
 
-	def #>(e: FormRendering): NSTransform = {
-		val rr: PartialFunction[Node, Seq[Node]] = {
-			case el @ Elem(_, `tagName`, attribs, _, children @ _*) if attributeMatches(attribs) =>
-				e.transform(el)
-		}
-		ns => transform(ns, rr)
-	}
 	def #>(iter: Iterable[NSTransform]): NSTransform = {
 		val rr: PartialFunction[Node, Seq[Node]] = {
 			case e @ Elem(p, `tagName`, attribs, n, children @ _*) if attributeMatches(attribs) =>
