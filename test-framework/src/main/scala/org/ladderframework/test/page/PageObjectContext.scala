@@ -11,10 +11,6 @@ import scala.concurrent.Promise
 case class PageObjectContext(response: StatefulHtmlResponse)(implicit val context:Context, val ec:ExecutionContext) {
 
 	val responseXml:Promise[NodeSeq] = Promise[NodeSeq]()
-	responseXml.completeWith{
-		for{
-			sf <- response.statefullContent
-		} yield XML.loadString(sf)
-	}
+	responseXml.completeWith(response.statefullContent)
 	
 }

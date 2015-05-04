@@ -13,10 +13,10 @@ object LadderTestApp extends App{
 						<p><input type="file" name="file1"/></p>
 						<p><input type="file" name="file2"/></p>
 						<p><button type="submit">Submit</button></p>
-					</form>.toString))
+					</form>))
 			case req@POST(Path("formpost" :: Nil)) => 
 				Future.successful(XmlResponse(<div>Jeg er glad!!<a href="/form">form</a></div>))
-			case GET(Path(Nil)) => Future.successful(HtmlResponse(<div>Jeg er glad!!<a href="/form">form</a></div>.mkString))
+			case GET(Path(Nil)) => Future.successful(HtmlResponse(<div>Jeg er glad!!<a href="/form">form</a></div>))
 		}
 	})
 	

@@ -1,7 +1,5 @@
 package org.ladderframework.html.form
 
-import org.ladderframework.html.form.Formats._
-
 import scala.annotation._
 
 /**
@@ -150,7 +148,6 @@ object Forms {
 
 
   import Form._
-import Formats._
 
   /**
    * Constructs a simple mapping for a text field.
@@ -279,7 +276,7 @@ import Formats._
    *
    * @param value As we ignore this parameter in binding/unbinding we have to provide a default value.
    */
-  def ignored[A](value: A): FieldMapping[A] = of(ignoredFormat(value))
+  def ignored[A](value: A): FieldMapping[A] = of(Formatter.ignoredFormat(value))
 
   /**
    * Defines an optional mapping.
@@ -343,73 +340,7 @@ import Formats._
    *
    * @param pattern the date pattern, as defined in `java.text.SimpleDateFormat`
    */
-  def date(pattern: String): FieldMapping[java.util.Date] = of[java.util.Date] as dateFormat(pattern)
-
-  /**
-   * Constructs a simple mapping for a date field (mapped as `sql.Date type`).
-   *
-   * For example:
-   * {{{
-   *   Form(sqlDate)
-   * }}}
-   */
-  val sqlDate: FieldMapping[java.sql.Date] = of[java.sql.Date]
-
-  /**
-   * Constructs a simple mapping for a date field (mapped as `sql.Date type`).
-   *
-   * For example:
-   * {{{
-   *   Form(sqlDate("dd-MM-yyyy"))
-   * }}}
-   *
-   * @param pattern the date pattern, as defined in `java.text.SimpleDateFormat`
-   */
-  def sqlDate(pattern: String): FieldMapping[java.sql.Date] = of[java.sql.Date] as sqlDateFormat(pattern)
-
-//  /**
-//   * Constructs a simple mapping for a date field (mapped as `org.joda.time.DateTime type`).
-//   *
-//   * For example:
-//   * {{{
-//   *   Form("birthdate" -> jodaDate)
-//   * }}}
-//   */
-//  val jodaDate: Mapping[org.joda.time.DateTime] = of[org.joda.time.DateTime]
-//
-//  /**
-//   * Constructs a simple mapping for a date field (mapped as `org.joda.time.DateTime type`).
-//   *
-//   * For example:
-//   * {{{
-//   *   Form("birthdate" -> jodaDate("dd-MM-yyyy"))
-//   * }}}
-//   *
-//   * @param pattern the date pattern, as defined in `org.joda.time.format.DateTimeFormat`
-//   */
-//  def jodaDate(pattern: String): Mapping[org.joda.time.DateTime] = of[org.joda.time.DateTime] as jodaDateTimeFormat(pattern)
-//
-//  /**
-//   * Constructs a simple mapping for a date field (mapped as `org.joda.time.LocalDatetype`).
-//   *
-//   * For example:
-//   * {{{
-//   * Form("birthdate" -> jodaLocalDate)
-//   * }}}
-//   */
-//  val jodaLocalDate: Mapping[org.joda.time.LocalDate] = of[org.joda.time.LocalDate]
-//
-//  /**
-//   * Constructs a simple mapping for a date field (mapped as `org.joda.time.LocalDate type`).
-//   *
-//   * For example:
-//   * {{{
-//   * Form("birthdate" -> jodaLocalDate("dd-MM-yyyy"))
-//   * }}}
-//   *
-//   * @param pattern the date pattern, as defined in `org.joda.time.format.DateTimeFormat`
-//   */
-//  def jodaLocalDate(pattern: String): Mapping[org.joda.time.LocalDate] = of[org.joda.time.LocalDate] as jodaLocalDateFormat(pattern)
+  def date(pattern: String): FieldMapping[java.util.Date] = of[java.util.Date]
 
   /**
    * Constructs a simple mapping for an e-mail field.

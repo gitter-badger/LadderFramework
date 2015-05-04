@@ -24,13 +24,13 @@ import java.nio.file.FileSystemNotFoundException
 trait HttpResponse {
 	def status: Status
 
-	def httpResponse()(implicit context: Context, ec: ExecutionContext): Future[HttpResponseOutput]
+	def httpResponse()(implicit context: Context): Future[HttpResponseOutput]
 }
 
 case class HttpRedirectResponse(location: List[String], params: Option[String] = None) extends HttpResponse {
 	val status = Status.Found
 
-	override def httpResponse()(implicit context: Context, ec: ExecutionContext): Future[HttpResponseOutput] = {
+	override def httpResponse()(implicit context: Context): Future[HttpResponseOutput] = {
 		Future.successful{
 			HttpStringResponseOutput(
 					status = status,
@@ -45,8 +45,8 @@ case class HttpRedirectResponse(location: List[String], params: Option[String] =
 
 object NotFoundDefaultResponse extends HtmlResponse {
 	override final val status = Status.NotFound
-	override def content(implicit ec: ExecutionContext): Future[String] = Future.successful(
-		<html><head><title>404</title></head><body>404</body></html>.toString)
+	override def content(): Future[NodeSeq] = Future.successful(
+		<html><head><title>404</title></head><body>404</body></html>)
 }
 
 case class ErrorResponse(override val status: Status, ot: Option[Throwable]) extends HtmlResponse {
@@ -60,52 +60,55 @@ case class ErrorResponse(override val status: Status, ot: Option[Throwable]) ext
 		}).getOrElse("")
 	}
 
-	def content(implicit ec: ExecutionContext): Future[String] = Future {
+	def content(): Future[NodeSeq] = Future.successful {
 		<html>
 			<head><title>{ status.code }</title></head>
 			<body><h1>{ status.code }</h1><h2>{ ot.map(_.getMessage).getOrElse("") }</h2><pre>{ throwableString }</pre></body>
-		</html>.toString
+		</html>
 	}
 }
 
 case class HttpResourceResponse(status: Status = Status.OK, path: List[String]) extends HttpResponse with Loggable {
 	lazy val pathString = path.mkString("/", "/", "")
 
-	override def httpResponse()(implicit context: Context, ec: ExecutionContext): Future[HttpResponseOutput] = Future {
-		context.boot.resource(pathString)
-	}.flatMap(file => {
-		debug("HttpResourceResponse - print: " + file)
-		if (file != null) {
-			Future.successful(
-				HttpPathResponseOutput(
-					status = status,
-					contentType = ContentType(MediaType(path.reverse.headOption.map(context.boot.mimeType).getOrElse("")), Some(Charset.forName("UTF-8"))),
-					headers = Nil,
-					cookies = Nil,
-					content = {
-						val uri = context.boot.resource(pathString).toURI()
-						if(uri.toString().contains("!")){
-							val array = uri.toString().split("!")
-							val fsURI = URI.create(array(0))
-							val fs = try{
-								FileSystems.getFileSystem(fsURI)
-							}catch{
-								case e:FileSystemNotFoundException =>
-									val env = new java.util.HashMap[String, String]() 
-									env.put("create", "true")
-									FileSystems.newFileSystem(URI.create(array(0)), env)
+	override def httpResponse()(implicit context: Context): Future[HttpResponseOutput] = {
+		import context.boot.executionContext
+		Future {
+			context.boot.resource(pathString)
+		}.flatMap(file => {
+			debug("HttpResourceResponse - print: " + file)
+			if (file != null) {
+				Future.successful(
+					HttpPathResponseOutput(
+						status = status,
+						contentType = ContentType(MediaType(path.reverse.headOption.map(context.boot.mimeType).getOrElse("")), Some(Charset.forName("UTF-8"))),
+						headers = Nil,
+						cookies = Nil,
+						content = {
+							val uri = context.boot.resource(pathString).toURI()
+							if(uri.toString().contains("!")){
+								val array = uri.toString().split("!")
+								val fsURI = URI.create(array(0))
+								val fs = try{
+									FileSystems.getFileSystem(fsURI)
+								}catch{
+									case e:FileSystemNotFoundException =>
+										val env = new java.util.HashMap[String, String]() 
+										env.put("create", "true")
+										FileSystems.newFileSystem(URI.create(array(0)), env)
+								}
+								fs.getPath(array(1))
+							}else {
+								Paths.get(uri)
 							}
-							fs.getPath(array(1))
-						}else {
-							Paths.get(uri)
 						}
-					}
+					)
 				)
-			)
-		} else {
-			context.boot.notFound.httpResponse()
-		}
-	})
+			} else {
+				context.boot.notFound.httpResponse()
+			}
+		})
+	}
 }
 
 trait ProsessedHttpResponse extends HttpResponse with Loggable{
@@ -113,7 +116,7 @@ trait ProsessedHttpResponse extends HttpResponse with Loggable{
 	def content: String
 	def contentType: ContentType
 	
-	override def httpResponse()(implicit context: Context, ec: ExecutionContext) = Future.successful {
+	override def httpResponse()(implicit context: Context) = Future.successful {
 		debug("httpResponse: " + this)
 		HttpStringResponseOutput(
 			status = status,
@@ -147,43 +150,47 @@ case class PullResponse(messages: List[PushMessage]) extends ProsessedHttpRespon
 trait HtmlResponse extends HttpResponse {
 	def status: Status = Status.OK
 	def contentType = ContentType.`text/html`
-	def content(implicit ec: ExecutionContext): Future[String]
-	override def httpResponse()(implicit context: Context, ec: ExecutionContext) =
+	def content(): Future[NodeSeq]
+	override def httpResponse()(implicit context: Context) = {
+		import context.boot.executionContext
 		content.map(cont => {
 			HttpStringResponseOutput(
 				status = status,
 				contentType = contentType,
 				headers = Nil,
 				cookies = Nil,
-				content = cont
+				content = "<!DOCTYPE html>\n" + cont.mkString
 			)
 		})
+	}
 }
 
 object HtmlResponse {
 
-	def apply(html: String) = new HtmlResponse {
-		def content(implicit ec: ExecutionContext) = Future.successful(html)
+	def apply(html: NodeSeq) = new HtmlResponse {
+		def content() = Future.successful(html)
 	}
 }
 
 trait Stateful {
 	self: HtmlResponse =>
-	def statefullContent(implicit context: Context, ec: ExecutionContext): Future[String]
-	final override def content(implicit ec: ExecutionContext) = Future("")
+	def statefullContent(implicit context: Context): Future[NodeSeq]
+	final override def content() = Future.successful(NodeSeq.Empty)
 }
 
 trait StatefulHtmlResponse extends HtmlResponse with Stateful {
-	override def httpResponse()(implicit context: Context, ec: ExecutionContext) =
+	override def httpResponse()(implicit context: Context) = {
+		import context.boot.executionContext
 		statefullContent.map(content => {
 			HttpStringResponseOutput(
 				status = status,
 				contentType = contentType,
 				headers = Nil,
 				cookies = Nil,
-				content = content
+				content = "<!DOCTYPE html>\n" + Xhtml.toXhtml(content)
 			)
 		})
+	}
 }
 
 trait StatefulHtmlPage extends StatefulHtmlResponse with Loggable {
@@ -196,14 +203,15 @@ trait StatefulHtmlPage extends StatefulHtmlResponse with Loggable {
 	}
 
 	def render(implicit context: Context, ec: ExecutionContext): Future[NodeSeq => NodeSeq]
-	override def statefullContent(implicit context: Context, ec: ExecutionContext): Future[String] = {
+	override def statefullContent(implicit context: Context): Future[NodeSeq] = {
+		import context.boot.executionContext
 		for {
-			x <- xml.completeWith(Future {
+			x <- xml.completeWith(Future.successful {
 				val resouce = context.boot.resource(source)
 				XML.load(resouce)
 			}).future
 			r <- render
-		} yield "<!DOCTYPE html>\n" + Xhtml.toXhtml(addPush.apply(r(x)))
+		} yield addPush.apply(r(x))
 	}
 }
 

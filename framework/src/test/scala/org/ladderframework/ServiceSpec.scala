@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit
 import org.ladderframework.mock.HttpServletRequestMock
 import java.util.concurrent.CountDownLatch
 import javax.servlet.http.{ Cookie => jCookie }
+import scala.xml.Text
 
 class ServiceSpec(systm: ActorSystem) extends TestKit(systm) with WordSpecLike with GivenWhenThen with BeforeAndAfterAll with ScalaFutures {
 
@@ -34,56 +35,56 @@ class ServiceSpec(systm: ActorSystem) extends TestKit(systm) with WordSpecLike w
 
 	implicit val patience = PatienceConfig(timeout = scaled(Span(500, Millis)))
 
-	val helloWorldResponse = Future.successful(HtmlResponse("<html><body>hello world</body></html>"))
+	val helloWorldResponse = Future.successful(HtmlResponse(<html><body>hello world</body></html>))
 
 	val boot = new DefaultBoot {
 		override val system = systm
 		override val site: PartialFunction[HttpRequest, Future[HttpResponse]] = {
 			case req @ HttpRequest(GET, "hello" :: "world" :: Nil) if req.parameters.size == 0 => helloWorldResponse
 			case req @ HttpRequest(POST | GET, "hello" :: "world" :: Nil) =>
-				Future(HtmlResponse("<html><body>hello world " + req.parameters("parameter").head + "</body></html>"))
+				Future(HtmlResponse(<html><body>hello world { req.parameters("parameter").head }</body></html>))
 			case HttpRequest(GET, "resources" :: static :: Nil) =>
 				//println("HttpResourceResponse: " + static)
 				Future(HttpResourceResponse(path = static :: Nil))
 			case HttpRequest(GET, "statefull" :: "request" :: Nil) =>
 				Future(new StatefulHtmlResponse {
-					override def statefullContent(implicit context: Context, ec: ExecutionContext) = Future {
+					override def statefullContent(implicit context: Context) = Future.successful {
 						println("statefullContent")
-						val callback = context.addSubmitCallback(params => Future(
+						val callback = context.addSubmitCallback(params => Future.successful(
 							"some" :: "where" :: "new" :: Nil,
-							HtmlResponse("<html><body>redirect post</body></html>")))
+							HtmlResponse(<html><body>redirect post</body></html>)))
 						println("callback : " + callback)
-						callback.mkString("_")
+						Text(callback.mkString("_"))
 					}
 				})
 			case HttpRequest(GET, originalPath @ "statefull" :: "ajaxrequest" :: Nil) =>
 				Future(new StatefulHtmlResponse {
-					override def statefullContent(implicit context: Context, ec: ExecutionContext) = Future {
-						val callback = context.addAjaxFormSubmitCallback(params => Future(JsCall("callback")))
-						callback.split("/").tail.mkString("_")
+					override def statefullContent(implicit context: Context) = Future.successful {
+						val callback = context.addAjaxFormSubmitCallback(params => Future.successful(JsCall("callback")))
+						Text(callback.split("/").tail.mkString("_"))
 					}
 				})
 			case HttpRequest(GET, originalPath @ "statefull" :: "ajaxcallback" :: Nil) =>
 				Future(new StatefulHtmlResponse {
-					override def statefullContent(implicit context: Context, ec: ExecutionContext) = Future {
-						val callback = context.addAjaxInputCallback((input) => Future(JsCall("inputCallback:" + input)))
-						callback.lookupPath.tail.mkString("_")
+					override def statefullContent(implicit context: Context) = Future.successful {
+						val callback = context.addAjaxInputCallback((input) => Future.successful(JsCall("inputCallback:" + input)))
+						Text(callback.lookupPath.tail.mkString("_"))
 					}
 				})
 			case HttpRequest(GET, originalPath @ "statefull" :: "ajaxhandler" :: Nil) =>
 				Future(new StatefulHtmlResponse {
-					override def statefullContent(implicit context: Context, ec: ExecutionContext) = Future {
+					override def statefullContent(implicit context: Context) = Future.successful {
 						val callback = context.addAjaxHandlerCallback({
-							case _ => Future(HtmlResponse("got back here"))
+							case _ => Future.successful(HtmlResponse(Text("got back here")))
 						})
-						callback.lookupPath.tail.mkString("_")
+						Text(callback.lookupPath.tail.mkString("_"))
 					}
 				})
 			case HttpRequest(GET, originalPath @ "statefull" :: "pull" :: Nil) =>
 				Future(new StatefulHtmlResponse {
-					override def statefullContent(implicit context: Context, ec: ExecutionContext) = Future {
+					override def statefullContent(implicit context: Context) = Future.successful {
 						context.update(JsCall("Message"))
-						context.contextID
+						Text(context.contextID)
 					}
 				})
 		}
@@ -122,14 +123,14 @@ class ServiceSpec(systm: ActorSystem) extends TestKit(systm) with WordSpecLike w
 			"handle simple request" in {
 				val httpServletResponse = call(httpRequest(GET, "hello" :: "world" :: Nil))
 				assert(httpServletResponse.status === OK.code)
-				assert(httpServletResponse.text === "<html><body>hello world</body></html>")
+				assert(httpServletResponse.text === "<!DOCTYPE html>\n<html><body>hello world</body></html>")
 				assert(httpServletResponse.contentType === "text/html")
 			}
 			"handle bad request" in {
 				val httpServletResponse = call(httpRequest(GET, "hello" :: "not" :: "found" :: Nil))
 				val content = NotFoundDefaultResponse.content.futureValue
 				assert(httpServletResponse.status === NotFound.code)
-				assert(httpServletResponse.text === content)
+				assert(httpServletResponse.text === "<!DOCTYPE html>\n" + content)
 				assert(httpServletResponse.contentType === "text/html")
 			}
 		}
@@ -139,7 +140,7 @@ class ServiceSpec(systm: ActorSystem) extends TestKit(systm) with WordSpecLike w
 
 			"handle simple request" in {
 				val httpServletResponse = call(request)
-				assert(httpServletResponse.text === "<html><body>hello world postedValue</body></html>")
+				assert(httpServletResponse.text === "<!DOCTYPE html>\n<html><body>hello world postedValue</body></html>")
 				assert(httpServletResponse.status === OK.code)
 				assert(httpServletResponse.contentType === "text/html")
 			}
@@ -156,7 +157,7 @@ class ServiceSpec(systm: ActorSystem) extends TestKit(systm) with WordSpecLike w
 			"handle not found (404)" in {
 				val httpServletResponse = call(httpRequest(GET, "resources" :: "notFound.html" :: Nil))
 				val expectedContent = NotFoundDefaultResponse.content.futureValue
-				assert(httpServletResponse.text === expectedContent)
+				assert(httpServletResponse.text === "<!DOCTYPE html>\n" + expectedContent)
 				assert(httpServletResponse.status === NotFound.code)
 				assert(httpServletResponse.contentType === "text/html")
 			}
@@ -174,18 +175,19 @@ class ServiceSpec(systm: ActorSystem) extends TestKit(systm) with WordSpecLike w
 
 			"handle simple request" in {
 				val httpServletResponse = call(request)
-				assert(httpServletResponse.text === "<html><body>hello world postedValue</body></html>")
+				assert(httpServletResponse.text === "<!DOCTYPE html>\n<html><body>hello world postedValue</body></html>")
 				assert(httpServletResponse.status === OK.code)
 				assert(httpServletResponse.contentType === "text/html")
 			}
 		}
 
-		"handle statefull response" should {
+		"handle stateful response" should {
 			"handle POST REDIRECT GET" in {
 				val httpServletResponse = call(httpRequest(GET, "statefull" :: "request" :: Nil))
 				assert(httpServletResponse.status === OK.code)
 				assert(httpServletResponse.contentType === "text/html")
-				val callback = httpServletResponse.text.split("_").toList
+				val callback = httpServletResponse.text.replaceFirst("<!DOCTYPE html>\n", "").split("_").toList
+				println("CALLBACK:" + callback)
 				val cookies = httpServletResponse.cookies.toList
 
 				val httpServletResponseStatefull = call(httpRequest(POST, callback, Map("key" -> Array("value")), cookies))
@@ -197,13 +199,13 @@ class ServiceSpec(systm: ActorSystem) extends TestKit(systm) with WordSpecLike w
 				val httpServletResponseRedirect = call(httpRequest(GET, List("some", "where", "new"), Map(param(0) -> param.tail), cookies))
 				assert(httpServletResponseRedirect.status === OK.code)
 				assert(httpServletResponseRedirect.contentType === "text/html")
-				assert(httpServletResponseRedirect.text === "<html><body>redirect post</body></html>")
+				assert(httpServletResponseRedirect.text === "<!DOCTYPE html>\n<html><body>redirect post</body></html>")
 			}
 			"handle simple ajax post" in {
 				val httpServletResponse = call(httpRequest(GET, "statefull" :: "ajaxrequest" :: Nil))
 				assert(httpServletResponse.status === OK.code)
 				assert(httpServletResponse.contentType === "text/html")
-				val text = httpServletResponse.text.split("_")
+				val text = httpServletResponse.text.replaceFirst("<!DOCTYPE html>\n", "").split("_")
 				val statefull = text(0)
 				val id = text(1)
 				val cookies = httpServletResponse.cookies.toList
@@ -219,7 +221,7 @@ class ServiceSpec(systm: ActorSystem) extends TestKit(systm) with WordSpecLike w
 				val httpServletResponse = call(request)
 				assert(httpServletResponse.status === OK.code)
 				assert(httpServletResponse.contentType === "text/html")
-				val text = httpServletResponse.text.split("_")
+				val text = httpServletResponse.text.replaceFirst("<!DOCTYPE html>\n", "").split("_")
 				val statefull = text(0)
 				val key = text(1)
 				val cookies = httpServletResponse.cookies.toList
@@ -234,7 +236,7 @@ class ServiceSpec(systm: ActorSystem) extends TestKit(systm) with WordSpecLike w
 				val httpServletResponse = call(request)
 				assert(httpServletResponse.status === OK.code)
 				assert(httpServletResponse.contentType === "text/html")
-				val text = httpServletResponse.text.split("_")
+				val text = httpServletResponse.text.replaceFirst("<!DOCTYPE html>\n", "").split("_")
 				val statefull = text(0)
 				val key = text(1)
 				val cookies = httpServletResponse.cookies.toList
@@ -242,7 +244,7 @@ class ServiceSpec(systm: ActorSystem) extends TestKit(systm) with WordSpecLike w
 				val httpServletResponseAjax = call(httpRequest(POST, "ajax" :: statefull :: key :: Nil, Map(key -> Array("inputValue")), cookies))
 				assert(httpServletResponseAjax.status === OK.code)
 				assert(httpServletResponseAjax.contentType === "text/html")
-				assert(httpServletResponseAjax.text === "got back here")
+				assert(httpServletResponseAjax.text === "<!DOCTYPE html>\ngot back here")
 			}
 		}
 
@@ -252,7 +254,7 @@ class ServiceSpec(systm: ActorSystem) extends TestKit(systm) with WordSpecLike w
 				val httpServletResponse = call(request)
 				assert(httpServletResponse.status === OK.code)
 				assert(httpServletResponse.contentType === "text/html")
-				val statefull = httpServletResponse.text
+				val statefull = httpServletResponse.text.replaceFirst("<!DOCTYPE html>\n", "")
 
 				val httpServletResponsePull = call(httpRequest(POST, "pull" :: statefull :: Nil, cookies = httpServletResponse.cookies.toList))
 				assert(httpServletResponsePull.status === OK.code)

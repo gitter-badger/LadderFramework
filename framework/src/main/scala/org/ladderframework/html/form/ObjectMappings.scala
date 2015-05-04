@@ -25,13 +25,10 @@ case class ObjectMapping1[R, A1, M1 <: Mapping[M1]{type T = A1}](
 	val field1: M1 = f1.withPrefix(key)
 	
   def bind(data: Map[String, String]) = {
-    merge(field1.bind(data)) match {
+    field1.bind(data) match {
       case Left(errors) => Left(errors)
-      case Right(values) => {
-        applyConstraints(apply(
-
-          values(0).asInstanceOf[A1]))
-      }
+      case Right(v) =>
+        applyConstraints(apply(v))
     }
   }
 
@@ -71,13 +68,11 @@ case class ObjectMapping2[R, A1, A2, M1 <: Mapping[M1]{type T = A1}, M2 <: Mappi
 	val field2: M2 = f2.withPrefix(key)
 	
   def bind(data: Map[String, String]): Either[Seq[FormError], R] = {
-    merge(field1.bind(data), field2.bind(data)) match {
-      case Left(errors) => Left(errors)
-      case Right(values) => {
-        applyConstraints(apply(
-          values(0).asInstanceOf[A1],
-          values(1).asInstanceOf[A2]))
-      }
+    (field1.bind(data), field2.bind(data)) match {
+      case (Left(le), Left(re)) => Left(le ++ re)
+      case (_, Left(re)) => Left(re)
+      case (Left(le), _) => Left(le)
+      case (Right(lv), Right(rv)) => applyConstraints(apply(lv,rv))
     }
   }
 
@@ -122,15 +117,10 @@ case class ObjectMapping3[R, A1, A2, A3,
 	type S = (M1, M2, M3)
 	
   def bind(data: Map[String, String]): Either[Seq[FormError], R] = {
-    merge(field1.bind(data), field2.bind(data), field3.bind(data)) match {
+    mrg(mrg(field1.bind(data), field2.bind(data)), field3.bind(data)) match {
       case Left(errors) => Left(errors)
-      case Right(values) => {
-        applyConstraints(apply(
-
-          values(0).asInstanceOf[A1],
-          values(1).asInstanceOf[A2],
-          values(2).asInstanceOf[A3]))
-      }
+      case Right(((v1, v2), v3)) =>
+        applyConstraints(apply(v1, v2, v3))
     }
   }
 
@@ -167,16 +157,10 @@ case class ObjectMapping4[R, A1, A2, A3, A4, M1 <: Mapping[M1]{type T = A1}, M2 
 	type S = (M1, M2, M3, M4)
 
   def bind(data: Map[String, String]): Either[Seq[FormError], R] = {
-    merge(field1.bind(data), field2.bind(data), field3.bind(data), field4.bind(data)) match {
+    mrg(mrg(mrg(field1.bind(data), field2.bind(data)), field3.bind(data)), field4.bind(data)) match {
       case Left(errors) => Left(errors)
-      case Right(values) => {
-        applyConstraints(apply(
-
-          values(0).asInstanceOf[A1],
-          values(1).asInstanceOf[A2],
-          values(2).asInstanceOf[A3],
-          values(3).asInstanceOf[A4]))
-      }
+      case Right((((v1, v2), v3), v4)) => 
+        applyConstraints(apply(v1, v2, v3, v4))
     }
   }
 
@@ -208,17 +192,10 @@ case class ObjectMapping5[R, A1, A2, A3, A4, A5, M1 <: Mapping[M1]{type T = A1},
 	type S = (M1, M2, M3, M4, M5)
 
   def bind(data: Map[String, String]): Either[Seq[FormError], R] = {
-    merge(field1.bind(data), field2.bind(data), field3.bind(data), field4.bind(data), field5.bind(data)) match {
+    mrg(mrg(mrg(mrg(field1.bind(data), field2.bind(data)), field3.bind(data)), field4.bind(data)), field5.bind(data)) match {
       case Left(errors) => Left(errors)
-      case Right(values) => {
-        applyConstraints(apply(
-
-          values(0).asInstanceOf[A1],
-          values(1).asInstanceOf[A2],
-          values(2).asInstanceOf[A3],
-          values(3).asInstanceOf[A4],
-          values(4).asInstanceOf[A5]))
-      }
+      case Right(((((v1, v2), v3), v4), v5)) => 
+        applyConstraints(apply(v1, v2, v3, v4, v5))
     }
   }
 
@@ -252,17 +229,10 @@ case class ObjectMapping6[R, A1, A2, A3, A4, A5, A6, M1 <: Mapping[M1]{type T = 
 	type S = (M1, M2, M3, M4, M5, M6)
 
   def bind(data: Map[String, String]): Either[Seq[FormError], R] = {
-    merge(field1.bind(data), field2.bind(data), field3.bind(data), field4.bind(data), field5.bind(data), field6.bind(data)) match {
+    mrg(mrg(mrg(mrg(mrg(field1.bind(data), field2.bind(data)), field3.bind(data)), field4.bind(data)), field5.bind(data)), field6.bind(data)) match {
       case Left(errors) => Left(errors)
-      case Right(values) => {
-        applyConstraints(apply(
-
-          values(0).asInstanceOf[A1],
-          values(1).asInstanceOf[A2],
-          values(2).asInstanceOf[A3],
-          values(3).asInstanceOf[A4],
-          values(4).asInstanceOf[A5],
-          values(5).asInstanceOf[A6]))
+      case Right((((((v1, v2), v3), v4), v5), v6)) => {
+        applyConstraints(apply(v1, v2, v3, v4, v5, v6))
       }
     }
   }
@@ -298,18 +268,10 @@ case class ObjectMapping7[R, A1, A2, A3, A4, A5, A6, A7, M1 <: Mapping[M1]{type 
 	type S = (M1, M2, M3, M4, M5, M6, M7)
 
   def bind(data: Map[String, String]): Either[Seq[FormError], R] = {
-    merge(field1.bind(data), field2.bind(data), field3.bind(data), field4.bind(data), field5.bind(data), field6.bind(data), field7.bind(data)) match {
+    mrg(mrg(mrg(mrg(mrg(mrg(field1.bind(data), field2.bind(data)), field3.bind(data)), field4.bind(data)), field5.bind(data)), field6.bind(data)), field7.bind(data)) match {
       case Left(errors) => Left(errors)
-      case Right(values) => {
-        applyConstraints(apply(
-          values(0).asInstanceOf[A1],
-          values(1).asInstanceOf[A2],
-          values(2).asInstanceOf[A3],
-          values(3).asInstanceOf[A4],
-          values(4).asInstanceOf[A5],
-          values(5).asInstanceOf[A6],
-          values(6).asInstanceOf[A7]))
-      }
+      case Right(((((((v1, v2), v3), v4), v5), v6), v7)) => 
+        applyConstraints(apply(v1, v2, v3, v4, v5, v6, v7))
     }
   }
 
@@ -345,20 +307,10 @@ case class ObjectMapping8[R, A1, A2, A3, A4, A5, A6, A7, A8, M1 <: Mapping[M1]{t
 	type S = (M1, M2, M3, M4, M5, M6, M7, M8)
 
   def bind(data: Map[String, String]): Either[Seq[FormError], R] = {
-    merge(field1.bind(data), field2.bind(data), field3.bind(data), field4.bind(data), field5.bind(data), field6.bind(data), field7.bind(data), field8.bind(data)) match {
+    mrg(mrg(mrg(mrg(mrg(mrg(mrg(field1.bind(data), field2.bind(data)), field3.bind(data)), field4.bind(data)), field5.bind(data)), field6.bind(data)), field7.bind(data)), field8.bind(data)) match {
       case Left(errors) => Left(errors)
-      case Right(values) => {
-        applyConstraints(apply(
-
-          values(0).asInstanceOf[A1],
-          values(1).asInstanceOf[A2],
-          values(2).asInstanceOf[A3],
-          values(3).asInstanceOf[A4],
-          values(4).asInstanceOf[A5],
-          values(5).asInstanceOf[A6],
-          values(6).asInstanceOf[A7],
-          values(7).asInstanceOf[A8]))
-      }
+      case Right((((((((v1, v2), v3), v4), v5), v6), v7), v8)) => 
+        applyConstraints(apply(v1, v2, v3, v4, v5, v6, v7, v8))
     }
   }
 
@@ -395,21 +347,10 @@ case class ObjectMapping9[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, M1 <: Mapping[M
 	type S = (M1, M2, M3, M4, M5, M6, M7, M8, M9)
 
   def bind(data: Map[String, String]): Either[Seq[FormError], R] = {
-    merge(field1.bind(data), field2.bind(data), field3.bind(data), field4.bind(data), field5.bind(data), field6.bind(data), field7.bind(data), field8.bind(data), field9.bind(data)) match {
+    mrg(mrg(mrg(mrg(mrg(mrg(mrg(mrg(field1.bind(data), field2.bind(data)), field3.bind(data)), field4.bind(data)), field5.bind(data)), field6.bind(data)), field7.bind(data)), field8.bind(data)), field9.bind(data)) match {
       case Left(errors) => Left(errors)
-      case Right(values) => {
-        applyConstraints(apply(
-
-          values(0).asInstanceOf[A1],
-          values(1).asInstanceOf[A2],
-          values(2).asInstanceOf[A3],
-          values(3).asInstanceOf[A4],
-          values(4).asInstanceOf[A5],
-          values(5).asInstanceOf[A6],
-          values(6).asInstanceOf[A7],
-          values(7).asInstanceOf[A8],
-          values(8).asInstanceOf[A9]))
-      }
+      case Right(((((((((v1, v2), v3), v4), v5), v6), v7), v8), v9)) => 
+        applyConstraints(apply(v1, v2, v3, v4, v5, v6, v7, v8, v9))
     }
   }
 
@@ -447,22 +388,10 @@ case class ObjectMapping10[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, M1 <: Map
 	type S = (M1, M2, M3, M4, M5, M6, M7, M8, M9, M10)
 
   def bind(data: Map[String, String]): Either[Seq[FormError], R] = {
-    merge(field1.bind(data), field2.bind(data), field3.bind(data), field4.bind(data), field5.bind(data), field6.bind(data), field7.bind(data), field8.bind(data), field9.bind(data), field10.bind(data)) match {
+    mrg(mrg(mrg(mrg(mrg(mrg(mrg(mrg(mrg(field1.bind(data), field2.bind(data)), field3.bind(data)), field4.bind(data)), field5.bind(data)), field6.bind(data)), field7.bind(data)), field8.bind(data)), field9.bind(data)), field10.bind(data)) match {
       case Left(errors) => Left(errors)
-      case Right(values) => {
-        applyConstraints(apply(
-
-          values(0).asInstanceOf[A1],
-          values(1).asInstanceOf[A2],
-          values(2).asInstanceOf[A3],
-          values(3).asInstanceOf[A4],
-          values(4).asInstanceOf[A5],
-          values(5).asInstanceOf[A6],
-          values(6).asInstanceOf[A7],
-          values(7).asInstanceOf[A8],
-          values(8).asInstanceOf[A9],
-          values(9).asInstanceOf[A10]))
-      }
+      case Right((((((((((v1, v2), v3), v4), v5), v6), v7), v8), v9), v10)) => 
+        applyConstraints(apply(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10))
     }
   }
 
@@ -501,23 +430,10 @@ case class ObjectMapping11[R, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, M1 <
 	type S = (M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11)
 
   def bind(data: Map[String, String]): Either[Seq[FormError], R] = {
-    merge(field1.bind(data), field2.bind(data), field3.bind(data), field4.bind(data), field5.bind(data), field6.bind(data), field7.bind(data), field8.bind(data), field9.bind(data), field10.bind(data), field11.bind(data)) match {
+    mrg(mrg(mrg(mrg(mrg(mrg(mrg(mrg(mrg(mrg(field1.bind(data), field2.bind(data)), field3.bind(data)), field4.bind(data)), field5.bind(data)), field6.bind(data)), field7.bind(data)), field8.bind(data)), field9.bind(data)), field10.bind(data)), field11.bind(data)) match {
       case Left(errors) => Left(errors)
-      case Right(values) => {
-        applyConstraints(apply(
-
-          values(0).asInstanceOf[A1],
-          values(1).asInstanceOf[A2],
-          values(2).asInstanceOf[A3],
-          values(3).asInstanceOf[A4],
-          values(4).asInstanceOf[A5],
-          values(5).asInstanceOf[A6],
-          values(6).asInstanceOf[A7],
-          values(7).asInstanceOf[A8],
-          values(8).asInstanceOf[A9],
-          values(9).asInstanceOf[A10],
-          values(10).asInstanceOf[A11]))
-      }
+      case Right(((((((((((v1, v2), v3), v4), v5), v6), v7), v8), v9), v10), v11)) => 
+        applyConstraints(apply(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11))
     }
   }
 

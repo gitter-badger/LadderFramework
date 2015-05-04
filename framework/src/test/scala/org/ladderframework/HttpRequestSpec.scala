@@ -42,7 +42,7 @@ class HttpRequestSpec extends FunSpec with GivenWhenThen {
   
   val dummyResponse = new HttpResponse{
   	def status:Status = OK 
-  	def httpResponse()(implicit context: Context, ec: ExecutionContext): Future[HttpStringResponseOutput] = 
+  	def httpResponse()(implicit context: Context): Future[HttpStringResponseOutput] = 
   		Future.successful(HttpStringResponseOutput(status = status, contentType = ContentType.`text/plain` , content = "")) 
   }
   

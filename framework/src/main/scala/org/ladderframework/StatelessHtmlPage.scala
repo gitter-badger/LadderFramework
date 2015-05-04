@@ -10,15 +10,16 @@ import org.ladderframework.exception.RetrievingXMLException
 trait StatelessHtmlPage extends HtmlResponse{
 	def source: String
 	def boot: DefaultBoot
+	implicit def ex: ExecutionContext
 	
-	override final def content(implicit ec:ExecutionContext):Future[String] = {
+	override final def content():Future[NodeSeq] = {
 		for{
 			x <- xml
 			r <- render
-		} yield "<!DOCTYPE html>\n" + (r(x)).toString
+		} yield (r(x))
 	}
 	
-	private def xml(implicit ec:ExecutionContext):Future[NodeSeq] = Future{
+	private def xml():Future[NodeSeq] = Future{
 		try{
 			XML.load(boot.resource(source))
 		}catch{
@@ -26,6 +27,6 @@ trait StatelessHtmlPage extends HtmlResponse{
 		}
 	}
 	
-	def render(implicit ec:ExecutionContext):Future[NodeSeq => NodeSeq]
+	def render():Future[NodeSeq => NodeSeq]
 
 }

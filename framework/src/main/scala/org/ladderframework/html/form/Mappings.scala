@@ -303,10 +303,10 @@ case class RepeatedMapping[RT, M <: Mapping[M]{type T = RT}](wrapped: M{type T =
  *
  * @param wrapped the wrapped mapping
  */
-case class OptionalMapping[OT, M <: Mapping[M]{type T = OT}](wrapped: M{type T = OT}, val constraints: Seq[Constraint[Option[OT]]] = Nil) extends NestedMapping[OptionalMapping[OT, M]] {
+case class OptionalMapping[OT, M <: Mapping[M]{type T = OT}](wrapped: M, val constraints: Seq[Constraint[Option[OT]]] = Nil) extends NestedMapping[OptionalMapping[OT, M]] {
 
 	type T = Option[OT]
-	type S = M{type T = OT}
+	type S = M
 	
 	override val format: Option[(String, Seq[Any])] = wrapped.format
 
@@ -459,13 +459,20 @@ trait ObjectMapping {
 	 *
 	 * @see bind()
 	 */
+	def mrg[A, B](a: Either[Seq[FormError], A], b: Either[Seq[FormError], B]): Either[Seq[FormError], (A, B)] = (a, b) match {
+		case (Left(errorsA), Left(errorsB)) => Left(errorsA ++ errorsB)
+		case (Left(errorsA), Right(_)) => Left(errorsA)
+		case (Right(_), Left(errorsB)) => Left(errorsB)
+		case (Right(a), Right(b)) => Right(a -> b)
+	}
+	
 	def merge2(a: Either[Seq[FormError], Seq[Any]], b: Either[Seq[FormError], Seq[Any]]): Either[Seq[FormError], Seq[Any]] = (a, b) match {
 		case (Left(errorsA), Left(errorsB)) => Left(errorsA ++ errorsB)
 		case (Left(errorsA), Right(_)) => Left(errorsA)
 		case (Right(_), Left(errorsB)) => Left(errorsB)
 		case (Right(a), Right(b)) => Right(a ++ b)
 	}
-
+	
 	/**
 	 * Merges the result of multiple bindings.
 	 *

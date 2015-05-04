@@ -6,7 +6,7 @@ import annotation.implicitNotFound
  * Handles field binding and unbinding.
  */
 @implicitNotFound(
-  msg = "Cannot find Formatter type class for ${T}. Perhaps you will need to import org.ladderframework.html.form.Formats._ or create your own inputs"
+  msg = "Cannot find Formatter type class for ${T}. Perhaps you will need to import org.ladderframework.html.form.Formatter._ or create your own inputs"
 )
 trait Formatter[T] {
 
@@ -35,7 +35,7 @@ trait Formatter[T] {
 }
 
 /** This object defines several default formatters. */
-object Formats {
+object Formatter {
 
   /**
    * Formatter for ignored values.
@@ -170,30 +170,6 @@ object Formats {
    * @param pattern a date pattern as specified in `java.text.SimpleDateFormat`.
    */
   implicit val dateFormat: Formatter[Date] = dateFormat("yyyy-MM-dd")
-
-  /**
-   * Formatter for the `java.sql.Date` type.
-   *
-   * @param pattern a date pattern as specified in `java.text.SimpleDateFormat`.
-   */
-  def sqlDateFormat(pattern: String): Formatter[java.sql.Date] = new Formatter[java.sql.Date] {
-
-    override val format = Some(("format.date", Seq(pattern)))
-
-    def bind(key: String, data: Map[String, String]) = {
-      dateFormat(pattern).bind(key, data).right.map(d => new java.sql.Date(d.getTime))
-    }
-
-    def unbind(key: String, value: java.sql.Date) = dateFormat(pattern).unbind(key, value)
-
-  }
-
-  /**
-   * Default formatter for `java.sql.Date` type with pattern `yyyy-MM-dd`.
-   *
-   * @param pattern a date pattern as specified in `java.text.SimpleDateFormat`.
-   */
-  implicit val sqlDateFormat: Formatter[java.sql.Date] = sqlDateFormat("yyyy-MM-dd")
 
 
 }

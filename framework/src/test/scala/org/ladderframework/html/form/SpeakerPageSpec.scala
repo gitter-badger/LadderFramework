@@ -3,13 +3,11 @@ package org.ladderframework.html.form
 import org.ladderframework.StatefulHtmlPage
 import org.scalatest.FunSpec
 import org.ladderframework.Context
-import org.ladderframework.html.form.Formats._
 import org.ladderframework.html.form.Forms._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 import Forms._
-import Formats._
 import org.ladderframework.html.form._
 import org.ladderframework.js.JsCmd
 import org.ladderframework.js.JsNoCmd
