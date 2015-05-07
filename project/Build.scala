@@ -14,7 +14,7 @@ object LadderFrameworkBuild extends Build {
 	lazy val root = Project(id = "root",
 		base = file("."),
 		settings = ladderSettings ++ releaseSettings
-	) aggregate (framework, testFramework)
+	) aggregate (json, css, framework, testFramework)
 
 	lazy val framework = Project(id = "ladder-web",
 		base = file("framework"),
