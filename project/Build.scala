@@ -80,7 +80,7 @@ object Dependency {
 		val scalacheck = "1.11.4"
 		val slf4j = "1.7.5"
 		val akka = "2.3.7"
-		val scalaVersion = "2.11.1"
+		val scalaVersion = "2.11.6"
 	}
 
 	// Compile
@@ -95,8 +95,8 @@ object Dependency {
 	lazy val slf4jApi = "org.slf4j" % "slf4j-api" % V.slf4j
 	lazy val logback = "ch.qos.logback" % "logback-classic" % V.logback
 
-	lazy val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.2"
-	lazy val scalaParserCompinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.1"
+	lazy val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.4"
+	lazy val scalaParserCompinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
 
 	lazy val akkaActor = "com.typesafe.akka" %% "akka-actor" % V.akka
 	lazy val akkaLogging = "com.typesafe.akka" %% "akka-slf4j" % V.akka
