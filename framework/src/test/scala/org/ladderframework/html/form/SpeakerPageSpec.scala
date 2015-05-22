@@ -97,7 +97,7 @@ case class Date(day: Int, month: Int, year: Int)
 case class Address(street: String, city: String, code: Int)
 
 
-class ProductHtmlPage(speaker: Option[Speaker]) extends StatefulHtmlPage {
+class ProductHtmlPage(speaker: Option[Speaker])(implicit ec:ExecutionContext) extends StatefulHtmlPage {
 	val source: String = "speaker.html"
 		
 	val form = Form(mapping(Speaker)(Speaker.unapply _)(
@@ -113,7 +113,7 @@ class ProductHtmlPage(speaker: Option[Speaker]) extends StatefulHtmlPage {
 		)
 	))
 	
-	def render(implicit context: Context, ec: ExecutionContext): Future[NodeSeq => NodeSeq] = Future{
+	def render(implicit context: Context): Future[NodeSeq => NodeSeq] = Future{
 		Ajax(form)((either, id) => Future(JsNoCmd))(
 				implicit context => speaker => {
 					ns => {

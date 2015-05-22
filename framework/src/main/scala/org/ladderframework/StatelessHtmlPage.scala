@@ -10,7 +10,7 @@ import org.ladderframework.exception.RetrievingXMLException
 trait StatelessHtmlPage extends HtmlResponse{
 	def source: String
 	def boot: DefaultBoot
-	implicit def ex: ExecutionContext
+	implicit def ec: ExecutionContext
 	
 	override final def content():Future[NodeSeq] = {
 		for{

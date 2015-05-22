@@ -9,6 +9,6 @@ import scala.concurrent.Future
 class AboutResponse extends StatefulHtmlPage{
 	val source = "about.html"
 		
-	override def render(implicit context: Context, ec: ExecutionContext): Future[NodeSeq => NodeSeq] = Future(ns => ns)
+	override def render(implicit context: Context): Future[NodeSeq => NodeSeq] = Future.successful(ns => ns)
 
 }

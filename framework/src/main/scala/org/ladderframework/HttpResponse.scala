@@ -202,7 +202,8 @@ trait StatefulHtmlPage extends StatefulHtmlResponse with Loggable {
 		"body" #+> <script type="text/javascript">{ "$(function(){ladder.push('" + context.contextID + "');})" }</script>
 	}
 
-	def render(implicit context: Context, ec: ExecutionContext): Future[NodeSeq => NodeSeq]
+	def render(implicit context: Context): Future[NodeSeq => NodeSeq]
+	
 	override def statefullContent(implicit context: Context): Future[NodeSeq] = {
 		import context.boot.executionContext
 		for {
