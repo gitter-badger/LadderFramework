@@ -1,4 +1,4 @@
-package org.ladderframework.html.form
+package org.ladderframework.form
 
 /**
  * Represents an object binding (ie. a binding for several fields).

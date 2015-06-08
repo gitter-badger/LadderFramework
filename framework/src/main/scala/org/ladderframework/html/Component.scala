@@ -4,9 +4,9 @@ import scala.xml.NodeSeq
 import scala.xml.XML
 import org.ladderframework.css.CssSelector
 import org.ladderframework.css.CssSelector._
-import org.ladderframework.Utils
 import scala.concurrent._
 import org.ladderframework.Context
+import org.ladderframework.utils._
 
 trait Component {
 	def source:String

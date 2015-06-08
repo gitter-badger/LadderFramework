@@ -3,7 +3,6 @@ package org.ladderframework
 import java.io.IOException
 import java.nio.file.Files
 import java.util.UUID
-
 import scala.collection.Iterator
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -11,11 +10,9 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
-
 import org.ladderframework.js.JsCmd
 import org.ladderframework.json.JObject
 import org.ladderframework.json.JsonString
-
 import akka.actor.Actor
 import akka.actor.ActorIdentity
 import akka.actor.ActorLogging
@@ -37,7 +34,7 @@ case class RenderInital(res: Promise[HttpResponseOutput])
 case class CreateSession(sessionId: String)
 case class RemoveSession(sessionId: String)
 case class AddResponse(path: List[String], uuid: String, response: HttpResponse) {}
-case class PushMessage(id: String = Utils.uuid, message: String) {
+case class PushMessage(id: String = utils.uuid, message: String) {
 	lazy val asJson = { """{"id":"""" + id + """", "message":"""" + message.replace("\"", "\\\"") + """"}""" }
 }
 case class Invalidate(session: SessionId)
@@ -81,7 +78,7 @@ class RequestHandler(boot: DefaultBoot, completed: () => Unit, req: HttpServletR
 		Cookie(c)
 	})
 	def createServletHttpRequestWithNewSession(): Unit = {
-		val sessionId = SessionId(Utils.secureRandom)
+		val sessionId = SessionId(utils.secureRandom)
 		log.debug("Create session: {}", sessionId)
 		handleResponse(sessionId)
 		val request = new ServletHttpRequest(req, cookies, sessionId)
@@ -208,17 +205,17 @@ class SessionActor(sessionID: SessionId, boot: DefaultBoot) extends Actor with A
 							log.debug("redirect:id = " + id)
 							log.debug("child: " + context.child(id))
 							context.child(id).getOrElse {
-								val uuid: String = Utils.uuid
+								val uuid: String = utils.uuid
 								context.actorOf(InitalResponseContainer.props(self, hi.req, uuid, boot), name = uuid)
 							} ! RenderInital(hi.res)
 						case _ =>
-							val uuid: String = Utils.uuid
+							val uuid: String = utils.uuid
 							val resonseContainerRef = context.actorOf(InitalResponseContainer.props(context.self, hi.req, uuid, boot), name = uuid)
 							resonseContainerRef ! RenderInital(hi.res)
 					}
 
 				case _ =>
-					val uuid: String = Utils.uuid
+					val uuid: String = utils.uuid
 					val resonseContainerRef = context.actorOf(InitalResponseContainer.props(context.self, hi.req, uuid, boot), name = uuid)
 					resonseContainerRef ! RenderInital(hi.res)
 			}
@@ -445,7 +442,7 @@ class PullActor(res: Promise[HttpResponseOutput], boot: DefaultBoot) extends Act
 
 	def send(msgs: List[PushMessage]): Unit = {
 		val response = PullResponse(msgs)
-		implicit val c: Context = new Context(Utils.uuid, (_, _) => "", _ => Success({}), boot)
+		implicit val c: Context = new Context(utils.uuid, (_, _) => "", _ => Success({}), boot)
 		val selfActor = context.self
 		response.httpResponse().onComplete {
 			case Success(hsro) =>

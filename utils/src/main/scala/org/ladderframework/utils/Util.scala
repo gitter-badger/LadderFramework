@@ -1,10 +1,12 @@
+
 package org.ladderframework
+
 import java.util.UUID
 import java.security.SecureRandom
 import java.util.Base64
 
-object Utils {
-	lazy val sr = SecureRandom.getInstance("SHA1PRNG")
+package object utils {
+	private lazy val sr = SecureRandom.getInstance("SHA1PRNG")
 	
 	def uuid: String = UUID.randomUUID().toString.replaceAll("[\\/+=-]", "0")
 	

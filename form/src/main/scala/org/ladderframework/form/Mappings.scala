@@ -1,6 +1,6 @@
-package org.ladderframework.html.form
+package org.ladderframework.form
 
-import org.ladderframework.Utils
+import org.ladderframework.utils._
 
 trait NestedMapping[M <: NestedMapping[M]] extends Mapping[M]{
 	type S
@@ -59,7 +59,6 @@ trait Mapping[M <: Mapping[M]] {
 	 *
 	 * For example:
 	 * {{{
-	 *   import play.api.data._
 	 *   import validation.Constraints._
 	 *
 	 *   Form("phonenumber" -> text.verifying(required) )
@@ -75,7 +74,6 @@ trait Mapping[M <: Mapping[M]] {
 	 *
 	 * For example:
 	 * {{{
-	 *   import play.api.data._
 	 *   import validation.Constraints._
 	 *
 	 *   Form("phonenumber" -> text.verifying {_.grouped(2).size == 5})
@@ -91,7 +89,6 @@ trait Mapping[M <: Mapping[M]] {
 	 *
 	 * For example:
 	 * {{{
-	 *   import play.api.data._
 	 *   import validation.Constraints._
 	 *
 	 *   Form("phonenumber" -> text.verifying("Bad phone number", {_.grouped(2).size == 5}))
@@ -194,7 +191,6 @@ case class WrappedMapping[A, B, M <: Mapping[M]{type T = A}](wrapped: M, f1: A =
 	 *
 	 * For example:
 	 * {{{
-	 *   import play.api.data._
 	 *   import validation.Constraints._
 	 *
 	 *   Form("phonenumber" -> text.verifying(required) )
@@ -227,7 +223,7 @@ object RepeatedMapping {
  *
  * @param wrapped The wrapped mapping
  */
-case class RepeatedMapping[RT, M <: Mapping[M]{type T = RT}](wrapped: M{type T = RT}, val key: String = Utils.uuid, val constraints: Seq[Constraint[List[RT]]] = Nil) extends NestedMapping[RepeatedMapping[RT, M]] {
+case class RepeatedMapping[RT, M <: Mapping[M]{type T = RT}](wrapped: M{type T = RT}, val key: String = uuid, val constraints: Seq[Constraint[List[RT]]] = Nil) extends NestedMapping[RepeatedMapping[RT, M]] {
 
 	type T = List[RT]
 	type S = M{type T = RT}
@@ -242,7 +238,6 @@ case class RepeatedMapping[RT, M <: Mapping[M]{type T = RT}](wrapped: M{type T =
 	 *
 	 * For example:
 	 * {{{
-	 *   import play.api.data._
 	 *   import validation.Constraints._
 	 *
 	 *   Form("phonenumber" -> text.verifying(required) )
@@ -320,7 +315,6 @@ case class OptionalMapping[OT, M <: Mapping[M]{type T = OT}](wrapped: M, val con
 	 *
 	 * For example:
 	 * {{{
-	 *   import play.api.data._
 	 *   import validation.Constraints._
 	 *
 	 *   Form("phonenumber" -> text.verifying(required) )
@@ -377,7 +371,7 @@ case class OptionalMapping[OT, M <: Mapping[M]{type T = OT}](wrapped: M, val con
  * @param key the field key
  * @param constraints the constraints associated with this field.
  */
-case class FieldMapping[FT](val key: String = Utils.uuid, val constraints: Seq[Constraint[FT]] = Nil)(implicit val binder: Formatter[FT]) extends Mapping[FieldMapping[FT]] {
+case class FieldMapping[FT](val key: String = uuid, val constraints: Seq[Constraint[FT]] = Nil)(implicit val binder: Formatter[FT]) extends Mapping[FieldMapping[FT]] {
 	
 	type T = FT
 
@@ -391,7 +385,6 @@ case class FieldMapping[FT](val key: String = Utils.uuid, val constraints: Seq[C
 	 *
 	 * For example:
 	 * {{{
-	 *   import play.api.data._
 	 *   import validation.Constraints._
 	 *
 	 *   Form("phonenumber" -> text.verifying(required) )

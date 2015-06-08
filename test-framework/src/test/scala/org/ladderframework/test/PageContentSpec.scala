@@ -4,7 +4,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalatest.FunSpec
 import org.scalatest.GivenWhenThen
 import org.ladderframework.Context
-import org.ladderframework.Utils
+import org.ladderframework.utils
 import org.ladderframework.HttpResponse
 import org.ladderframework.js._
 import org.ladderframework.test.page._
@@ -26,7 +26,7 @@ class PageContentSpec extends FunSpec with GivenWhenThen with Futures{
 	}    
 	
 	implicit val context: Context = Context(
-		contextID = Utils.uuid, 
+		contextID = utils.uuid, 
 		addResponse = (path: List[String], res: HttpResponse) => "", 
 		update = (str: JsCmd) => Try{Unit}, boot)
 		

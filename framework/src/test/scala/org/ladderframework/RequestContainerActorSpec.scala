@@ -30,7 +30,7 @@ class ResponseContainerActorSpec (system: ActorSystem) extends TestKit(system) w
 		"handle time to live" should {
 			"handle timing out" in {
 				val httpResponseOutput = Promise[HttpResponseOutput]()
-				val uuid = Utils.uuid
+				val uuid = utils.uuid
 				val initalResponseContainer = system.actorOf(Props(new InitalResponseContainer(null, null, uuid, boot)))
 				val probe = TestProbe()
 				probe watch initalResponseContainer

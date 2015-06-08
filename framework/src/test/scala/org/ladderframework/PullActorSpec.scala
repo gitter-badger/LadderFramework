@@ -36,7 +36,7 @@ class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpecL
 			"handle pushing message" in {
 				val httpResponseOutput = Promise[HttpResponseOutput]()
 				val pullActor = system.actorOf(PullActor(httpResponseOutput, boot), "pushMessage")
-				val uuid = Utils.uuid
+				val uuid = utils.uuid
 				val msg = "sendSimpleMessage"
 				pullActor ! PushMessage(uuid, msg)
 				whenReady(httpResponseOutput.future)(httpResponseOutput => { 
@@ -51,8 +51,8 @@ class PullActorSpec (system: ActorSystem) extends TestKit(system) with WordSpecL
 			"handle pushing messages" in {
 				val httpResponseOutput = Promise[HttpResponseOutput]()
 				val pullActor = system.actorOf(PullActor(httpResponseOutput, boot))
-				val uuid = Utils.uuid
-				val uuid2 = Utils.uuid
+				val uuid = utils.uuid
+				val uuid2 = utils.uuid
 				val message1 = "sendMessage1"
 				val message2 = "sendMessage2"
 				pullActor ! List(PushMessage(uuid, message1), PushMessage(uuid2, message2))

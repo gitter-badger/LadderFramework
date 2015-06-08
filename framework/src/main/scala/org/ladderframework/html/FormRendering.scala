@@ -1,15 +1,14 @@
-package org.ladderframework.html.form
+package org.ladderframework.html
 
 import scala.xml.NodeSeq
 import org.ladderframework.js.JsCmd
 import org.ladderframework.Context
-import org.ladderframework.Utils
+import org.ladderframework.utils
 import org.ladderframework.HttpResponse
 import scala.concurrent.Future
 import org.ladderframework.Status
 import scala.concurrent.ExecutionContext
-
-case class FormContext(data: Map[String, String], indexesOf: String => Seq[Int], errors: Seq[FormError])
+import org.ladderframework.form._
 
 trait FormRendering {
 	def transform(ns: NodeSeq): NodeSeq
@@ -20,7 +19,7 @@ trait FormRendering {
 case class Ajax[M <: Mapping[M]](form: Form[M])
 		(callback: (Either[Form[M], M#T], FormRendering#FormId) => Future[JsCmd])(rendering: FormContext => M => (NodeSeq => NodeSeq))
 		(implicit context: Context) extends FormRendering{
-	val id = Utils.uuid
+	val id = utils.uuid
 	val submitPath = context.addAjaxFormSubmitCallback(req => {
 		val boundForm = form.bindFromRequest(req.parameters.mapValues(_.toSeq))
 		val either = if(boundForm.hasErrors) Left[Form[M], M#T](boundForm) else boundForm.value.toRight(boundForm)
@@ -38,7 +37,7 @@ abstract class StatefulForm[M <: Mapping[M]](
 			callback: (Either[Form[M], M#T], FormRendering#FormId) => Future[(List[String], HttpResponse)], 
 			rendering: FormContext => M => (NodeSeq => NodeSeq)
 		)(implicit context: Context, executionContext: ExecutionContext) extends FormRendering{
-	val id = Utils.uuid
+	val id = utils.uuid
 	val actionPath = context.addSubmitCallback(req => {
 		val boundForm = form.bindFromRequest(req.parameters.mapValues(_.toSeq))
 		val either = if(boundForm.hasErrors) Left[Form[M], M#T](boundForm) else boundForm.value.toRight(boundForm)

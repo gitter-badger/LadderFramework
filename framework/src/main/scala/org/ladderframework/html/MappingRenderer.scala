@@ -1,10 +1,14 @@
 package org.ladderframework.html
 
 import scala.xml.NodeSeq
-import org.ladderframework.Utils
+
+import org.ladderframework.utils
+
 import scala.xml.Text
+
 import java.util.ResourceBundle
 import java.text.MessageFormat
+import org.ladderframework.form._
 
 package object form{
 	

@@ -198,7 +198,7 @@ case class Context(
 			debug("ajax func: " + func + " --- " + ajaxPostMap(func))
 			
 			request.parameters.foreach(param => {
-				val (key, values: Array[String]) = param
+				val (key, values: Seq[String]) = param
 				for{
 					callbackFunc <- inputMap.get(key)
 					nullableValue <- values

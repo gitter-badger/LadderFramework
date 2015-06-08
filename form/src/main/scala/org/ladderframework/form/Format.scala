@@ -1,4 +1,4 @@
-package org.ladderframework.html.form
+package org.ladderframework.form
 
 import annotation.implicitNotFound
 

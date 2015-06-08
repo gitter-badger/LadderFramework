@@ -15,7 +15,7 @@ trait HttpRequest{
 	def headers: Map[String,String]
 	def sessionId:SessionId
 	def path:List[String]
-	def parameters: Map[String,Array[String]]
+	def parameters: Map[String,Seq[String]]
 	//TODO S wrap Part in something appropriate
 	def parts: List[Part] = Nil
 	def part(name: String): Option[Part] = parts.find{_.getName() == name}
@@ -29,7 +29,7 @@ case class ServletHttpRequest(req: HttpServletRequest, val cookies: Seq[Cookie],
 	val method:Method = Method(req.getMethod())
 	override val headers: Map[String,String] = req.getHeaderNames.map(name => name -> req.getHeader(name)).toMap
 	val path:List[String] = req.getPathInfo.split("/").filterNot(_.isEmpty).toList
-	val parameters: Map[String,Array[String]]  = req.getParameterMap.asScala.toMap
+	val parameters: Map[String,Seq[String]]  = req.getParameterMap.asScala.toMap.mapValues(_.toSeq)
 	debug("Parameters: " + parameters)
 	//TODO S wrap Part in something appropriate
 	override val parts = if(Option(req.getContentType).exists(_.startsWith("multipart/form-data"))) 

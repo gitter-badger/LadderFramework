@@ -14,14 +14,14 @@ object LadderFrameworkBuild extends Build {
 	lazy val root = Project(id = "root",
 		base = file("."),
 		settings = ladderSettings ++ releaseSettings
-	) aggregate (json, css, framework, testFramework)
+	) aggregate (json, css, framework, testFramework, utils, form)
 
 	lazy val framework = Project(id = "ladder-web",
 		base = file("framework"),
 		settings = ladderSettings ++ Seq(
 			libraryDependencies ++= Dependencies.framework ++ Dependencies.testkit ++ Seq(Dependency.Test.akkaTest)
 		)
-	) dependsOn (json, css)
+	) dependsOn (json, css, form)
 
 	lazy val json = Project(id = "ladder-json",
 		base = file("json"),
@@ -30,12 +30,28 @@ object LadderFrameworkBuild extends Build {
 		)
 	)
 
+	lazy val form = Project(id = "ladder-form",
+		base = file("form"),
+		settings = ladderSettings ++ Seq(
+                        libraryDependencies ++= Dependencies.form ++ Dependencies.testkit
+                )
+        ) dependsOn (json, utils)
+
+
 	lazy val css = Project(id = "ladder-css",
 		base = file("css"),
 		settings = ladderSettings ++ Seq(
 			libraryDependencies ++= Dependencies.css ++ Dependencies.testkit
 		)
 	)
+
+	lazy val utils = Project(id = "ladder-utils",
+		base = file("utils"),
+		settings = ladderSettings ++ Seq(
+                        libraryDependencies ++= Dependencies.utils ++ Dependencies.testkit
+                )
+        )
+
 
 	lazy val testFramework = Project(id = "ladder-test",
 		base = file("test-framework"),
@@ -67,7 +83,8 @@ object Dependencies {
 	val test_framework = Seq(servletApi) ++ slf4j
 	val json = Seq(scalaParserCompinators)
 	val css = Seq(scalaXml)
-
+	val form = Seq()
+	val utils = Seq()
 }
 
 object Dependency {

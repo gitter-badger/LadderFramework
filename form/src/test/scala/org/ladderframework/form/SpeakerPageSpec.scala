@@ -1,17 +1,12 @@
-package org.ladderframework.html.form
+package org.ladderframework.form
 
-import org.ladderframework.StatefulHtmlPage
-import org.scalatest.FunSpec
-import org.ladderframework.Context
-import org.ladderframework.html.form.Forms._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
+import org.scalatest.FunSpec
+
 import Forms._
-import org.ladderframework.html.form._
-import org.ladderframework.js.JsCmd
-import org.ladderframework.js.JsNoCmd
-import org.ladderframework.css.CssSelector._
+
 
 class FormBindingSpec extends FunSpec{
 	
@@ -75,7 +70,7 @@ class FormBindingSpec extends FunSpec{
 	}
 	
 	describe("Form bind from json"){
-		import org.ladderframework.json._
+  import org.ladderframework.json._
 		val per = Speaker("Per", Date(1, 12, 1924), Some("jalla"), List(true -> Address("street", "city", 1), false -> Address("highway", "town", 2)))
 		it("should handle bind"){
 			val bound = form.bind(JObject("name" -> "Per", 
@@ -95,51 +90,3 @@ class FormBindingSpec extends FunSpec{
 case class Speaker(name: String, date: Date, info: Option[String], addresses: List[(Boolean, Address)])
 case class Date(day: Int, month: Int, year: Int)
 case class Address(street: String, city: String, code: Int)
-
-
-class ProductHtmlPage(speaker: Option[Speaker])(implicit ec:ExecutionContext) extends StatefulHtmlPage {
-	val source: String = "speaker.html"
-		
-	val form = Form(mapping(Speaker)(Speaker.unapply _)(
-		of[String], 
-		mapping(Date.apply _)( Date.unapply _)(of[Int], of[Int], of[Int]),
-		optional(of[String]),
-		list(
-				mapping((selected: Boolean, address: Address) => (selected -> address))
-						((touple: Tuple2[Boolean, Address]) => Option(touple._1 -> touple._2))(
-						boolean, 
-						mapping(Address)(Address.unapply _)(of[String]("street"), of[String]("city"), of[Int]("code"))
-				)
-		)
-	))
-	
-	def render(implicit context: Context): Future[NodeSeq => NodeSeq] = Future{
-		Ajax(form)((either, id) => Future(JsNoCmd))(
-				implicit context => speaker => {
-					ns => {
-						<div>
-							<h3>Speaker</h3>
-							{
-								speaker.render((name, date, info, addresses) => {
-									date.render((day, month, year) => ns => {
-										name.text("Name", 'id -> "name") ++
-										<fieldset>
-											<legend>Date of birth:</legend>
-											{
-												day.text("Day") ++
-												month.text("Month") ++
-												year.text("Year")
-											}
-										</fieldset> /*++
-										info.textarea("Info")*/
-									})
-								})
-							}
-							<input type="submit" value="Send"/>
-						</div>
-					}
-				}
-		)
-		ns => ns
-	}
-}

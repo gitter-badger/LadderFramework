@@ -1,16 +1,15 @@
-package org.ladderframework.html.form
+package org.ladderframework.form
 
 import scala.annotation.implicitNotFound
-import org.ladderframework.Utils
-import org.ladderframework.json.JValue
+import org.ladderframework.json._
+
+case class FormContext(data: Map[String, String], indexesOf: String => Seq[Int], errors: Seq[FormError])
 
 /**
  * Helper to manage HTML form description, submission and validation.
  *
  * For example, a form handling a `User` case class submission:
  * {{{
- * import play.api.data._
- * import play.api.data.format.Formats._
  *
  * val userForm = Form(
  *   mapping(
