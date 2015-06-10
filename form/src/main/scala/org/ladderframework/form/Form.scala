@@ -1,7 +1,7 @@
 package org.ladderframework.form
 
 import scala.annotation.implicitNotFound
-import org.ladderframework.json._
+import org.ladderframework.json.JValue
 
 case class FormContext(data: Map[String, String], indexesOf: String => Seq[Int], errors: Seq[FormError])
 
@@ -26,7 +26,7 @@ case class FormContext(data: Map[String, String], indexesOf: String => Seq[Int],
  * @param errors the collection of errors associated with this form
  * @param value a concrete value of type `T` if the form submission was successful
  */
-case class Form[M <: Mapping[M]](mapping: M, data: Map[String, String], errors: Seq[FormError], value: Option[M#T]) {
+case class Form[M <: Mapping](mapping: M, data: Map[String, String], errors: Seq[FormError], value: Option[M#T]) {
 	
 	/* *
 	 * Constraints associated with this form, indexed by field name.
@@ -51,7 +51,7 @@ case class Form[M <: Mapping[M]](mapping: M, data: Map[String, String], errors: 
 	 * @param data the data to submit
 	 * @return a copy of this form, filled with the new data
 	 */
-	def bind(data: Map[String, String]): Form[M] = mapping.bind(data).fold(
+	def bind(data: Map[String, String]): Form[M] = mapping.bind(data, "").fold(
 		errors => this.copy(data = data, errors = errors, value = None),
 		value => this.copy(data = data, errors = Nil, value = Some(value)))
 
@@ -99,7 +99,7 @@ case class Form[M <: Mapping[M]](mapping: M, data: Map[String, String], errors: 
 	 * @return a copy of this form filled with the new data
 	 */
 	def fill(value: mapping.T): Form[M] = {
-		val result = mapping.unbind(value)
+		val result = mapping.unbind(value, "")
 		this.copy(data = result._1, value = Some(value))
 	}
 
@@ -110,7 +110,7 @@ case class Form[M <: Mapping[M]](mapping: M, data: Map[String, String], errors: 
 	 * @return a copy of this form filled with the new data
 	 */
 	def fillAndValidate(value: mapping.T): Form[M] = {
-		val result = mapping.unbind(value)
+		val result = mapping.unbind(value, "")
 		this.copy(data = result._1, errors = result._2, value = Some(value))
 	}
 
@@ -238,7 +238,7 @@ object Form {
 	 * @param mapping the form mapping
 	 * @return a form definition
 	 */
-	def apply[M <: Mapping[M]](mapping: M): Form[M] = Form(mapping, Map.empty, Nil, None)
+	def apply[M <: Mapping](mapping: M): Form[M] = Form(mapping, Map.empty, Nil, None)
 
 }
 
