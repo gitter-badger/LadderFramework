@@ -68,7 +68,7 @@ trait Mapping {
  * @param f2 Transformation function from B to A
  * @param additionalConstraints Additional constraints of type B
  */
-case class WrappedMapping[A, B, M <: Mapping{type T = A}](wrapped: M{type T = A}, f1: A => B, f2: B => A, val additionalConstraints: Seq[Constraint[B]] = Nil) extends NestedMapping {
+case class WrappedMapping[A, B, M <: Mapping{type T = A}](wrapped: M{type T = A}, f1: A => B, f2: B => A, additionalConstraints: Seq[Constraint[B]] = Nil) extends NestedMapping {
 	type T = B
 	type S = M
 

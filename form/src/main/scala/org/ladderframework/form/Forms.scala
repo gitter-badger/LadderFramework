@@ -32,6 +32,20 @@ object named {
 		def transform[B](f1: A => B, f2: B => A) = WrappedMapping[A, B, M](mapping, f1, f2)
   }
   
+  implicit class NamedTransformWrapper[A, M <: Mapping{type T = A}](mapping: NameableMapping[M{type T = A}]){
+    /**
+     * Transform this Mapping[A] to a Mapping[B].
+     *
+     * @tparam B The type of the new mapping.
+     * @param f1 Transform value of A to a value of B
+     * @param f2 Transform value of B to a value of A
+     */
+    def transform[B](f1: A => B, f2: B => A, additionalConstraints: Constraint[B]*): NameableMapping[WrappedMapping[A, B, M]] = 
+      NameableMapping(name => {
+        WrappedMapping[A, B, M](mapping(name), f1, f2, additionalConstraints)
+      })
+  }
+  
   case class NameableMapping[M <: Mapping](toMapping: String => M){
     type MM = M
     def apply(in: String): MM = toMapping(in)

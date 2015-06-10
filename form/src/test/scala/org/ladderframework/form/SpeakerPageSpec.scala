@@ -14,7 +14,7 @@ class FormBindingSpec extends FunSpec{
   val addressMapping = "address" --> mapping(Address)(Address.unapply _)("street" --> of[String], "city" --> of[String], "code" --> of[Int])
 	
 	val speakerMapping = "speaker" --> mapping(Speaker.apply _)(Speaker.unapply _)(
-		"name" --> of[String], 
+		"name" --> of[String].transform[Name](Name, _.value), 
 		dateMapping,
 		"info" --> optional(of[String]),
 		"addresses" --> list(
@@ -51,7 +51,7 @@ class FormBindingSpec extends FunSpec{
   }
   
 	describe("Form bind simple"){
-		val per = Speaker("Per", Date(1, 12, 1924), None, Nil)
+		val per = Speaker(Name("Per"), Date(1, 12, 1924), None, Nil)
 		it("should handle bind"){
 			assert(form.bind(Map("speaker.name" -> "Per", "speaker.date.day" -> "1", "speaker.date.month" -> "12", "speaker.date.year" -> "1924", "speaker.info" -> "")).get === per)
 		}
@@ -60,7 +60,7 @@ class FormBindingSpec extends FunSpec{
 		}
 	}
 	describe("Form bind advanced"){
-		val per = Speaker("Per", Date(1, 12, 1924), Some("jalla"), List(true -> Address("street", "city", 1), false -> Address("highway", "town", 2)))
+		val per = Speaker(Name("Per"), Date(1, 12, 1924), Some("jalla"), List(true -> Address("street", "city", 1), false -> Address("highway", "town", 2)))
 		it("should handle bind"){
 			val bound = form.bind(Map("speaker.name" -> "Per", "speaker.date.day" -> "1", "speaker.date.month" -> "12", "speaker.date.year" -> "1924", "speaker.info" -> "jalla", 
 					"speaker.addresses[0].selected" -> "true", "speaker.addresses[0].address.street" -> "street", "speaker.addresses[0].address.city" -> "city", "speaker.addresses[0].address.code" -> "1", 
@@ -79,7 +79,7 @@ class FormBindingSpec extends FunSpec{
 	
 	describe("Form bind from json"){
   import org.ladderframework.json._
-		val per = Speaker("Per", Date(1, 12, 1924), Some("jalla"), List(true -> Address("street", "city", 1), false -> Address("highway", "town", 2)))
+		val per = Speaker(Name("Per"), Date(1, 12, 1924), Some("jalla"), List(true -> Address("street", "city", 1), false -> Address("highway", "town", 2)))
 		it("should handle bind"){
 			val bound = form.bind(JObject("speaker" -> JObject("name" -> "Per", 
 				"date" -> JObject("day" -> 1, "month" -> 12, "year" -> 1924), 
@@ -95,6 +95,7 @@ class FormBindingSpec extends FunSpec{
 	}
 }
 
-case class Speaker(name: String, date: Date, info: Option[String], addresses: List[(Boolean, Address)])
+case class Speaker(name: Name, date: Date, info: Option[String], addresses: List[(Boolean, Address)])
+case class Name(value: String)
 case class Date(day: Int, month: Int, year: Int)
 case class Address(street: String, city: String, code: Int)
