@@ -2,6 +2,8 @@
 
 &#8803; LadderFramework
 =======================
+
+[![Join the chat at https://gitter.im/ladderframework/LadderFramework](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ladderframework/LadderFramework?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 This isn't a framwork for you to use. It's by no means production ready. There are many great framworks and toolkits that you should look at before even waisting time on this one. 
 
 Stop reading! 
